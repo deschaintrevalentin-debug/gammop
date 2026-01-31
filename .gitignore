@@ -1,0 +1,36 @@
+# Fichiers de sauvegarde
+*.bak
+*.backup
+*.old
+*.orig
+*~
+
+# Logs
+*.log
+npm-debug.log*
+
+# Fichiers sensibles
+.env
+.env.*
+*.secret
+credentials.*
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Node
+node_modules/
+package-lock.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude Code
+.claude/

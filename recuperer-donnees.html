@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Récupération des Données GAMMOP</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2em;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .status {
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 2px solid #bee5eb;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            resize: vertical;
+            margin-bottom: 20px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+            color: #666;
+        }
+
+        .info-box li {
+            margin: 8px 0;
+        }
+
+        .count {
+            font-size: 3em;
+            font-weight: bold;
+            color: #667eea;
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Récupération des Données GAMMOP</h1>
+        <p class="subtitle">Vérification du localStorage...</p>
+
+        <div id="status" class="status info">
+            Recherche des données en cours...
+        </div>
+
+        <div id="countDisplay" style="display:none;">
+            <div class="count" id="seasonCount">0</div>
+            <p style="text-align:center;color:#666;font-size:1.2em;margin-bottom:20px">saisons trouvées</p>
+        </div>
+
+        <textarea id="dataDisplay" placeholder="Les données apparaîtront ici..." style="display:none;"></textarea>
+
+        <div class="btn-group" id="actions" style="display:none;">
+            <button class="btn-success" onclick="copyToClipboard()">
+                📋 Copier les Données
+            </button>
+            <button class="btn-primary" onclick="downloadJSON()">
+                💾 Télécharger JSON
+            </button>
+            <button class="btn-warning" onclick="restoreData()">
+                🔄 Restaurer Maintenant
+            </button>
+        </div>
+
+        <div class="info-box">
+            <h3>📖 Comment utiliser cet outil ?</h3>
+            <ul>
+                <li><strong>Si des données sont trouvées</strong> : Utilisez les boutons pour copier ou télécharger vos données</li>
+                <li><strong>Copier les Données</strong> : Copie dans le presse-papier pour coller ailleurs</li>
+                <li><strong>Télécharger JSON</strong> : Sauvegarde un fichier sur votre ordinateur</li>
+                <li><strong>Restaurer Maintenant</strong> : Remet les données dans le localStorage (si elles ont été effacées)</li>
+                <li><strong>Ensuite</strong> : Retournez sur votre site principal pour voir vos données</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let recoveredData = null;
+
+        function checkData() {
+            try {
+                // Vérifier localStorage
+                const data = localStorage.getItem('gammopSeasons');
+
+                if (data && data !== '[]' && data !== 'null') {
+                    // Données trouvées !
+                    recoveredData = data;
+                    const seasons = JSON.parse(data);
+
+                    document.getElementById('status').className = 'status success';
+                    document.getElementById('status').innerHTML = '✅ Données trouvées dans le localStorage !';
+
+                    document.getElementById('countDisplay').style.display = 'block';
+                    document.getElementById('seasonCount').textContent = seasons.length;
+
+                    document.getElementById('dataDisplay').style.display = 'block';
+                    document.getElementById('dataDisplay').value = data;
+
+                    document.getElementById('actions').style.display = 'flex';
+                } else {
+                    // Aucune donnée
+                    document.getElementById('status').className = 'status error';
+                    document.getElementById('status').innerHTML = '❌ Aucune donnée trouvée dans le localStorage<br><br>Essayez d\'ouvrir cette page dans un autre navigateur (Chrome, Firefox, etc.)';
+                }
+            } catch (error) {
+                document.getElementById('status').className = 'status error';
+                document.getElementById('status').innerHTML = '⚠️ Erreur lors de la lecture : ' + error.message;
+            }
+        }
+
+        function copyToClipboard() {
+            const textarea = document.getElementById('dataDisplay');
+            textarea.select();
+            textarea.setSelectionRange(0, 99999); // Pour mobile
+
+            try {
+                document.execCommand('copy');
+                alert('✅ Données copiées dans le presse-papier !\n\nVous pouvez maintenant les coller dans l\'onglet Backup de votre site.');
+            } catch (err) {
+                // Fallback moderne
+                navigator.clipboard.writeText(textarea.value).then(() => {
+                    alert('✅ Données copiées dans le presse-papier !');
+                }).catch(() => {
+                    alert('❌ Impossible de copier automatiquement.\nSélectionnez le texte manuellement et appuyez sur Cmd+C');
+                });
+            }
+        }
+
+        function downloadJSON() {
+            if (!recoveredData) {
+                alert('❌ Aucune donnée à télécharger');
+                return;
+            }
+
+            const blob = new Blob([recoveredData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'gammop-backup-' + new Date().toISOString().split('T')[0] + '.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            alert('✅ Fichier téléchargé avec succès !\n\nVous pouvez l\'importer dans l\'onglet Backup de votre site.');
+        }
+
+        function restoreData() {
+            if (!recoveredData) {
+                alert('❌ Aucune donnée à restaurer');
+                return;
+            }
+
+            if (confirm('🔄 Voulez-vous restaurer ces données dans le localStorage ?\n\nCela écrasera les données actuelles (s\'il y en a).')) {
+                try {
+                    localStorage.setItem('gammopSeasons', recoveredData);
+                    alert('✅ Données restaurées avec succès !\n\nRetournez sur votre site principal (index.html) et rechargez la page.');
+                } catch (error) {
+                    alert('❌ Erreur lors de la restauration : ' + error.message);
+                }
+            }
+        }
+
+        // Lancer la vérification au chargement
+        window.onload = checkData;
+    </script>
+</body>
+</html>

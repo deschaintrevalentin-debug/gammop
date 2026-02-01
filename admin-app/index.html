@@ -541,6 +541,7 @@ let discordProfiles = {};
 let discordAvatars = {};
 let mergeHistory = [];
 let currentUser = null;
+let currentSession = null; // Stocke la session auth — mis a jour par onAuthStateChange
 let editingSeasonId = null;
 let confirmCb = null;
 let ignoredPairs = new Set();
@@ -632,6 +633,7 @@ async function handleHashCallback() {
         return false;
     }
 
+    if (data && data.session) currentSession = data.session; // Stocker
     console.log('[AUTH] setSession OK');
     return true;
 }
@@ -647,10 +649,12 @@ async function checkSession() {
             return;
         }
         if (session) {
+            currentSession = session; // Stocker
             showAdmin(session.user);
             await loadAllData();
         } else {
             console.log('[AUTH] getSession returned null');
+            currentSession = null;
             showLogin();
         }
     } catch (e) {
@@ -734,12 +738,17 @@ async function handleLogout() {
 // --- Auth state listener: catches OAuth PKCE exchange, token refresh, etc. ---
 sb.auth.onAuthStateChange(async (event, session) => {
     console.log('[AUTH] onAuthStateChange:', event, session ? session.user.email || session.user.id : 'null');
+
+    // TOUJOURS stocker la session (ou null si deconnexion)
+    currentSession = session;
+
     if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION')) {
         // Only act if we haven't already shown admin (avoid double loadAllData)
         if (currentUser && currentUser.id === session.user.id) return;
         showAdmin(session.user);
         await loadAllData();
     } else if (event === 'SIGNED_OUT') {
+        currentSession = null;
         showLogin();
     }
 });
@@ -968,8 +977,7 @@ function cancelEdit() {
 async function deleteSeason(id) {
     const s = seasons.find(x => x.id === id);
     if (!s) return;
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) { showMsg('Non connecte — reconnectez-vous.', 'error'); return; }
+    if (!currentSession) { showMsg('Non connecte — reconnectez-vous.', 'error'); return; }
     showConfirm(`Supprimer "${s.name}" ?\nCette action est irreversible.`, async (confirmed) => {
         if (!confirmed) return;
         const { error } = await sb.from('seasons').delete().eq('id', id);
@@ -1017,9 +1025,8 @@ function resetAddForm() {
 }
 
 async function addSeason() {
-    // 1. Check session before writing
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) {
+    // 1. Check cached session
+    if (!currentSession) {
         showMsg('Non connecte — reconnectez-vous avant d\'ajouter une saison.', 'error');
         return;
     }
@@ -1482,19 +1489,12 @@ async function callEdgeFunction(payload) {
         ]);
     }
 
-    // 1. Get user JWT (timeout 5s)
-    importLog('[EDGE] 1/4 - Recuperation session...');
-    var resp;
-    try {
-        resp = await withTimeout(sb.auth.getSession(), 5000, 'getSession()');
-    } catch (e) {
-        throw new Error('getSession() a echoue: ' + e.message);
+    // 1. Use cached session (set by onAuthStateChange / checkSession / handleHashCallback)
+    importLog('[EDGE] 1/4 - Verification session...');
+    var session = currentSession;
+    if (!session || !session.access_token) {
+        throw new Error('Non connecte (session absente). Reconnectez-vous (GitHub / Magic Link).');
     }
-
-    if (!resp || !resp.data || !resp.data.session) {
-        throw new Error('Non connecte (session null). Reconnectez-vous (GitHub / Magic Link).');
-    }
-    var session = resp.data.session;
 
     var url = SUPABASE_URL + '/functions/v1/import-seasons';
     importLog('[EDGE] 2/4 - Session OK: ' + (session.user.email || session.user.id));

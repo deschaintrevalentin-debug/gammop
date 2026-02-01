@@ -1602,44 +1602,55 @@ async function testInsertOneSeason() {
     var el = document.getElementById('testResult');
     el.innerHTML = '<span style="color:orange">Test en cours...</span>';
 
-    // Check auth
-    var resp = await sb.auth.getSession();
-    var session = resp.data.session;
-    if (!session) {
-        el.innerHTML = '<span style="color:red">ECHEC: Non connecte. Reconnectez-vous d\'abord.</span>';
-        return;
+    try {
+        // Check auth
+        console.log('[TEST] Getting session...');
+        var resp = await sb.auth.getSession();
+        console.log('[TEST] getSession result:', resp);
+        var session = resp.data.session;
+        if (!session) {
+            el.innerHTML = '<span style="color:red">ECHEC: Non connecte. Reconnectez-vous d\'abord.</span>';
+            return;
+        }
+        el.innerHTML = '<span style="color:orange">Auth OK (' + (session.user.email || session.user.id) + '). Insert en cours...</span>';
+
+        var testRow = {
+            game: 'Test',
+            name: 'Test Saison (supprimer)',
+            date: new Date().toISOString().split('T')[0],
+            players: ['Joueur1', 'Joueur2', 'Joueur3'],
+            is_special: false
+        };
+
+        console.log('[TEST] Inserting row:', testRow);
+        var res = await sb.from('seasons').insert(testRow).select();
+        console.log('[TEST] Insert result:', JSON.stringify(res));
+
+        if (res.error) {
+            el.innerHTML = '<span style="color:red">ECHEC INSERT: ' + res.error.message + ' (code: ' + (res.error.code || '?') + ', details: ' + (res.error.details || '') + ', hint: ' + (res.error.hint || '') + ')</span>';
+            console.error('[TEST] Insert failed:', res.error);
+            return;
+        }
+
+        if (!res.data || res.data.length === 0) {
+            el.innerHTML = '<span style="color:red">ECHEC: Insert OK mais 0 rows retournees. RLS bloque probablement l\'insert. Verifiez que votre politique RLS autorise les inserts pour les utilisateurs authentifies.</span>';
+            return;
+        }
+
+        // Verify with a separate SELECT
+        console.log('[TEST] Verifying with SELECT...');
+        var verify = await sb.from('seasons').select('id, name').eq('name', 'Test Saison (supprimer)');
+        console.log('[TEST] Verify result:', JSON.stringify(verify));
+        var found = verify.data ? verify.data.length : 0;
+
+        el.innerHTML = '<span style="color:green">SUCCES ! Row inseree (id: ' + res.data[0].id + '). Verification SELECT: ' + found + ' row(s) trouvee(s). Allez dans Supabase > Table Editor pour confirmer.</span>';
+        console.log('[TEST] Insert OK:', res.data[0]);
+
+        await loadAllData();
+    } catch (err) {
+        console.error('[TEST] Exception caught:', err);
+        el.innerHTML = '<span style="color:red">EXCEPTION: ' + (err.message || String(err)) + '<br>Stack: ' + (err.stack || 'N/A') + '</span>';
     }
-    el.innerHTML = '<span style="color:orange">Auth OK (' + (session.user.email || session.user.id) + '). Insert en cours...</span>';
-
-    var testRow = {
-        game: 'Test',
-        name: 'Test Saison (supprimer)',
-        date: new Date().toISOString().split('T')[0],
-        players: ['Joueur1', 'Joueur2', 'Joueur3'],
-        is_special: false
-    };
-
-    var res = await sb.from('seasons').insert(testRow).select();
-
-    if (res.error) {
-        el.innerHTML = '<span style="color:red">ECHEC INSERT: ' + res.error.message + ' (code: ' + (res.error.code || '?') + ', details: ' + (res.error.details || '') + ')</span>';
-        console.error('[TEST] Insert failed:', res.error);
-        return;
-    }
-
-    if (!res.data || res.data.length === 0) {
-        el.innerHTML = '<span style="color:red">ECHEC: Insert OK mais 0 rows retournees. RLS bloque.</span>';
-        return;
-    }
-
-    // Verify with a separate SELECT
-    var verify = await sb.from('seasons').select('id, name').eq('name', 'Test Saison (supprimer)');
-    var found = verify.data ? verify.data.length : 0;
-
-    el.innerHTML = '<span style="color:green">SUCCES ! Row inseree (id: ' + res.data[0].id + '). Verification SELECT: ' + found + ' row(s) trouvee(s). Allez dans Supabase > Table Editor pour confirmer.</span>';
-    console.log('[TEST] Insert OK:', res.data[0]);
-
-    await loadAllData();
 }
 
 function showBackupMsg(text, type) {

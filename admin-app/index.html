@@ -247,8 +247,27 @@
 </head>
 <body>
 
+<!-- Detect magic link hash SYNCHRONOUSLY before any screen renders -->
+<script>
+    (function() {
+        var h = window.location.hash;
+        if (h && h.indexOf('access_token') !== -1) {
+            document.documentElement.setAttribute('data-magic-link-pending', 'true');
+        }
+    })();
+</script>
+
+<!-- ==================== LOADING SCREEN (magic link callback) ==================== -->
+<div id="loadingScreen" style="display:none">
+    <div class="login-box" style="text-align:center">
+        <h1>GAMMOP</h1>
+        <p style="margin-top:20px;font-size:1.2em">Connexion en cours via Magic Link...</p>
+        <div id="loadingError" class="msg msg-error" style="margin-top:15px"></div>
+    </div>
+</div>
+
 <!-- ==================== LOGIN SCREEN ==================== -->
-<div id="loginScreen">
+<div id="loginScreen" style="display:none">
     <div class="login-box">
         <h1>GAMMOP</h1>
         <p>Administration</p>
@@ -494,6 +513,32 @@ let ignoredPairs = new Set();
 let currentSimilarGroups = [];
 
 // ==================== AUTH ====================
+
+// --- Screen helpers: only ONE screen visible at a time ---
+function hideAllScreens() {
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminInterface').style.display = 'none';
+}
+
+function showLoadingScreen() {
+    hideAllScreens();
+    document.getElementById('loadingScreen').style.display = '';
+}
+
+function showAdmin(user) {
+    hideAllScreens();
+    currentUser = user;
+    document.getElementById('adminInterface').style.display = '';
+}
+
+function showLogin() {
+    hideAllScreens();
+    currentUser = null;
+    document.getElementById('loginScreen').style.display = '';
+}
+
+// --- Message helpers ---
 function showLoginError(msg) {
     const errEl = document.getElementById('loginError');
     errEl.textContent = msg;
@@ -509,19 +554,13 @@ function showLoginSuccess(msg) {
     document.getElementById('loginError').style.display = 'none';
 }
 
-function showAdmin(user) {
-    currentUser = user;
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('adminInterface').style.display = '';
+function showLoadingError(msg) {
+    const errEl = document.getElementById('loadingError');
+    errEl.textContent = msg;
+    errEl.style.display = 'block';
 }
 
-function showLogin() {
-    currentUser = null;
-    document.getElementById('adminInterface').style.display = 'none';
-    document.getElementById('loginScreen').style.display = '';
-}
-
-// Detect and handle magic link / recovery tokens from URL hash
+// --- Magic Link callback: detect tokens in hash, consume them ---
 async function handleMagicLinkCallback() {
     const hash = window.location.hash.substring(1);
     if (!hash) return false;
@@ -532,7 +571,10 @@ async function handleMagicLinkCallback() {
 
     if (!accessToken || !refreshToken) return false;
 
-    // Clean URL immediately to remove tokens
+    // Show loading screen immediately
+    showLoadingScreen();
+
+    // Clean URL to remove tokens
     window.history.replaceState(null, '', window.location.pathname + window.location.search);
 
     const { data, error } = await supabase.auth.setSession({
@@ -541,25 +583,32 @@ async function handleMagicLinkCallback() {
     });
 
     if (error) {
-        showLoginError('Erreur d\'authentification : ' + error.message);
+        showLoadingError('Erreur d\'authentification : ' + error.message);
+        // After a delay, fall back to login screen so user can retry
+        setTimeout(() => showLogin(), 4000);
         return false;
     }
 
     return true;
 }
 
+// --- Session check ---
 async function checkSession() {
     const { data: { session }, error } = await supabase.auth.getSession();
     if (error) {
+        showLogin();
         showLoginError('Erreur de session : ' + error.message);
         return;
     }
     if (session) {
         showAdmin(session.user);
         await loadAllData();
+    } else {
+        showLogin();
     }
 }
 
+// --- Login with password ---
 async function handleLogin() {
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
@@ -584,6 +633,7 @@ async function handleLogin() {
     await loadAllData();
 }
 
+// --- Send Magic Link email ---
 async function handleMagicLink() {
     const email = document.getElementById('loginEmail').value.trim();
     if (!email) {
@@ -607,11 +657,22 @@ async function handleMagicLink() {
     showLoginSuccess('Magic link envoyé ! Vérifiez votre boîte mail.');
 }
 
+// --- Logout ---
 async function handleLogout() {
     if (!confirm('Se déconnecter ?')) return;
     await supabase.auth.signOut();
     showLogin();
 }
+
+// --- Auth state listener: auto-redirect on session changes ---
+supabase.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+        showAdmin(session.user);
+        await loadAllData();
+    } else if (event === 'SIGNED_OUT') {
+        showLogin();
+    }
+});
 
 // ==================== DATA LOADING ====================
 async function loadAllData() {
@@ -1397,7 +1458,12 @@ function showBackupMsg(text, type) {
     const dateInput = document.getElementById('seasonDate');
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 
-    // Handle magic link callback (tokens in URL hash), then check session
+    // If magic link hash detected (flag set by inline script), show loading immediately
+    if (document.documentElement.getAttribute('data-magic-link-pending') === 'true') {
+        showLoadingScreen();
+    }
+
+    // Consume magic link tokens if present, then check session
     await handleMagicLinkCallback();
     await checkSession();
 })();

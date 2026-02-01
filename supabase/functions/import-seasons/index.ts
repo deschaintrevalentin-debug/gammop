@@ -44,23 +44,24 @@ serve(async (req: Request) => {
   }
 
   try {
-    // --- 1. Verify caller is authenticated ---
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return jsonResponse(
-        { error: "Missing or invalid Authorization header" },
-        401
-      );
-    }
-    const jwt = authHeader.replace("Bearer ", "");
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     // Service-role client for DB writes (bypasses RLS)
     const sbAdmin = createClient(supabaseUrl, serviceRoleKey);
 
-    // Verify the user's JWT
+    // --- 1. Parse body (JWT is inside the body, not the Authorization header) ---
+    const body = await req.json();
+
+    // --- 2. Verify caller is authenticated via JWT in body ---
+    const jwt = body.userJwt;
+    if (!jwt) {
+      return jsonResponse(
+        { error: "Missing userJwt in request body" },
+        401
+      );
+    }
+
     const {
       data: { user },
       error: authError,
@@ -75,9 +76,6 @@ serve(async (req: Request) => {
         401
       );
     }
-
-    // --- 2. Parse body ---
-    const body = await req.json();
     const mode: string = body.mode || "replace"; // "replace" | "test"
     const seasons: SeasonRow[] = body.seasons || [];
     const profiles: ProfileRow[] = body.profiles || [];

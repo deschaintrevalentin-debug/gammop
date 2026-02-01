@@ -1503,6 +1503,9 @@ async function callEdgeFunction(payload) {
     console.log('[EDGE] Calling:', url, 'mode:', payload.mode);
 
     // 2. Call Edge Function (timeout 30s)
+    // Authorization = anon key (pour le gateway Supabase)
+    // Le JWT utilisateur est envoye dans le body (verifie par la Edge Function)
+    var bodyWithJwt = Object.assign({}, payload, { userJwt: session.access_token });
     importLog('[EDGE] 3/4 - Appel fetch...');
     var response;
     try {
@@ -1511,10 +1514,10 @@ async function callEdgeFunction(payload) {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + session.access_token,
+                    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
                     'apikey': SUPABASE_ANON_KEY
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(bodyWithJwt)
             }),
             30000,
             'fetch Edge Function'

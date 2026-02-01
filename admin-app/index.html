@@ -317,6 +317,9 @@
         <div id="seasons" class="content active">
             <div class="section">
                 <h3>Liste des Saisons</h3>
+                <div id="supabaseStatus" style="margin-bottom:12px;padding:10px 14px;border-radius:8px;background:var(--section-bg);border:1px solid var(--border-color);font-size:13px;color:var(--text-secondary)">
+                    Supabase: chargement...
+                </div>
                 <div id="seasonsList"><p class="loading">Chargement...</p></div>
             </div>
         </div>
@@ -869,6 +872,18 @@ function toggleDarkMode() {
 
 // ==================== TAB 1: SAISONS ====================
 function renderSeasonsList() {
+    // Update Supabase count display
+    var statusEl = document.getElementById('supabaseStatus');
+    if (statusEl) {
+        if (seasons.length > 0) {
+            var games = {};
+            seasons.forEach(function(s) { games[s.game] = (games[s.game] || 0) + 1; });
+            var detail = Object.entries(games).map(function(e) { return e[0] + ': ' + e[1]; }).join(', ');
+            statusEl.innerHTML = '<strong style="color:#4a7c28">Supabase: ' + seasons.length + ' saisons en base</strong> (' + detail + ')';
+        } else {
+            statusEl.innerHTML = '<strong style="color:#e74c3c">Supabase: 0 saisons en base</strong> — importez via l\'onglet Backup ou ajoutez manuellement.';
+        }
+    }
     const el = document.getElementById('seasonsList');
     if (seasons.length === 0) { el.innerHTML = '<p style="color:var(--text-secondary)">Aucune saison</p>'; return; }
 
@@ -938,13 +953,15 @@ function cancelEdit() {
 async function deleteSeason(id) {
     const s = seasons.find(x => x.id === id);
     if (!s) return;
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { showMsg('Non connecte — reconnectez-vous.', 'error'); return; }
     showConfirm(`Supprimer "${s.name}" ?\nCette action est irreversible.`, async (confirmed) => {
         if (!confirmed) return;
         const { error } = await sb.from('seasons').delete().eq('id', id);
-        if (error) { alert('Erreur: ' + error.message); return; }
+        if (error) { showMsg('Erreur suppression: ' + error.message, 'error'); return; }
         await loadSeasons();
         renderSeasonsList();
-        showMsg(`"${s.name}" supprimee`, 'success');
+        showMsg(`"${s.name}" supprimee. Total en base: ${seasons.length} saisons.`, 'success');
     });
 }
 
@@ -985,6 +1002,13 @@ function resetAddForm() {
 }
 
 async function addSeason() {
+    // 1. Check session before writing
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+        showMsg('Non connecte — reconnectez-vous avant d\'ajouter une saison.', 'error');
+        return;
+    }
+
     const game = document.getElementById('seasonGame').value;
     const isSpecial = document.getElementById('isSpecialSeason').checked;
     const number = isSpecial
@@ -1017,26 +1041,36 @@ async function addSeason() {
         }
     }
 
-    let error;
+    // 2. Write to Supabase with .select() to verify
+    let result;
     if (editingSeasonId) {
-        ({ error } = await sb.from('seasons').update(row).eq('id', editingSeasonId));
+        result = await sb.from('seasons').update(row).eq('id', editingSeasonId).select();
         editingSeasonId = null;
         document.getElementById('addTitle').textContent = 'Ajouter une Saison';
         document.getElementById('addBtn').textContent = 'Ajouter la Saison';
         document.getElementById('cancelEditBtn').style.display = 'none';
     } else {
-        ({ error } = await sb.from('seasons').insert(row));
+        result = await sb.from('seasons').insert(row).select();
     }
 
-    if (error) { showMsg('Erreur: ' + error.message, 'error'); return; }
+    if (result.error) {
+        showMsg('Erreur Supabase: ' + result.error.message + ' (code: ' + (result.error.code || '?') + ')', 'error');
+        return;
+    }
 
+    if (!result.data || result.data.length === 0) {
+        showMsg('Erreur: ecriture refusee par Supabase (RLS). Verifiez votre session.', 'error');
+        return;
+    }
+
+    // 3. Reload and show count
     resetAddForm();
     await loadSeasons();
     renderSeasonsList();
     updatePseudosList();
 
     const typeMsg = isSpecial ? 'speciale ' : '';
-    showMsg(`Saison ${typeMsg}"${name}" enregistree (${players.length} joueurs)`, 'success');
+    showMsg(`Saison ${typeMsg}"${name}" enregistree (${players.length} joueurs). Total en base: ${seasons.length} saisons.`, 'success');
     setTimeout(() => showAdminTab('seasons', document.querySelectorAll('.tab-btn')[0]), 2000);
 }
 

@@ -4526,6 +4526,17 @@
                 html += `<div style="color:var(--text-primary)">${makePlayerNameClickable(bestStreak.player)} avec ${bestStreak.max} victoires consécutives</div></div>`;
             }
 
+            // Joueur le plus participatif sans victoire (hors saisons spéciales)
+            if (rankingData.length > 0) {
+                const neverWon = rankingData.filter(p => p.w === 0 && p.games > 0).sort((a, b) => b.games - a.games);
+                if (neverWon.length > 0) {
+                    const unlucky = neverWon[0];
+                    html += '<div style="background:var(--card-bg);border-radius:8px;padding:15px;border-left:3px solid #E65100">';
+                    html += '<div style="font-weight:600;color:#E65100;margin-bottom:5px">😤 Le plus assidu sans victoire</div>';
+                    html += `<div style="color:var(--text-primary)">${makePlayerNameClickable(unlucky.player)} avec ${unlucky.games} participation${unlucky.games > 1 ? 's' : ''} sans jamais gagner</div></div>`;
+                }
+            }
+
             // Premier et dernier vainqueur
             if (sortedSeasons.length > 0 && sortedSeasons[0].players.length > 0) {
                 const firstWinner = sortedSeasons[0].players[0];
@@ -6693,32 +6704,45 @@
                     </div>
                 </div>
 
-                <!-- LIGNE 3 : Trophées (pommes, poires, médailles) -->
-                <div style="display:flex !important;gap:8px;margin-bottom:15px;width:100%;flex-wrap:wrap;justify-content:center">
-                    <div style="background:#f8fdf9;padding:10px 14px;border-radius:8px;text-align:center;border:1px solid #c8e6c9;min-width:70px">
-                        <div style="font-size:1.3em">🍏</div>
-                        <div style="font-size:1.4em;font-weight:bold;color:#4a7c28">${getPlayerSeasonWins(name)}</div>
-                        <div style="color:#666;font-size:0.7em">Pommes vertes</div>
+                <!-- LIGNE 3 : Trophées regroupés -->
+                <div style="display:flex !important;gap:10px;margin-bottom:15px;width:100%">
+                    <!-- Carte 1 : Victoires (pommes vertes + argent + bronze) -->
+                    <div style="flex:1;background:#f8fdf9;padding:12px;border-radius:10px;border:1px solid #c8e6c9">
+                        <div style="display:flex;align-items:center;justify-content:space-around;gap:6px">
+                            <div style="text-align:center">
+                                <div style="font-size:1.2em">🍏</div>
+                                <div style="font-size:1.3em;font-weight:bold;color:#4a7c28">${getPlayerSeasonWins(name)}</div>
+                                <div style="color:#666;font-size:0.65em">1ère place</div>
+                            </div>
+                            <div style="width:1px;height:35px;background:#c8e6c9"></div>
+                            <div style="text-align:center">
+                                <div style="font-size:1.2em">🥈</div>
+                                <div style="font-size:1.3em;font-weight:bold;color:#808080">${p.t2}</div>
+                                <div style="color:#666;font-size:0.65em">2ème place</div>
+                            </div>
+                            <div style="width:1px;height:35px;background:#c8e6c9"></div>
+                            <div style="text-align:center">
+                                <div style="font-size:1.2em">🥉</div>
+                                <div style="font-size:1.3em;font-weight:bold;color:#CD7F32">${p.t3}</div>
+                                <div style="color:#666;font-size:0.65em">3ème place</div>
+                            </div>
+                        </div>
                     </div>
-                    <div style="background:#f8fdf9;padding:10px 14px;border-radius:8px;text-align:center;border:1px solid #c8e6c9;min-width:70px">
-                        <div style="font-size:1.3em">🍎</div>
-                        <div style="font-size:1.4em;font-weight:bold;color:#DC143C">${getPlayerYearlyFirstPlaces(name)}</div>
-                        <div style="color:#666;font-size:0.7em">Pommes rouges</div>
-                    </div>
-                    <div style="background:#f8fdf9;padding:10px 14px;border-radius:8px;text-align:center;border:1px solid #c8e6c9;min-width:70px">
-                        <div style="font-size:1.3em">🍐</div>
-                        <div style="font-size:1.4em;font-weight:bold;color:#9c27b0">${getPlayerPears(name)}</div>
-                        <div style="color:#666;font-size:0.7em">Poires</div>
-                    </div>
-                    <div style="background:#f8fdf9;padding:10px 14px;border-radius:8px;text-align:center;border:1px solid #c8e6c9;min-width:70px">
-                        <div style="font-size:1.3em">🥈</div>
-                        <div style="font-size:1.4em;font-weight:bold;color:#808080">${p.t2}</div>
-                        <div style="color:#666;font-size:0.7em">2ème place</div>
-                    </div>
-                    <div style="background:#f8fdf9;padding:10px 14px;border-radius:8px;text-align:center;border:1px solid #c8e6c9;min-width:70px">
-                        <div style="font-size:1.3em">🥉</div>
-                        <div style="font-size:1.4em;font-weight:bold;color:#CD7F32">${p.t3}</div>
-                        <div style="color:#666;font-size:0.7em">3ème place</div>
+                    <!-- Carte 2 : Titres (pommes rouges + poires) -->
+                    <div style="flex:0 0 auto;background:#f8fdf9;padding:12px 16px;border-radius:10px;border:1px solid #c8e6c9">
+                        <div style="display:flex;align-items:center;justify-content:center;gap:14px">
+                            <div style="text-align:center">
+                                <div style="font-size:1.2em">🍎</div>
+                                <div style="font-size:1.3em;font-weight:bold;color:#DC143C">${getPlayerYearlyFirstPlaces(name)}</div>
+                                <div style="color:#666;font-size:0.65em">Pommes rouges</div>
+                            </div>
+                            <div style="width:1px;height:35px;background:#c8e6c9"></div>
+                            <div style="text-align:center">
+                                <div style="font-size:1.2em">🍐</div>
+                                <div style="font-size:1.3em;font-weight:bold;color:#556B2F">${getPlayerPears(name)}</div>
+                                <div style="color:#666;font-size:0.65em">Poires</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

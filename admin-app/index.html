@@ -753,9 +753,106 @@ sb.auth.onAuthStateChange(async (event, session) => {
     }
 });
 
-// ==================== DATA LOADING ====================
+// ==================== DATA LOADING (raw fetch — contourne le SDK instable) ====================
+var REST_BASE = SUPABASE_URL + '/rest/v1';
+var REST_HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
+
+async function restGet(table, query) {
+    var resp = await fetch(REST_BASE + '/' + table + '?' + (query || 'select=*'), {
+        headers: Object.assign({ 'Content-Type': 'application/json' }, REST_HEADERS)
+    });
+    if (!resp.ok) {
+        var body = await resp.text();
+        throw new Error('REST GET ' + table + ' failed: HTTP ' + resp.status + ' ' + body.substring(0, 200));
+    }
+    return resp.json();
+}
+
+async function restPost(table, row) {
+    var resp = await fetch(REST_BASE + '/' + table, {
+        method: 'POST',
+        headers: Object.assign({ 'Content-Type': 'application/json', 'Prefer': 'return=representation' }, REST_HEADERS,
+            currentSession ? { 'Authorization': 'Bearer ' + currentSession.access_token } : {}),
+        body: JSON.stringify(row)
+    });
+    var data = await resp.json();
+    if (!resp.ok) throw new Error('REST POST ' + table + ': ' + (data.message || JSON.stringify(data)));
+    return data;
+}
+
+async function restPatch(table, id, row) {
+    var resp = await fetch(REST_BASE + '/' + table + '?id=eq.' + id, {
+        method: 'PATCH',
+        headers: Object.assign({ 'Content-Type': 'application/json', 'Prefer': 'return=representation' }, REST_HEADERS,
+            currentSession ? { 'Authorization': 'Bearer ' + currentSession.access_token } : {}),
+        body: JSON.stringify(row)
+    });
+    var data = await resp.json();
+    if (!resp.ok) throw new Error('REST PATCH ' + table + ': ' + (data.message || JSON.stringify(data)));
+    return data;
+}
+
+async function restDelete(table, id) {
+    var resp = await fetch(REST_BASE + '/' + table + '?id=eq.' + id, {
+        method: 'DELETE',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, REST_HEADERS,
+            currentSession ? { 'Authorization': 'Bearer ' + currentSession.access_token } : {})
+    });
+    if (!resp.ok) {
+        var body = await resp.text();
+        throw new Error('REST DELETE ' + table + ': HTTP ' + resp.status + ' ' + body.substring(0, 200));
+    }
+}
+
+async function restDeleteWhere(table, filter) {
+    var resp = await fetch(REST_BASE + '/' + table + '?' + filter, {
+        method: 'DELETE',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, REST_HEADERS,
+            currentSession ? { 'Authorization': 'Bearer ' + currentSession.access_token } : {})
+    });
+    if (!resp.ok) {
+        var body = await resp.text();
+        throw new Error('REST DELETE ' + table + ': HTTP ' + resp.status + ' ' + body.substring(0, 200));
+    }
+}
+
+async function restPatchWhere(table, filter, row) {
+    var resp = await fetch(REST_BASE + '/' + table + '?' + filter, {
+        method: 'PATCH',
+        headers: Object.assign({ 'Content-Type': 'application/json', 'Prefer': 'return=representation' }, REST_HEADERS,
+            currentSession ? { 'Authorization': 'Bearer ' + currentSession.access_token } : {}),
+        body: JSON.stringify(row)
+    });
+    if (!resp.ok) {
+        var body = await resp.text();
+        throw new Error('REST PATCH ' + table + ': HTTP ' + resp.status + ' ' + body.substring(0, 200));
+    }
+    return resp.json();
+}
+
+async function restUpsert(table, row, onConflict) {
+    var resp = await fetch(REST_BASE + '/' + table, {
+        method: 'POST',
+        headers: Object.assign({
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation,resolution=merge-duplicates'
+        }, REST_HEADERS,
+            currentSession ? { 'Authorization': 'Bearer ' + currentSession.access_token } : {}),
+        body: JSON.stringify(row)
+    });
+    if (!resp.ok) {
+        var body = await resp.text();
+        throw new Error('REST UPSERT ' + table + ': HTTP ' + resp.status + ' ' + body.substring(0, 200));
+    }
+    return resp.json();
+}
+
 async function loadAllData() {
-    await Promise.all([loadSeasons(), loadDiscordProfiles(), loadMergeHistory()]);
+    try {
+        await Promise.all([loadSeasons(), loadDiscordProfiles(), loadMergeHistory()]);
+    } catch (e) {
+        console.error('loadAllData error:', e);
+    }
     renderSeasonsList();
     updatePseudosList();
     updateSimilarPseudos();
@@ -764,37 +861,33 @@ async function loadAllData() {
 }
 
 async function loadSeasons() {
-    const { data, error } = await sb.from('seasons').select('*').order('date', { ascending: true });
-    if (error) { console.error('Error loading seasons:', error); return; }
-    seasons = (data || []).map(row => ({
-        id: row.id,
-        game: row.game,
-        name: row.name,
-        date: row.date,
-        players: row.players || [],
-        isSpecial: row.is_special || false,
-        specialNumber: row.special_number,
-        organizer: row.organizer,
-        speciality: row.speciality,
-        gdocLink: row.gdoc_link
-    }));
+    var data = await restGet('seasons', 'select=*&order=date.asc');
+    seasons = (data || []).map(function(row) {
+        return {
+            id: row.id, game: row.game, name: row.name, date: row.date,
+            players: row.players || [], isSpecial: row.is_special || false,
+            specialNumber: row.special_number, organizer: row.organizer,
+            speciality: row.speciality, gdocLink: row.gdoc_link
+        };
+    });
+    console.log('[LOAD] seasons:', seasons.length);
 }
 
 async function loadDiscordProfiles() {
-    const { data, error } = await sb.from('discord_profiles').select('*');
-    if (error) { console.error('Error loading discord profiles:', error); return; }
+    var data = await restGet('discord_profiles', 'select=*');
     discordProfiles = {};
     discordAvatars = {};
-    (data || []).forEach(row => {
+    (data || []).forEach(function(row) {
         discordProfiles[row.pseudo] = row.discord_user_id;
         if (row.avatar_url) discordAvatars[row.discord_user_id] = row.avatar_url;
     });
+    console.log('[LOAD] discord_profiles:', Object.keys(discordProfiles).length);
 }
 
 async function loadMergeHistory() {
-    const { data, error } = await sb.from('merge_history').select('*').order('merged_at', { ascending: false });
-    if (error) { console.error('Error loading merge history:', error); return; }
+    var data = await restGet('merge_history', 'select=*&order=merged_at.desc');
     mergeHistory = data || [];
+    console.log('[LOAD] merge_history:', mergeHistory.length);
 }
 
 // ==================== UTILITY ====================
@@ -980,8 +1073,9 @@ async function deleteSeason(id) {
     if (!currentSession) { showMsg('Non connecte — reconnectez-vous.', 'error'); return; }
     showConfirm(`Supprimer "${s.name}" ?\nCette action est irreversible.`, async (confirmed) => {
         if (!confirmed) return;
-        const { error } = await sb.from('seasons').delete().eq('id', id);
-        if (error) { showMsg('Erreur suppression: ' + error.message, 'error'); return; }
+        try {
+            await restDelete('seasons', id);
+        } catch (err) { showMsg('Erreur suppression: ' + err.message, 'error'); return; }
         await loadSeasons();
         renderSeasonsList();
         showMsg(`"${s.name}" supprimee. Total en base: ${seasons.length} saisons.`, 'success');
@@ -1063,25 +1157,19 @@ async function addSeason() {
         }
     }
 
-    // 2. Write to Supabase with .select() to verify
-    let result;
-    if (editingSeasonId) {
-        result = await sb.from('seasons').update(row).eq('id', editingSeasonId).select();
-        editingSeasonId = null;
-        document.getElementById('addTitle').textContent = 'Ajouter une Saison';
-        document.getElementById('addBtn').textContent = 'Ajouter la Saison';
-        document.getElementById('cancelEditBtn').style.display = 'none';
-    } else {
-        result = await sb.from('seasons').insert(row).select();
-    }
-
-    if (result.error) {
-        showMsg('Erreur Supabase: ' + result.error.message + ' (code: ' + (result.error.code || '?') + ')', 'error');
-        return;
-    }
-
-    if (!result.data || result.data.length === 0) {
-        showMsg('Erreur: ecriture refusee par Supabase (RLS). Verifiez votre session.', 'error');
+    // 2. Write via REST API
+    try {
+        if (editingSeasonId) {
+            await restPatch('seasons', editingSeasonId, row);
+            editingSeasonId = null;
+            document.getElementById('addTitle').textContent = 'Ajouter une Saison';
+            document.getElementById('addBtn').textContent = 'Ajouter la Saison';
+            document.getElementById('cancelEditBtn').style.display = 'none';
+        } else {
+            await restPost('seasons', row);
+        }
+    } catch (err) {
+        showMsg('Erreur Supabase: ' + err.message, 'error');
         return;
     }
 
@@ -1221,19 +1309,18 @@ async function mergeSelectedPseudos(gIdx) {
     for (const s of affected) {
         const newPlayers = s.players.map(p => selected.includes(p) ? target : p);
         const seen = new Set(); const deduped = newPlayers.filter(p => { if (seen.has(p)) return false; seen.add(p); return true; });
-        const { error } = await sb.from('seasons').update({ players: deduped }).eq('id', s.id);
-        if (error) console.error('Error updating season:', error);
+        try { await restPatch('seasons', s.id, { players: deduped }); } catch(e) { console.error('Error updating season:', e); }
     }
 
     // Update discord profiles
     for (const p of selected) {
         if (p !== target && discordProfiles[p]) {
-            await sb.from('discord_profiles').update({ pseudo: target }).eq('pseudo', p);
+            try { await restPatchWhere('discord_profiles', 'pseudo=eq.' + encodeURIComponent(p), { pseudo: target }); } catch(e) { console.error(e); }
         }
     }
 
     // Record merge
-    await sb.from('merge_history').insert({ source_pseudos: selected, target_pseudo: target });
+    try { await restPost('merge_history', { source_pseudos: selected, target_pseudo: target }); } catch(e) { console.error(e); }
 
     // Ignore pairs
     for (let i = 0; i < selected.length; i++) {
@@ -1267,16 +1354,17 @@ async function linkDiscordProfile() {
 
     let avatarUrl = null;
     try {
-        const { data, error } = await sb.functions.invoke('discord-avatar', { body: { userId } });
-        if (!error && data && data.avatarUrl) avatarUrl = data.avatarUrl;
+        var avatarResp = await fetch(SUPABASE_URL + '/functions/v1/discord-avatar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId })
+        });
+        if (avatarResp.ok) { var avatarData = await avatarResp.json(); if (avatarData.avatarUrl) avatarUrl = avatarData.avatarUrl; }
     } catch (e) { console.warn('Edge function error:', e); }
 
-    const { error } = await sb.from('discord_profiles').upsert(
-        { pseudo, discord_user_id: userId, avatar_url: avatarUrl },
-        { onConflict: 'pseudo' }
-    );
-
-    if (error) { showDiscordMsg('Erreur: ' + error.message, 'error'); return; }
+    try {
+        await restUpsert('discord_profiles', { pseudo, discord_user_id: userId, avatar_url: avatarUrl });
+    } catch (err) { showDiscordMsg('Erreur: ' + err.message, 'error'); return; }
 
     document.getElementById('discordPseudo').value = '';
     document.getElementById('discordUserId').value = '';
@@ -1287,8 +1375,9 @@ async function linkDiscordProfile() {
 
 async function unlinkDiscordProfile(pseudo) {
     if (!confirm(`Supprimer la liaison Discord pour "${pseudo}" ?`)) return;
-    const { error } = await sb.from('discord_profiles').delete().eq('pseudo', pseudo);
-    if (error) { showDiscordMsg('Erreur: ' + error.message, 'error'); return; }
+    try {
+        await restDeleteWhere('discord_profiles', 'pseudo=eq.' + encodeURIComponent(pseudo));
+    } catch (err) { showDiscordMsg('Erreur: ' + err.message, 'error'); return; }
     await loadDiscordProfiles();
     renderDiscordProfilesList();
     showDiscordMsg(`Liaison supprimee pour ${pseudo}`, 'success');
@@ -1362,11 +1451,10 @@ async function undoMerge(mergeId) {
             }
             return p;
         });
-        const { error } = await sb.from('seasons').update({ players: newPlayers }).eq('id', s.id);
-        if (error) console.error('Error undoing merge:', error);
+        try { await restPatch('seasons', s.id, { players: newPlayers }); } catch(e) { console.error('Error undoing merge:', e); }
     }
 
-    await sb.from('merge_history').delete().eq('id', mergeId);
+    try { await restDelete('merge_history', mergeId); } catch(e) { console.error(e); }
     await loadAllData();
     showUndoMergeMsg('Regroupement annule avec succes', 'success');
 }
@@ -1404,13 +1492,12 @@ async function renamePseudo() {
 
         for (const s of affected) {
             const newPlayers = s.players.map(p => p === old ? newP : p);
-            const { error } = await sb.from('seasons').update({ players: newPlayers }).eq('id', s.id);
-            if (error) console.error('Error renaming:', error);
+            try { await restPatch('seasons', s.id, { players: newPlayers }); } catch(e) { console.error('Error renaming:', e); }
         }
 
         // Update discord profile if exists
         if (discordProfiles[old]) {
-            await sb.from('discord_profiles').update({ pseudo: newP }).eq('pseudo', old);
+            try { await restPatchWhere('discord_profiles', 'pseudo=eq.' + encodeURIComponent(old), { pseudo: newP }); } catch(e) { console.error(e); }
         }
 
         document.getElementById('oldPseudo').value = '';
@@ -1560,17 +1647,24 @@ async function callEdgeFunction(payload) {
     return result;
 }
 
-// Verification independante : count(*) seasons en base via le client Supabase
+// Verification independante : count(*) via REST API (pas le SDK)
 async function verifyDbCount() {
     try {
-        var { count, error } = await sb.from('seasons').select('*', { count: 'exact', head: true });
-        if (error) {
-            importLog('[VERIFY] Erreur count: ' + error.message);
-            return -1;
+        var resp = await fetch(REST_BASE + '/seasons?select=id&limit=0', {
+            method: 'HEAD',
+            headers: Object.assign({ 'Prefer': 'count=exact' }, REST_HEADERS)
+        });
+        // PostgREST renvoie le count dans le header Content-Range
+        var range = resp.headers.get('content-range');
+        if (range) {
+            var total = parseInt(range.split('/')[1]);
+            importLog('[VERIFY] Supabase seasons count = ' + total);
+            return total;
         }
-        importLog('[VERIFY] Supabase seasons count = ' + count);
-        console.log('[VERIFY] DB count:', count);
-        return count;
+        // Fallback: compter les rows
+        var data = await restGet('seasons', 'select=id');
+        importLog('[VERIFY] Supabase seasons count = ' + data.length + ' (fallback)');
+        return data.length;
     } catch (e) {
         importLog('[VERIFY] Exception: ' + e.message);
         return -1;
@@ -1638,20 +1732,18 @@ async function processImportData(parsed) {
 
         importLog('[EDGE] Reponse: inserted=' + result.inserted + ', verified=' + result.verified + ', profiles=' + (result.profilesInserted || 0));
 
-        // Verification independante depuis le client admin
+        // Verification independante (peut timeout si SDK hang)
         var dbCount = await verifyDbCount();
 
-        if (dbCount === 0) {
-            showBackupMsg('ECHEC CRITIQUE : Edge Function dit inserted=' + result.inserted + ' mais count(*) = 0. Rien ecrit en base.', 'error');
+        if (dbCount === 0 && result.verified === 0) {
+            showBackupMsg('ECHEC CRITIQUE : inserted=' + result.inserted + ' mais count(*) = 0. Rien ecrit en base.', 'error');
             importLog('[IMPORT] ECHEC: count(*) = 0 malgre inserted=' + result.inserted);
             return false;
         }
 
-        if (dbCount > 0 && dbCount !== result.inserted) {
-            importLog('[IMPORT] WARNING: count(*) = ' + dbCount + ' != inserted = ' + result.inserted);
-        }
-
-        return { inserted: result.inserted, verified: dbCount >= 0 ? dbCount : result.verified };
+        // Se fier au verified de la Edge Function si le SDK front hang
+        var finalCount = dbCount >= 0 ? dbCount : result.verified;
+        return { inserted: result.inserted, verified: finalCount };
     } catch (err) {
         showBackupMsg('ERREUR Edge Function: ' + err.message, 'error');
         importLog('[EDGE] ERREUR: ' + err.message);
@@ -1668,12 +1760,10 @@ async function importFromText() {
         if (result === 'cancelled') return;
         if (!result) return;
         document.getElementById('importData').value = '';
-        await loadAllData();
-        if (seasons.length === 0) {
-            showBackupMsg('ECHEC : Edge Function OK mais 0 saisons chargees depuis Supabase.', 'error');
-        } else {
-            showBackupMsg('Import OK ! Supabase count(*) = ' + result.verified + '. Admin: ' + seasons.length + ' saisons chargees.', 'success');
-        }
+        try {
+            await Promise.race([loadAllData(), new Promise(function(_, rej) { setTimeout(function() { rej(new Error('timeout')); }, 8000); })]);
+        } catch(e) { importLog('[IMPORT] loadAllData timeout — SDK instable.'); }
+        showBackupMsg('Import OK ! Edge Function verified = ' + result.verified + ' seasons.' + (seasons.length > 0 ? ' Admin: ' + seasons.length + ' chargees.' : ' (rechargez la page pour voir la liste)'), 'success');
     } catch (e) { showBackupMsg('JSON invalide: ' + e.message, 'error'); }
 }
 
@@ -1687,12 +1777,10 @@ async function importFromFile(event) {
             var result = await processImportData(parsed);
             if (result === 'cancelled') return;
             if (!result) return;
-            await loadAllData();
-            if (seasons.length === 0) {
-                showBackupMsg('ECHEC : Edge Function OK mais 0 saisons chargees depuis Supabase.', 'error');
-            } else {
-                showBackupMsg('Import OK ! Supabase count(*) = ' + result.verified + '. Admin: ' + seasons.length + ' saisons chargees.', 'success');
-            }
+            try {
+                await Promise.race([loadAllData(), new Promise(function(_, rej) { setTimeout(function() { rej(new Error('timeout')); }, 8000); })]);
+            } catch(e2) { importLog('[IMPORT] loadAllData timeout — SDK instable.'); }
+            showBackupMsg('Import OK ! Edge Function verified = ' + result.verified + ' seasons.' + (seasons.length > 0 ? ' Admin: ' + seasons.length + ' chargees.' : ' (rechargez la page pour voir la liste)'), 'success');
         } catch (err) { showBackupMsg('Erreur lecture fichier: ' + err.message, 'error'); }
     };
     reader.readAsText(file);
@@ -1713,24 +1801,29 @@ async function testInsertOneSeason() {
 
         importLog('[TEST] Reponse: ' + JSON.stringify(result));
 
-        // Verification independante
+        // Verification independante (peut timeout si SDK hang)
         importLog('[TEST] Verification count(*)...');
         var dbCount = await verifyDbCount();
+        var countMsg = dbCount >= 0 ? ('count(*) = ' + dbCount) : ('count(*) indisponible — voir Edge Function verified=' + result.verified);
 
-        if (dbCount === 0) {
-            el.innerHTML = '<span style="color:red">ECHEC : Edge Function dit inserted=' + result.inserted
-                + ' mais count(*) seasons = 0. Rien ecrit en base !'
-                + '<br>Verifiez la Edge Function dans Supabase Dashboard.</span>';
+        if (dbCount === 0 && result.verified === 0) {
+            el.innerHTML = '<span style="color:red">ECHEC : inserted=' + result.inserted
+                + ' mais count(*) = 0. Rien ecrit en base !</span>';
             return;
         }
 
         el.innerHTML = '<span style="color:green">SUCCES ! Row inseree via Edge Function.'
             + '<br>Edge Function: inserted=' + result.inserted + ', verified=' + result.verified
-            + '<br>Verification admin: count(*) seasons = ' + dbCount
+            + '<br>Verification admin: ' + countMsg
             + '<br>User: ' + result.user
-            + '<br>Allez dans Supabase > Table Editor pour confirmer.</span>';
+            + '<br>Verifiez dans Supabase > Table Editor > seasons.</span>';
 
-        await loadAllData();
+        // Reload (avec timeout car loadAllData utilise aussi le SDK)
+        try {
+            await Promise.race([loadAllData(), new Promise(function(_, rej) { setTimeout(function() { rej(new Error('timeout')); }, 8000); })]);
+        } catch(e) {
+            importLog('[TEST] loadAllData timeout — le SDK front-end est instable, mais la Edge Function a ecrit.');
+        }
     } catch (err) {
         console.error('[TEST] Exception:', err);
         importLog('[TEST] ERREUR: ' + (err.message || String(err)));

@@ -506,7 +506,12 @@
 // ==================== SUPABASE CONFIG ====================
 const SUPABASE_URL = 'https://xxxxxxxx.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6...';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+if (!window.supabase) {
+    document.body.innerHTML = '<div style="padding:40px;text-align:center;color:#721c24;background:#f8d7da;border-radius:8px;margin:40px">'
+        + '<h2>Erreur critique</h2><p>Supabase SDK non chargé. Vérifiez votre connexion internet.</p></div>';
+    throw new Error('Supabase SDK not loaded');
+}
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ==================== STATE ====================
 let seasons = [];
@@ -590,7 +595,7 @@ async function handleHashCallback() {
     // Clean URL to remove tokens
     window.history.replaceState(null, '', window.location.pathname);
 
-    const { data, error } = await supabase.auth.setSession({
+    const { data, error } = await sb.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken
     });
@@ -609,7 +614,7 @@ async function handleHashCallback() {
 // --- Session check ---
 async function checkSession() {
     try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { session }, error } = await sb.auth.getSession();
         if (error) {
             console.error('[AUTH] getSession error:', error.message);
             showLogin();
@@ -642,7 +647,7 @@ async function handleLogin() {
     document.getElementById('loginError').style.display = 'none';
     document.getElementById('loginSuccess').style.display = 'none';
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
 
     if (error) {
         showLoginError(error.message === 'Invalid login credentials'
@@ -666,7 +671,7 @@ async function handleMagicLink() {
     document.getElementById('loginError').style.display = 'none';
     document.getElementById('loginSuccess').style.display = 'none';
 
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error } = await sb.auth.signInWithOtp({
         email,
         options: { emailRedirectTo: window.location.origin + window.location.pathname }
     });
@@ -684,7 +689,7 @@ async function handleGitHubLogin() {
     document.getElementById('loginError').style.display = 'none';
     document.getElementById('loginSuccess').style.display = 'none';
 
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error } = await sb.auth.signInWithOAuth({
         provider: 'github',
         options: { redirectTo: window.location.origin + window.location.pathname }
     });
@@ -697,12 +702,12 @@ async function handleGitHubLogin() {
 // --- Logout ---
 async function handleLogout() {
     if (!confirm('Se déconnecter ?')) return;
-    await supabase.auth.signOut();
+    await sb.auth.signOut();
     showLogin();
 }
 
 // --- Auth state listener: catches OAuth PKCE exchange, token refresh, etc. ---
-supabase.auth.onAuthStateChange(async (event, session) => {
+sb.auth.onAuthStateChange(async (event, session) => {
     console.log('[AUTH] onAuthStateChange:', event, session ? session.user.email || session.user.id : 'null');
     if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION')) {
         // Only act if we haven't already shown admin (avoid double loadAllData)
@@ -725,7 +730,7 @@ async function loadAllData() {
 }
 
 async function loadSeasons() {
-    const { data, error } = await supabase.from('seasons').select('*').order('date', { ascending: true });
+    const { data, error } = await sb.from('seasons').select('*').order('date', { ascending: true });
     if (error) { console.error('Error loading seasons:', error); return; }
     seasons = (data || []).map(row => ({
         id: row.id,
@@ -742,7 +747,7 @@ async function loadSeasons() {
 }
 
 async function loadDiscordProfiles() {
-    const { data, error } = await supabase.from('discord_profiles').select('*');
+    const { data, error } = await sb.from('discord_profiles').select('*');
     if (error) { console.error('Error loading discord profiles:', error); return; }
     discordProfiles = {};
     discordAvatars = {};
@@ -753,7 +758,7 @@ async function loadDiscordProfiles() {
 }
 
 async function loadMergeHistory() {
-    const { data, error } = await supabase.from('merge_history').select('*').order('merged_at', { ascending: false });
+    const { data, error } = await sb.from('merge_history').select('*').order('merged_at', { ascending: false });
     if (error) { console.error('Error loading merge history:', error); return; }
     mergeHistory = data || [];
 }
@@ -928,7 +933,7 @@ async function deleteSeason(id) {
     if (!s) return;
     showConfirm(`Supprimer "${s.name}" ?\nCette action est irreversible.`, async (confirmed) => {
         if (!confirmed) return;
-        const { error } = await supabase.from('seasons').delete().eq('id', id);
+        const { error } = await sb.from('seasons').delete().eq('id', id);
         if (error) { alert('Erreur: ' + error.message); return; }
         await loadSeasons();
         renderSeasonsList();
@@ -1007,13 +1012,13 @@ async function addSeason() {
 
     let error;
     if (editingSeasonId) {
-        ({ error } = await supabase.from('seasons').update(row).eq('id', editingSeasonId));
+        ({ error } = await sb.from('seasons').update(row).eq('id', editingSeasonId));
         editingSeasonId = null;
         document.getElementById('addTitle').textContent = 'Ajouter une Saison';
         document.getElementById('addBtn').textContent = 'Ajouter la Saison';
         document.getElementById('cancelEditBtn').style.display = 'none';
     } else {
-        ({ error } = await supabase.from('seasons').insert(row));
+        ({ error } = await sb.from('seasons').insert(row));
     }
 
     if (error) { showMsg('Erreur: ' + error.message, 'error'); return; }
@@ -1153,19 +1158,19 @@ async function mergeSelectedPseudos(gIdx) {
     for (const s of affected) {
         const newPlayers = s.players.map(p => selected.includes(p) ? target : p);
         const seen = new Set(); const deduped = newPlayers.filter(p => { if (seen.has(p)) return false; seen.add(p); return true; });
-        const { error } = await supabase.from('seasons').update({ players: deduped }).eq('id', s.id);
+        const { error } = await sb.from('seasons').update({ players: deduped }).eq('id', s.id);
         if (error) console.error('Error updating season:', error);
     }
 
     // Update discord profiles
     for (const p of selected) {
         if (p !== target && discordProfiles[p]) {
-            await supabase.from('discord_profiles').update({ pseudo: target }).eq('pseudo', p);
+            await sb.from('discord_profiles').update({ pseudo: target }).eq('pseudo', p);
         }
     }
 
     // Record merge
-    await supabase.from('merge_history').insert({ source_pseudos: selected, target_pseudo: target });
+    await sb.from('merge_history').insert({ source_pseudos: selected, target_pseudo: target });
 
     // Ignore pairs
     for (let i = 0; i < selected.length; i++) {
@@ -1199,11 +1204,11 @@ async function linkDiscordProfile() {
 
     let avatarUrl = null;
     try {
-        const { data, error } = await supabase.functions.invoke('discord-avatar', { body: { userId } });
+        const { data, error } = await sb.functions.invoke('discord-avatar', { body: { userId } });
         if (!error && data && data.avatarUrl) avatarUrl = data.avatarUrl;
     } catch (e) { console.warn('Edge function error:', e); }
 
-    const { error } = await supabase.from('discord_profiles').upsert(
+    const { error } = await sb.from('discord_profiles').upsert(
         { pseudo, discord_user_id: userId, avatar_url: avatarUrl },
         { onConflict: 'pseudo' }
     );
@@ -1219,7 +1224,7 @@ async function linkDiscordProfile() {
 
 async function unlinkDiscordProfile(pseudo) {
     if (!confirm(`Supprimer la liaison Discord pour "${pseudo}" ?`)) return;
-    const { error } = await supabase.from('discord_profiles').delete().eq('pseudo', pseudo);
+    const { error } = await sb.from('discord_profiles').delete().eq('pseudo', pseudo);
     if (error) { showDiscordMsg('Erreur: ' + error.message, 'error'); return; }
     await loadDiscordProfiles();
     renderDiscordProfilesList();
@@ -1294,11 +1299,11 @@ async function undoMerge(mergeId) {
             }
             return p;
         });
-        const { error } = await supabase.from('seasons').update({ players: newPlayers }).eq('id', s.id);
+        const { error } = await sb.from('seasons').update({ players: newPlayers }).eq('id', s.id);
         if (error) console.error('Error undoing merge:', error);
     }
 
-    await supabase.from('merge_history').delete().eq('id', mergeId);
+    await sb.from('merge_history').delete().eq('id', mergeId);
     await loadAllData();
     showUndoMergeMsg('Regroupement annule avec succes', 'success');
 }
@@ -1336,13 +1341,13 @@ async function renamePseudo() {
 
         for (const s of affected) {
             const newPlayers = s.players.map(p => p === old ? newP : p);
-            const { error } = await supabase.from('seasons').update({ players: newPlayers }).eq('id', s.id);
+            const { error } = await sb.from('seasons').update({ players: newPlayers }).eq('id', s.id);
             if (error) console.error('Error renaming:', error);
         }
 
         // Update discord profile if exists
         if (discordProfiles[old]) {
-            await supabase.from('discord_profiles').update({ pseudo: newP }).eq('pseudo', old);
+            await sb.from('discord_profiles').update({ pseudo: newP }).eq('pseudo', old);
         }
 
         document.getElementById('oldPseudo').value = '';
@@ -1415,8 +1420,8 @@ async function processImportData(parsed) {
     if (!confirm(`Importer ${importSeasons.length} saison(s) ?\nCela REMPLACERA toutes les donnees existantes.`)) return 'cancelled';
 
     // Delete all existing
-    await supabase.from('seasons').delete().gt('created_at', '1970-01-01');
-    await supabase.from('discord_profiles').delete().gt('created_at', '1970-01-01');
+    await sb.from('seasons').delete().gt('created_at', '1970-01-01');
+    await sb.from('discord_profiles').delete().gt('created_at', '1970-01-01');
 
     // Insert seasons in batches
     const rows = importSeasons.map(s => ({
@@ -1433,7 +1438,7 @@ async function processImportData(parsed) {
 
     for (let i = 0; i < rows.length; i += 50) {
         const batch = rows.slice(i, i + 50);
-        const { error } = await supabase.from('seasons').insert(batch);
+        const { error } = await sb.from('seasons').insert(batch);
         if (error) { console.error('Import error:', error); return false; }
     }
 
@@ -1442,7 +1447,7 @@ async function processImportData(parsed) {
         pseudo, discord_user_id: userId, avatar_url: importAvatars[userId] || null
     }));
     if (profiles.length > 0) {
-        const { error } = await supabase.from('discord_profiles').insert(profiles);
+        const { error } = await sb.from('discord_profiles').insert(profiles);
         if (error) console.error('Import discord error:', error);
     }
 

@@ -1399,7 +1399,10 @@
             }
             updateDarkModeButton();
 
-            if (debugMode) debugLog.push('SUPABASE_URL: ' + SUPABASE_URL);
+            if (debugMode) {
+                debugLog.push('SUPABASE_URL: ' + SUPABASE_URL);
+                debugLog.push('Tables lues: seasons, discord_profiles');
+            }
 
             // Charger les saisons depuis Supabase
             var seasonsError = null;
@@ -1455,6 +1458,11 @@
             }
 
             calc();
+
+            if (debugMode) {
+                debugLog.push('rankingData: ' + rankingData.length + ' joueurs calcules');
+                debugLog.push('normalSeasons: ' + seasons.filter(function(s){return !s.isSpecial}).length);
+            }
 
             // Charger les données Supabase news (lecture seule)
             loadFromSupabase();
@@ -1634,20 +1642,18 @@
                 return a.player.localeCompare(b.player);
             });
 
-            updateHome();
-            updateGeneral();
-            updateRecentRanking();
-            updateStats();
-            updateLeaders();
-            updateLeadersRecentForm();
-            updateWinners();
-            updateYearsPalmares();
-            updateYearsStats();
-            updateGames();
-            updateYearRanking();
-            updateSpecialWinners();
-            updateSpecialOrganizers();
-            updateSpecialPalmares();
+            var updateFns = [
+                updateHome, updateGeneral, updateRecentRanking, updateStats,
+                updateLeaders, updateLeadersRecentForm, updateWinners,
+                updateYearsPalmares, updateYearsStats, updateGames,
+                updateYearRanking, updateSpecialWinners, updateSpecialOrganizers,
+                updateSpecialPalmares
+            ];
+            updateFns.forEach(function(fn) {
+                try { fn(); } catch (e) {
+                    console.error('[GAMMOP] ' + fn.name + '() crashed:', e.message);
+                }
+            });
         }
 
         function getDivisionInfo(rank) {
@@ -1730,25 +1736,29 @@
 
         function updateHome() {
             const el = document.getElementById('home');
-            if (seasons.length === 0) {
-                el.innerHTML = '<div class="section"><p style="color:#666;text-align:center;padding:40px">Aucune donnée disponible. Ajoutez des saisons pour commencer.</p></div>';
+            if (!el) return;
+            const normalSeasons = seasons.filter(s => !s.isSpecial);
+
+            if (seasons.length === 0 || rankingData.length === 0) {
+                el.innerHTML = '<div class="section" style="text-align:center;padding:60px 20px">'
+                    + '<h2 style="color:var(--text-secondary);margin-bottom:15px">Aucune donnée pour le moment</h2>'
+                    + '<p style="color:var(--text-secondary)">Ajoutez des saisons dans l\'admin pour voir les classements ici.</p></div>';
                 return;
             }
 
             const totalPlayers = rankingData.length;
-            const normalSeasons = seasons.filter(s => !s.isSpecial);
             const totalGames = normalSeasons.length;
             const currentLeader = rankingData[0];
 
             // Trouver le joueur avec le plus de victoires
-            const mostWins = [...rankingData].sort((a, b) => b.w - a.w)[0];
+            const mostWins = rankingData.length > 0 ? [...rankingData].sort((a, b) => b.w - a.w)[0] : null;
 
             // Trouver le joueur le plus actif
-            const mostActive = [...rankingData].sort((a, b) => b.games - a.games)[0];
+            const mostActive = rankingData.length > 0 ? [...rankingData].sort((a, b) => b.games - a.games)[0] : null;
 
             // Calculer la date de la dernière partie
-            const lastGame = [...normalSeasons].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-            const lastGameDate = new Date(lastGame.date).toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'});
+            const lastGame = normalSeasons.length > 0 ? [...normalSeasons].sort((a, b) => new Date(b.date) - new Date(a.date))[0] : null;
+            const lastGameDate = lastGame ? new Date(lastGame.date).toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'}) : 'N/A';
 
             let html = '<div style="text-align:center;padding:40px 20px;background:linear-gradient(135deg,#f8fdf9,#e8f5e9);border-radius:15px;margin-bottom:30px">';
             html += '<p style="color:#2d5016;font-size:1.3em;max-width:700px;margin:0 auto;line-height:1.6">Serveur discord de mini-jeux, retrouvez toutes les statistiques et les classements sur ce site</p>';
@@ -1823,7 +1833,7 @@
             const generalTopPlayer = rankingData.length > 0 ? rankingData[0].player : '';
 
             // 3. Calculer le classement annuel (année du dernier jeu)
-            const lastGameYear = new Date(lastGame.date).getFullYear();
+            const lastGameYear = lastGame ? new Date(lastGame.date).getFullYear() : new Date().getFullYear();
             const yearSeasons = normalSeasons.filter(s => new Date(s.date).getFullYear() === lastGameYear);
             const yearSeasonsCount = yearSeasons.length;
             let yearTopPlayer = '';
@@ -3182,12 +3192,16 @@
             html += '</div>';
 
             // 2. Joueur le plus actif
-            const mostActive = [...rankingData].sort((a, b) => b.games - a.games)[0];
+            const mostActive2 = rankingData.length > 0 ? [...rankingData].sort((a, b) => b.games - a.games)[0] : null;
             html += '<div style="background:white;padding:20px;border-radius:10px;border-left:4px solid #667eea">';
             html += '<div style="font-size:2em;margin-bottom:8px">💪</div>';
-            html += `<div style="font-weight:bold;color:#2d5016;font-size:1.3em;margin-bottom:5px">${makePlayerNameClickable(mostActive.player)}</div>`;
-            html += '<div style="color:#666">Joueur le plus actif</div>';
-            html += `<div style="color:#4a7c28;font-weight:bold;margin-top:5px">${mostActive.games} parties</div>`;
+            if (mostActive2) {
+                html += `<div style="font-weight:bold;color:#2d5016;font-size:1.3em;margin-bottom:5px">${makePlayerNameClickable(mostActive2.player)}</div>`;
+                html += '<div style="color:#666">Joueur le plus actif</div>';
+                html += `<div style="color:#4a7c28;font-weight:bold;margin-top:5px">${mostActive2.games} parties</div>`;
+            } else {
+                html += '<div style="color:#666">Aucune donnée</div>';
+            }
             html += '</div>';
 
             // 3. Meilleur taux de victoire (min 10 parties)
@@ -4226,18 +4240,20 @@
             }
 
             // Moyenne joueurs par partie
-            const avgPlayers = (normalSeasons.reduce((sum, s) => sum + s.players.length, 0) / totalGames).toFixed(1);
+            const avgPlayers = totalGames > 0 ? (normalSeasons.reduce((sum, s) => sum + s.players.length, 0) / totalGames).toFixed(1) : '0';
             html += '<div style="background:var(--section-bg);border-radius:12px;padding:20px;border:2px solid var(--section-border);text-align:center">';
             html += '<div style="font-size:2.5em;margin-bottom:10px">📊</div>';
             html += `<div style="font-size:2em;font-weight:bold;color:#2d5016">${avgPlayers}</div>`;
             html += '<div style="color:var(--text-secondary)">joueurs par partie en moyenne</div></div>';
 
             // Record de joueurs
-            const maxPlayersSeason = normalSeasons.reduce((max, s) => s.players.length > max.players.length ? s : max, normalSeasons[0]);
-            html += '<div style="background:var(--section-bg);border-radius:12px;padding:20px;border:2px solid var(--section-border);text-align:center">';
-            html += '<div style="font-size:2.5em;margin-bottom:10px">📈</div>';
-            html += `<div style="font-size:2em;font-weight:bold;color:#2d5016">${maxPlayersSeason.players.length}</div>`;
-            html += `<div style="color:var(--text-secondary)">record de joueurs (${maxPlayersSeason.name})</div></div>`;
+            if (normalSeasons.length > 0) {
+                const maxPlayersSeason = normalSeasons.reduce((max, s) => s.players.length > max.players.length ? s : max, normalSeasons[0]);
+                html += '<div style="background:var(--section-bg);border-radius:12px;padding:20px;border:2px solid var(--section-border);text-align:center">';
+                html += '<div style="font-size:2.5em;margin-bottom:10px">📈</div>';
+                html += `<div style="font-size:2em;font-weight:bold;color:#2d5016">${maxPlayersSeason.players.length}</div>`;
+                html += `<div style="color:var(--text-secondary)">record de joueurs (${maxPlayersSeason.name})</div></div>`;
+            }
 
             html += '</div>';
 
@@ -5198,8 +5214,12 @@
                     html += `<td style="color:#999;font-style:italic">-</td>`;
                 }
 
-                html += `<td style="font-weight:bold;cursor:pointer" onclick="openPlayer('${topWinner[0].replace(/'/g, "\\'")}')">${topWinner[0]}${getPlayerApples(topWinner[0])}</td>`;
-                html += `<td style="color:#4a7c28;font-weight:bold">${topWinner[1]} 🍏</td>`;
+                if (topWinner) {
+                    html += `<td style="font-weight:bold;cursor:pointer" onclick="openPlayer('${topWinner[0].replace(/'/g, "\\'")}')">${topWinner[0]}${getPlayerApples(topWinner[0])}</td>`;
+                    html += `<td style="color:#4a7c28;font-weight:bold">${topWinner[1]} 🍏</td>`;
+                } else {
+                    html += '<td>-</td><td>-</td>';
+                }
                 html += '</tr>';
             });
 

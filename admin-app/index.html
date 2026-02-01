@@ -488,8 +488,8 @@
                 <div id="importLog" style="margin-top:15px;padding:12px;background:#1a1a2e;color:#0f0;font-family:monospace;font-size:12px;border-radius:8px;display:none;max-height:200px;overflow:auto;white-space:pre-wrap"></div>
             </div>
             <div class="section">
-                <h3>Test Supabase</h3>
-                <p style="color:var(--text-secondary);margin-bottom:10px">Insere 1 saison de test dans public.seasons pour verifier que l'ecriture fonctionne.</p>
+                <h3>Test Edge Function</h3>
+                <p style="color:var(--text-secondary);margin-bottom:10px">Insere 1 saison de test via la Edge Function (service_role, bypass RLS).</p>
                 <button class="btn btn-secondary" onclick="testInsertOneSeason()">Test insert 1 saison</button>
                 <div id="testResult" style="margin-top:10px"></div>
             </div>
@@ -1422,6 +1422,36 @@ function clearImportLog() {
     if (el) { el.textContent = ''; el.style.display = 'none'; }
 }
 
+async function callEdgeFunction(payload) {
+    // Get user JWT for auth
+    var resp = await sb.auth.getSession();
+    var session = resp.data.session;
+    if (!session) {
+        throw new Error('Non connecte. Reconnectez-vous (GitHub / Magic Link) puis reessayez.');
+    }
+
+    importLog('[EDGE] Appel Edge Function import-seasons (mode: ' + (payload.mode || 'replace') + ')...');
+    importLog('[EDGE] Auth: ' + (session.user.email || session.user.id));
+
+    var response = await fetch(SUPABASE_URL + '/functions/v1/import-seasons', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + session.access_token,
+            'apikey': SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify(payload)
+    });
+
+    var result = await response.json();
+
+    if (!response.ok) {
+        throw new Error(result.error + (result.details ? ' (' + result.details + ')' : ''));
+    }
+
+    return result;
+}
+
 async function processImportData(parsed) {
     clearImportLog();
     var importSeasons, importProfiles = {}, importAvatars = {};
@@ -1440,129 +1470,55 @@ async function processImportData(parsed) {
 
     importLog('[IMPORT] JSON rows parsed: ' + importSeasons.length);
 
-    // --- Validate required fields on first row ---
+    // Validate sample
     if (importSeasons.length > 0) {
         var sample = importSeasons[0];
-        importLog('[IMPORT] Sample row: ' + JSON.stringify(sample).substring(0, 200));
+        importLog('[IMPORT] Sample: ' + JSON.stringify(sample).substring(0, 200));
         if (!sample.name || !sample.date || !sample.players) {
-            showBackupMsg('ERREUR: Champs manquants. Chaque saison doit avoir: name, date, players. Sample: ' + JSON.stringify(sample).substring(0, 100), 'error');
+            showBackupMsg('ERREUR: Champs manquants. Chaque saison doit avoir: name, date, players.', 'error');
             return false;
         }
     }
 
-    // --- 1. Check auth ---
-    var sessionData;
-    try {
-        var resp = await sb.auth.getSession();
-        sessionData = resp.data.session;
-    } catch (e) {
-        showBackupMsg('ERREUR getSession: ' + e.message, 'error');
-        return false;
-    }
-    if (!sessionData) {
-        showBackupMsg('NON CONNECTE — import impossible. Reconnectez-vous (GitHub / Magic Link) puis reessayez.', 'error');
-        importLog('[IMPORT] STOP: no active session. RLS will block all writes.');
-        return false;
-    }
-    importLog('[IMPORT] Auth OK: ' + (sessionData.user.email || sessionData.user.id));
-    importLog('[IMPORT] Access token (first 20 chars): ' + sessionData.access_token.substring(0, 20) + '...');
-
     if (!confirm('Importer ' + importSeasons.length + ' saison(s) ?\nCela REMPLACERA toutes les donnees existantes.')) return 'cancelled';
 
-    // --- 2. Delete existing ---
-    importLog('[IMPORT] Deleting existing seasons...');
-    var del1 = await sb.from('seasons').delete().gt('created_at', '1970-01-01');
-    if (del1.error) {
-        showBackupMsg('ERREUR delete seasons: ' + del1.error.message + ' (code: ' + del1.error.code + ')', 'error');
-        importLog('[IMPORT] STOP: delete seasons failed: ' + JSON.stringify(del1.error));
-        return false;
-    }
-    importLog('[IMPORT] Delete seasons OK');
-
-    importLog('[IMPORT] Deleting existing discord_profiles...');
-    var del2 = await sb.from('discord_profiles').delete().gt('created_at', '1970-01-01');
-    if (del2.error) {
-        showBackupMsg('ERREUR delete profiles: ' + del2.error.message, 'error');
-        importLog('[IMPORT] STOP: delete profiles failed: ' + JSON.stringify(del2.error));
-        return false;
-    }
-    importLog('[IMPORT] Delete profiles OK');
-
-    // --- 3. Build rows ---
+    // Build rows with correct DB column names
     var rows = importSeasons.map(function(s) {
         return {
             game: s.game || detectGameType(s.name),
             name: s.name,
             date: s.date,
             players: s.players,
-            is_special: s.isSpecial || false,
-            special_number: s.specialNumber || null,
+            is_special: s.isSpecial || s.is_special || false,
+            special_number: s.specialNumber || s.special_number || null,
             organizer: s.organizer || null,
             speciality: s.speciality || null,
-            gdoc_link: s.gdocLink || null
+            gdoc_link: s.gdocLink || s.gdoc_link || null
         };
     });
-    importLog('[IMPORT] Built ' + rows.length + ' rows for insert');
-    importLog('[IMPORT] First row: ' + JSON.stringify(rows[0]).substring(0, 200));
 
-    // --- 4. Insert in batches, using .select() to get back inserted rows ---
-    var insertedCount = 0;
-    for (var i = 0; i < rows.length; i += 50) {
-        var batch = rows.slice(i, i + 50);
-        var batchNum = Math.floor(i / 50) + 1;
-        importLog('[IMPORT] Inserting batch ' + batchNum + ' (' + batch.length + ' rows)...');
-
-        var res = await sb.from('seasons').insert(batch).select();
-
-        if (res.error) {
-            showBackupMsg('ERREUR insert batch ' + batchNum + ': ' + res.error.message + ' (code: ' + (res.error.code || '?') + ', details: ' + (res.error.details || '?') + ')', 'error');
-            importLog('[IMPORT] STOP: insert error: ' + JSON.stringify(res.error));
-            return false;
-        }
-
-        var returned = res.data ? res.data.length : 0;
-        insertedCount += returned;
-        importLog('[IMPORT] Batch ' + batchNum + ': sent=' + batch.length + ', returned=' + returned);
-
-        if (returned === 0) {
-            showBackupMsg('ERREUR: insert accepte mais 0 rows retournees. RLS bloque probablement (auth.role() != authenticated). Verifiez votre connexion.', 'error');
-            importLog('[IMPORT] STOP: 0 rows returned — RLS is blocking the insert');
-            return false;
-        }
-    }
-    importLog('[IMPORT] Rows inserted: ' + insertedCount);
-
-    // --- 5. Insert discord profiles ---
+    // Build profiles array
     var profiles = Object.entries(importProfiles).map(function(entry) {
         return { pseudo: entry[0], discord_user_id: entry[1], avatar_url: importAvatars[entry[1]] || null };
     });
-    if (profiles.length > 0) {
-        importLog('[IMPORT] Inserting ' + profiles.length + ' discord profiles...');
-        var profRes = await sb.from('discord_profiles').insert(profiles).select();
-        if (profRes.error) {
-            importLog('[IMPORT] WARNING: discord profiles error: ' + profRes.error.message);
-        } else {
-            importLog('[IMPORT] Discord profiles inserted: ' + (profRes.data ? profRes.data.length : 0));
-        }
-    }
 
-    // --- 6. VERIFY: read back from public.seasons ---
-    importLog('[IMPORT] Verifying: SELECT id FROM seasons...');
-    var verify = await sb.from('seasons').select('id');
-    if (verify.error) {
-        showBackupMsg('ERREUR verification: ' + verify.error.message, 'error');
-        importLog('[IMPORT] STOP: verify select failed: ' + JSON.stringify(verify.error));
+    importLog('[IMPORT] ' + rows.length + ' seasons + ' + profiles.length + ' profiles a envoyer');
+
+    try {
+        var result = await callEdgeFunction({
+            mode: 'replace',
+            seasons: rows,
+            profiles: profiles
+        });
+
+        importLog('[EDGE] Succes ! inserted=' + result.inserted + ', verified=' + result.verified + ', profiles=' + (result.profilesInserted || 0));
+
+        return { inserted: result.inserted, verified: result.verified };
+    } catch (err) {
+        showBackupMsg('ERREUR Edge Function: ' + err.message, 'error');
+        importLog('[EDGE] ERREUR: ' + err.message);
         return false;
     }
-    var dbCount = verify.data ? verify.data.length : 0;
-    importLog('[IMPORT] Rows in DB after import: ' + dbCount + ' (expected: ' + insertedCount + ')');
-
-    if (dbCount === 0) {
-        showBackupMsg('ERREUR CRITIQUE: La base contient 0 seasons apres import. Les inserts n\'ont pas persiste. Verifiez RLS et auth.', 'error');
-        return false;
-    }
-
-    return { inserted: insertedCount, verified: dbCount };
 }
 
 async function importFromText() {
@@ -1597,59 +1553,28 @@ async function importFromFile(event) {
     event.target.value = '';
 }
 
-// --- Test: insert 1 season to verify Supabase write works ---
+// --- Test: insert 1 season via Edge Function ---
 async function testInsertOneSeason() {
     var el = document.getElementById('testResult');
-    el.innerHTML = '<span style="color:orange">Test en cours...</span>';
+    el.innerHTML = '<span style="color:orange">Test en cours via Edge Function...</span>';
+    clearImportLog();
 
     try {
-        // Check auth
-        console.log('[TEST] Getting session...');
-        var resp = await sb.auth.getSession();
-        console.log('[TEST] getSession result:', resp);
-        var session = resp.data.session;
-        if (!session) {
-            el.innerHTML = '<span style="color:red">ECHEC: Non connecte. Reconnectez-vous d\'abord.</span>';
-            return;
-        }
-        el.innerHTML = '<span style="color:orange">Auth OK (' + (session.user.email || session.user.id) + '). Insert en cours...</span>';
+        var result = await callEdgeFunction({ mode: 'test' });
 
-        var testRow = {
-            game: 'Test',
-            name: 'Test Saison (supprimer)',
-            date: new Date().toISOString().split('T')[0],
-            players: ['Joueur1', 'Joueur2', 'Joueur3'],
-            is_special: false
-        };
+        importLog('[TEST] Reponse Edge Function: ' + JSON.stringify(result));
 
-        console.log('[TEST] Inserting row:', testRow);
-        var res = await sb.from('seasons').insert(testRow).select();
-        console.log('[TEST] Insert result:', JSON.stringify(res));
-
-        if (res.error) {
-            el.innerHTML = '<span style="color:red">ECHEC INSERT: ' + res.error.message + ' (code: ' + (res.error.code || '?') + ', details: ' + (res.error.details || '') + ', hint: ' + (res.error.hint || '') + ')</span>';
-            console.error('[TEST] Insert failed:', res.error);
-            return;
-        }
-
-        if (!res.data || res.data.length === 0) {
-            el.innerHTML = '<span style="color:red">ECHEC: Insert OK mais 0 rows retournees. RLS bloque probablement l\'insert. Verifiez que votre politique RLS autorise les inserts pour les utilisateurs authentifies.</span>';
-            return;
-        }
-
-        // Verify with a separate SELECT
-        console.log('[TEST] Verifying with SELECT...');
-        var verify = await sb.from('seasons').select('id, name').eq('name', 'Test Saison (supprimer)');
-        console.log('[TEST] Verify result:', JSON.stringify(verify));
-        var found = verify.data ? verify.data.length : 0;
-
-        el.innerHTML = '<span style="color:green">SUCCES ! Row inseree (id: ' + res.data[0].id + '). Verification SELECT: ' + found + ' row(s) trouvee(s). Allez dans Supabase > Table Editor pour confirmer.</span>';
-        console.log('[TEST] Insert OK:', res.data[0]);
+        el.innerHTML = '<span style="color:green">SUCCES ! Row inseree via Edge Function.'
+            + '<br>ID: ' + (result.row ? result.row.id : '?')
+            + ' | inserted: ' + result.inserted
+            + ' | verified: ' + result.verified
+            + '<br>User: ' + result.user
+            + '<br>Allez dans Supabase > Table Editor pour confirmer.</span>';
 
         await loadAllData();
     } catch (err) {
-        console.error('[TEST] Exception caught:', err);
-        el.innerHTML = '<span style="color:red">EXCEPTION: ' + (err.message || String(err)) + '<br>Stack: ' + (err.stack || 'N/A') + '</span>';
+        importLog('[TEST] ERREUR: ' + err.message);
+        el.innerHTML = '<span style="color:red">ECHEC Edge Function: ' + err.message + '</span>';
     }
 }
 

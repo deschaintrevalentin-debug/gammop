@@ -937,9 +937,17 @@ function parseNames(text) {
     return text.split('\n').map(l => {
         l = l.trim();
         if (!l) return null;
-        l = l.replace(/^(TOP\s*)?\d+[\s:.\-)\]]*\s*/gi, '');
-        const arrowMatch = l.match(/[-=]>|\u2192|>>|[>|]/);
+        // Strip leading rank with French ordinals: 1er, 2e, 3ème, 2nd, 1°, etc.
+        l = l.replace(/^(TOP\s*)?\d+(?:er|[eè](?:me|re)?|nde?|°)?\s*[\s:.\-)\]]*\s*/gi, '');
+        // Arrow separators (but NOT single > or | which are too aggressive)
+        const arrowMatch = l.match(/[-=]>|\u2192|>>/);
         if (arrowMatch) l = l.substring(arrowMatch.index + arrowMatch[0].length).trim();
+        // Handle pipe-separated columns: pick the column most likely to be a name
+        if (l.includes('|')) {
+            const cols = l.split('|').map(c => c.trim()).filter(c => c.length > 0);
+            const nameCol = cols.find(c => /[a-zA-Z]/.test(c) && !/^\d+\s*(pts?|points?)?\s*$/i.test(c));
+            if (nameCol) l = nameCol;
+        }
         if (l.includes(':')) {
             const parts = l.split(':');
             if (parts[1] && /\d/.test(parts[1])) l = parts[0];
@@ -947,10 +955,11 @@ function parseNames(text) {
         l = l.replace(/\s*\d+\s*pts?\.?$/i, '').replace(/\s*\d+\s*points?\.?$/i, '').replace(/\s+\d+$/, '').replace(/\s*\d+\s*pt$/i, '');
         l = l.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '');
         l = l.replace(/\([^)]*\)/g, '').replace(/\[[^\]]*\]/g, '').replace(/\{[^}]*\}/g, '');
+        l = l.replace(/\*{1,2}([^*]+)\*{1,2}/g, '$1');
         l = l.replace(/\s*[-_=+~#@%&*!?]+\s*$/g, '').replace(/^[-_=+~#@%&*!?]+\s*/g, '');
         l = l.replace(/\.{2,}/g, '').replace(/[!?]{2,}/g, '');
         l = l.replace(/\s+/g, ' ').trim();
-        l = l.replace(/^[^\w\s]+|[^\w\s]+$/gu, '');
+        l = l.replace(/^[^\w\s]+|[^\w\s]+$/gu, '').trim();
         return l.length >= 2 && /[a-zA-Z0-9_]/.test(l) ? l : null;
     }).filter(Boolean);
 }

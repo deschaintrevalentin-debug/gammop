@@ -1685,6 +1685,11 @@
                 panel.innerHTML = '<strong>[GAMMOP DEBUG]</strong><br>' + debugLog.join('<br>');
                 document.body.appendChild(panel);
             }
+
+            // Navigate to hash if present in URL (e.g. #general, #player/Name)
+            if (window.location.hash) {
+                navigateToHash();
+            }
         }
 
         function toggleDarkMode() {
@@ -6089,8 +6094,21 @@
         let generalDropdownTimeout;
         let winnersDropdownTimeout;
 
-        function showGamesDropdown() {
+        function hideAllDropdowns() {
             clearTimeout(dropdownTimeout);
+            clearTimeout(yearsDropdownTimeout);
+            clearTimeout(recentDropdownTimeout);
+            clearTimeout(statsDropdownTimeout);
+            clearTimeout(generalDropdownTimeout);
+            clearTimeout(winnersDropdownTimeout);
+            ['gamesDropdown','specialSeasonsDropdown','yearsDropdown','recentDropdown','statsDropdown','generalDropdown','winnersDropdown'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('show');
+            });
+        }
+
+        function showGamesDropdown() {
+            hideAllDropdowns();
             const dropdown = document.getElementById('gamesDropdown');
             const tab = document.getElementById('gamesTab');
             const rect = tab.getBoundingClientRect();
@@ -6143,7 +6161,7 @@
 
         // Fonctions pour le dropdown Saisons Spéciales
         function showSpecialSeasonsDropdown() {
-            clearTimeout(dropdownTimeout);
+            hideAllDropdowns();
             const dropdown = document.getElementById('specialSeasonsDropdown');
             const tab = document.getElementById('specialSeasonsTab');
             const rect = tab.getBoundingClientRect();
@@ -6247,7 +6265,7 @@
         }
 
         function showYearsDropdown() {
-            clearTimeout(yearsDropdownTimeout);
+            hideAllDropdowns();
             const dropdown = document.getElementById('yearsDropdown');
             const tab = document.getElementById('yearsTab');
             const rect = tab.getBoundingClientRect();
@@ -6300,6 +6318,11 @@
             // Aller à l'onglet Classements annuels
             showTab('years', event);
 
+            // Override hash with year-specific info
+            if (!_skipHashUpdate) {
+                history.replaceState(null, '', '#years/' + year);
+            }
+
             // Sélectionner l'année dans le dropdown
             const selector = document.getElementById('yearSelector');
             selector.value = year;
@@ -6330,7 +6353,7 @@
         }
 
         function showRecentDropdown() {
-            clearTimeout(recentDropdownTimeout);
+            hideAllDropdowns();
             const dropdown = document.getElementById('recentDropdown');
             const tab = document.getElementById('recentTab');
             const rect = tab.getBoundingClientRect();
@@ -6370,7 +6393,7 @@
         }
 
         function showStatsDropdown() {
-            clearTimeout(statsDropdownTimeout);
+            hideAllDropdowns();
             const dropdown = document.getElementById('statsDropdown');
             const tab = document.getElementById('statsTab');
             const rect = tab.getBoundingClientRect();
@@ -6434,7 +6457,7 @@
 
         // Dropdown Classement général
         function showGeneralDropdown() {
-            clearTimeout(generalDropdownTimeout);
+            hideAllDropdowns();
             const dropdown = document.getElementById('generalDropdown');
             const tab = document.getElementById('generalTab');
             const rect = tab.getBoundingClientRect();
@@ -6475,7 +6498,7 @@
 
         // Dropdown Vainqueurs
         function showWinnersDropdown() {
-            clearTimeout(winnersDropdownTimeout);
+            hideAllDropdowns();
             const dropdown = document.getElementById('winnersDropdown');
             const tab = document.getElementById('winnersTab');
             const rect = tab.getBoundingClientRect();
@@ -8351,10 +8374,21 @@
             document.getElementById('modalFormeActuelle').innerHTML = formeActuelleHtml;
 
             document.getElementById('playerModal').classList.add('active');
+
+            // Update URL hash for player modal
+            if (!_skipHashUpdate) {
+                history.pushState(null, '', '#player/' + encodeURIComponent(name));
+            }
         }
 
         function closeModal() {
             document.getElementById('playerModal').classList.remove('active');
+            // Replace player hash with the underlying active tab hash
+            if (window.location.hash.startsWith('#player/')) {
+                var activeContent = document.querySelector('.content.active');
+                var tabId = activeContent ? activeContent.id : 'home';
+                history.replaceState(null, '', '#' + tabId);
+            }
         }
 
         function showModalTab(tabName) {
@@ -8370,13 +8404,100 @@
             event.target.classList.add('active');
         }
 
+        // --- Hash-based URL routing ---
+        var _skipHashUpdate = false;
+
+        function getTabButtonId(tab) {
+            if (tab === 'home') return 'homeTab';
+            if (tab === 'recent' || tab === 'leaders-recent') return 'recentTab';
+            if (tab === 'general' || tab === 'leaders') return 'generalTab';
+            if (tab === 'years' || tab === 'years-palmares' || tab === 'years-stats') return 'yearsTab';
+            if (tab === 'winners') return 'winnersTab';
+            if (tab.startsWith('special-')) return 'specialSeasonsTab';
+            if (tab === 'stats' || tab.startsWith('stats-')) return 'statsTab';
+            if (tab === 'games') return 'gamesTab';
+            return null;
+        }
+
         function showTab(tab, evt) {
             document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             var el = document.getElementById(tab);
             if (el) el.classList.add('active');
-            if (evt && evt.target) evt.target.classList.add('active');
+
+            // Highlight the correct tab button based on tab ID
+            var btnId = getTabButtonId(tab);
+            if (btnId) {
+                var btn = document.getElementById(btnId);
+                if (btn) btn.classList.add('active');
+            } else if (evt && evt.target) {
+                evt.target.classList.add('active');
+            }
+
+            // Update URL hash
+            if (!_skipHashUpdate) {
+                history.pushState(null, '', '#' + tab);
+            }
         }
+
+        function navigateToHash() {
+            var hash = window.location.hash.replace('#', '');
+            if (!hash) hash = 'home';
+
+            _skipHashUpdate = true;
+
+            // Close player modal if navigating to a non-player hash
+            if (!hash.startsWith('player/')) {
+                document.getElementById('playerModal').classList.remove('active');
+            }
+
+            // Player modal: #player/PlayerName
+            if (hash.startsWith('player/')) {
+                var playerName = decodeURIComponent(hash.substring(7));
+                if (rankingData && rankingData.find(function(x) { return x.player === playerName; })) {
+                    openPlayer(playerName);
+                }
+                _skipHashUpdate = false;
+                return;
+            }
+
+            // Year with specific year: #years/2024
+            if (hash.startsWith('years/')) {
+                var year = parseInt(hash.substring(6));
+                if (!isNaN(year)) {
+                    selectYearFromDropdown(year);
+                }
+                _skipHashUpdate = false;
+                return;
+            }
+
+            // Stats categories: #stats-globales, #stats-par-jeux, etc.
+            if (hash.startsWith('stats-')) {
+                var category = hash.substring(6);
+                selectStatsCategory(category);
+                _skipHashUpdate = false;
+                return;
+            }
+
+            // Verify the tab content div exists
+            var contentEl = document.getElementById(hash);
+            if (contentEl && contentEl.classList.contains('content')) {
+                showTab(hash);
+
+                // Trigger content loading for tabs that need it
+                if (hash === 'special-palmares' && typeof updateSpecialPalmares === 'function') {
+                    updateSpecialPalmares();
+                }
+            } else {
+                showTab('home');
+            }
+
+            _skipHashUpdate = false;
+        }
+
+        window.addEventListener('popstate', function() {
+            navigateToHash();
+        });
 
         function getDiscordAvatar(pseudo) {
             const discordProfiles = window._discordProfiles || {};

@@ -320,6 +320,9 @@
                 <div id="supabaseStatus" style="margin-bottom:12px;padding:10px 14px;border-radius:8px;background:var(--section-bg);border:1px solid var(--border-color);font-size:13px;color:var(--text-secondary)">
                     Supabase: chargement...
                 </div>
+                <div style="margin-bottom:8px;font-size:11px;color:var(--text-secondary);font-family:monospace;opacity:0.7">
+                    DB: <span id="supabaseUrlDisplay"></span>
+                </div>
                 <div id="seasonsList"><p class="loading">Chargement...</p></div>
             </div>
         </div>
@@ -555,6 +558,9 @@ function showAdmin(user) {
     authResolved = true;
     currentUser = user;
     document.getElementById('adminInterface').style.display = '';
+    // Show Supabase URL (sans cle)
+    var urlDisplay = document.getElementById('supabaseUrlDisplay');
+    if (urlDisplay) urlDisplay.textContent = SUPABASE_URL;
     console.log('[AUTH] session found — showing admin for', user.email || user.id);
 }
 
@@ -1457,33 +1463,79 @@ function clearImportLog() {
 }
 
 async function callEdgeFunction(payload) {
-    // Get user JWT for auth
+    // 1. Get user JWT
     var resp = await sb.auth.getSession();
     var session = resp.data.session;
     if (!session) {
         throw new Error('Non connecte. Reconnectez-vous (GitHub / Magic Link) puis reessayez.');
     }
 
-    importLog('[EDGE] Appel Edge Function import-seasons (mode: ' + (payload.mode || 'replace') + ')...');
+    var url = SUPABASE_URL + '/functions/v1/import-seasons';
+    importLog('[EDGE] URL: ' + url);
+    importLog('[EDGE] Mode: ' + (payload.mode || 'replace'));
     importLog('[EDGE] Auth: ' + (session.user.email || session.user.id));
+    importLog('[EDGE] JWT (20 premiers chars): ' + session.access_token.substring(0, 20) + '...');
+    console.log('[EDGE] Calling:', url, 'mode:', payload.mode);
 
-    var response = await fetch(SUPABASE_URL + '/functions/v1/import-seasons', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + session.access_token,
-            'apikey': SUPABASE_ANON_KEY
-        },
-        body: JSON.stringify(payload)
-    });
+    // 2. Call Edge Function
+    var response;
+    try {
+        response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + session.access_token,
+                'apikey': SUPABASE_ANON_KEY
+            },
+            body: JSON.stringify(payload)
+        });
+    } catch (networkErr) {
+        importLog('[EDGE] ERREUR RESEAU: ' + networkErr.message);
+        console.error('[EDGE] Network error:', networkErr);
+        throw new Error('Erreur reseau: ' + networkErr.message + '. Verifiez que la Edge Function est deployee.');
+    }
 
-    var result = await response.json();
+    importLog('[EDGE] HTTP status: ' + response.status + ' ' + response.statusText);
+    console.log('[EDGE] Response status:', response.status);
 
+    // 3. Parse response (handle non-JSON responses)
+    var rawBody = await response.text();
+    importLog('[EDGE] Body (500 premiers chars): ' + rawBody.substring(0, 500));
+    console.log('[EDGE] Response body:', rawBody);
+
+    var result;
+    try {
+        result = JSON.parse(rawBody);
+    } catch (parseErr) {
+        throw new Error('Edge Function a retourne du non-JSON (status ' + response.status + '). Body: ' + rawBody.substring(0, 200));
+    }
+
+    // 4. Check HTTP status
     if (!response.ok) {
-        throw new Error(result.error + (result.details ? ' (' + result.details + ')' : ''));
+        var errMsg = result.error || 'Erreur inconnue';
+        if (result.details) errMsg += ' (' + result.details + ')';
+        errMsg += ' [HTTP ' + response.status + ']';
+        throw new Error(errMsg);
     }
 
     return result;
+}
+
+// Verification independante : count(*) seasons en base via le client Supabase
+async function verifyDbCount() {
+    try {
+        var { count, error } = await sb.from('seasons').select('*', { count: 'exact', head: true });
+        if (error) {
+            importLog('[VERIFY] Erreur count: ' + error.message);
+            return -1;
+        }
+        importLog('[VERIFY] Supabase seasons count = ' + count);
+        console.log('[VERIFY] DB count:', count);
+        return count;
+    } catch (e) {
+        importLog('[VERIFY] Exception: ' + e.message);
+        return -1;
+    }
 }
 
 async function processImportData(parsed) {
@@ -1545,9 +1597,22 @@ async function processImportData(parsed) {
             profiles: profiles
         });
 
-        importLog('[EDGE] Succes ! inserted=' + result.inserted + ', verified=' + result.verified + ', profiles=' + (result.profilesInserted || 0));
+        importLog('[EDGE] Reponse: inserted=' + result.inserted + ', verified=' + result.verified + ', profiles=' + (result.profilesInserted || 0));
 
-        return { inserted: result.inserted, verified: result.verified };
+        // Verification independante depuis le client admin
+        var dbCount = await verifyDbCount();
+
+        if (dbCount === 0) {
+            showBackupMsg('ECHEC CRITIQUE : Edge Function dit inserted=' + result.inserted + ' mais count(*) = 0. Rien ecrit en base.', 'error');
+            importLog('[IMPORT] ECHEC: count(*) = 0 malgre inserted=' + result.inserted);
+            return false;
+        }
+
+        if (dbCount > 0 && dbCount !== result.inserted) {
+            importLog('[IMPORT] WARNING: count(*) = ' + dbCount + ' != inserted = ' + result.inserted);
+        }
+
+        return { inserted: result.inserted, verified: dbCount >= 0 ? dbCount : result.verified };
     } catch (err) {
         showBackupMsg('ERREUR Edge Function: ' + err.message, 'error');
         importLog('[EDGE] ERREUR: ' + err.message);
@@ -1565,7 +1630,11 @@ async function importFromText() {
         if (!result) return;
         document.getElementById('importData').value = '';
         await loadAllData();
-        showBackupMsg('Import OK ! Supabase: ' + result.verified + ' seasons en base. Admin: ' + seasons.length + ' chargees.', 'success');
+        if (seasons.length === 0) {
+            showBackupMsg('ECHEC : Edge Function OK mais 0 saisons chargees depuis Supabase.', 'error');
+        } else {
+            showBackupMsg('Import OK ! Supabase count(*) = ' + result.verified + '. Admin: ' + seasons.length + ' saisons chargees.', 'success');
+        }
     } catch (e) { showBackupMsg('JSON invalide: ' + e.message, 'error'); }
 }
 
@@ -1580,7 +1649,11 @@ async function importFromFile(event) {
             if (result === 'cancelled') return;
             if (!result) return;
             await loadAllData();
-            showBackupMsg('Import OK ! Supabase: ' + result.verified + ' seasons en base. Admin: ' + seasons.length + ' chargees.', 'success');
+            if (seasons.length === 0) {
+                showBackupMsg('ECHEC : Edge Function OK mais 0 saisons chargees depuis Supabase.', 'error');
+            } else {
+                showBackupMsg('Import OK ! Supabase count(*) = ' + result.verified + '. Admin: ' + seasons.length + ' saisons chargees.', 'success');
+            }
         } catch (err) { showBackupMsg('Erreur lecture fichier: ' + err.message, 'error'); }
     };
     reader.readAsText(file);
@@ -1598,10 +1671,19 @@ async function testInsertOneSeason() {
 
         importLog('[TEST] Reponse Edge Function: ' + JSON.stringify(result));
 
+        // Verification independante
+        var dbCount = await verifyDbCount();
+
+        if (dbCount === 0) {
+            el.innerHTML = '<span style="color:red">ECHEC : Edge Function dit inserted=' + result.inserted
+                + ' mais count(*) seasons = 0. Rien ecrit en base !'
+                + '<br>Verifiez la Edge Function dans Supabase Dashboard.</span>';
+            return;
+        }
+
         el.innerHTML = '<span style="color:green">SUCCES ! Row inseree via Edge Function.'
-            + '<br>ID: ' + (result.row ? result.row.id : '?')
-            + ' | inserted: ' + result.inserted
-            + ' | verified: ' + result.verified
+            + '<br>Edge Function: inserted=' + result.inserted + ', verified=' + result.verified
+            + '<br>Verification admin: count(*) seasons = ' + dbCount
             + '<br>User: ' + result.user
             + '<br>Allez dans Supabase > Table Editor pour confirmer.</span>';
 

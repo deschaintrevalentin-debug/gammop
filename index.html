@@ -788,31 +788,211 @@
         }
 
         @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+
+            .container {
+                border-radius: 10px;
+            }
+
+            header {
+                padding: 20px 15px;
+            }
+
             header h1 {
-                font-size: 1.8em;
+                font-size: 1.5em;
+                letter-spacing: 3px;
+            }
+
+            header p {
+                font-size: 0.9em;
             }
 
             .header-btns {
                 position: static;
                 justify-content: center;
-                margin-top: 15px;
+                margin-top: 10px;
+                flex-wrap: wrap;
+            }
+
+            .search-container {
+                max-width: 100%;
             }
 
             .tabs {
-                flex-direction: column;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+
+            .tabs::-webkit-scrollbar {
+                display: none;
             }
 
             .tab-btn {
-                width: 100%;
-                text-align: left;
+                padding: 10px 12px;
+                font-size: 0.85em;
+                flex-shrink: 0;
+            }
+
+            .content {
+                padding: 12px;
+            }
+
+            .section {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+
+            .section h3 {
+                font-size: 1.2em;
             }
 
             table {
-                font-size: 0.9em;
+                font-size: 0.8em;
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
             }
 
             th, td {
-                padding: 10px 8px;
+                padding: 8px 5px;
+                white-space: nowrap;
+            }
+
+            th {
+                font-size: 0.75em;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .stat-card {
+                padding: 15px 10px;
+            }
+
+            .stat-card h3 {
+                font-size: 2em;
+            }
+
+            .stat-card p {
+                font-size: 0.9em;
+            }
+
+            .winner-card {
+                padding: 15px;
+            }
+
+            .tooltip {
+                width: 250px;
+                font-size: 0.8em;
+                left: 0;
+                transform: none;
+            }
+
+            /* Modal responsive */
+            .modal {
+                padding: 5px;
+            }
+
+            .modal.active {
+                align-items: flex-start;
+            }
+
+            .modal-content {
+                max-height: 95vh;
+                border-radius: 10px;
+            }
+
+            .modal-header {
+                padding: 15px;
+                border-radius: 10px 10px 0 0;
+            }
+
+            .modal-header h2 {
+                font-size: 1.1em;
+            }
+
+            .modal-body {
+                padding: 10px;
+            }
+
+            .modal-tabs {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                flex-wrap: nowrap !important;
+            }
+
+            .modal-tabs::-webkit-scrollbar {
+                display: none;
+            }
+
+            .modal-tab-btn {
+                padding: 10px 12px;
+                font-size: 0.8em;
+                flex-shrink: 0;
+            }
+
+            /* Stack modal flex rows on mobile */
+            #modalStats > div {
+                flex-direction: column !important;
+            }
+
+            #modalStats > div > div {
+                min-width: 0 !important;
+            }
+
+            /* Game rankings grid to 2 cols on mobile */
+            #playerGameRankings {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+
+            /* Season perf grid to 1 col on mobile */
+            #bestSeasonPerf, #worstSeasonPerf {
+                margin-bottom: 10px;
+            }
+
+            /* Dropdown menus on mobile */
+            .games-dropdown {
+                position: fixed;
+                left: 10px !important;
+                right: 10px;
+                width: auto !important;
+                max-height: 60vh;
+                overflow-y: auto;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header h1 {
+                font-size: 1.2em;
+                letter-spacing: 2px;
+            }
+
+            .tab-btn {
+                padding: 8px 10px;
+                font-size: 0.8em;
+            }
+
+            table {
+                font-size: 0.75em;
+            }
+
+            th, td {
+                padding: 6px 4px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-header h2 {
+                font-size: 1em;
             }
         }
 
@@ -907,16 +1087,42 @@
                             </div>
                         </span>
                     </div>
-                    <button class="btn download-btn" onclick="downloadAsImage('generalSection', 'classement-general-gammop.png')" style="background:#5865F2;color:white;display:flex;align-items:center;gap:8px">
-                        📥 Télécharger en image
-                    </button>
                 </div>
                 <div id="generalTable"></div>
             </div>
         </div>
 
         <div id="stats" class="content">
-            <!-- Content loaded by updateStats() -->
+            <div class="section" style="text-align:center;padding:40px 20px">
+                <h3 style="color:#2d5016;margin-bottom:25px">📈 Statistiques</h3>
+                <p style="color:#666;margin-bottom:30px">Choisissez une catégorie de statistiques :</p>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;max-width:700px;margin:0 auto">
+                    <div onclick="selectStatsCategory('globales')" style="cursor:pointer;background:#e8f5e9;padding:25px 15px;border-radius:12px;border:2px solid #c8e6c9;transition:transform 0.2s,box-shadow 0.2s" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+                        <div style="font-size:2em;margin-bottom:8px">🌍</div>
+                        <div style="font-weight:700;color:#2d5016">Statistiques globales</div>
+                    </div>
+                    <div onclick="selectStatsCategory('classement-actuel')" style="cursor:pointer;background:#e8f5e9;padding:25px 15px;border-radius:12px;border:2px solid #c8e6c9;transition:transform 0.2s,box-shadow 0.2s" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+                        <div style="font-size:2em;margin-bottom:8px">⚡</div>
+                        <div style="font-weight:700;color:#2d5016">Classement actuel</div>
+                    </div>
+                    <div onclick="selectStatsCategory('classement-annuel')" style="cursor:pointer;background:#e8f5e9;padding:25px 15px;border-radius:12px;border:2px solid #c8e6c9;transition:transform 0.2s,box-shadow 0.2s" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+                        <div style="font-size:2em;margin-bottom:8px">📅</div>
+                        <div style="font-weight:700;color:#2d5016">Classement annuel</div>
+                    </div>
+                    <div onclick="selectStatsCategory('par-jeux')" style="cursor:pointer;background:#e8f5e9;padding:25px 15px;border-radius:12px;border:2px solid #c8e6c9;transition:transform 0.2s,box-shadow 0.2s" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+                        <div style="font-size:2em;margin-bottom:8px">🎮</div>
+                        <div style="font-weight:700;color:#2d5016">Par jeux</div>
+                    </div>
+                    <div onclick="selectStatsCategory('saison-speciale')" style="cursor:pointer;background:#e8f5e9;padding:25px 15px;border-radius:12px;border:2px solid #c8e6c9;transition:transform 0.2s,box-shadow 0.2s" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+                        <div style="font-size:2em;margin-bottom:8px">🍐</div>
+                        <div style="font-weight:700;color:#2d5016">Saisons spéciales</div>
+                    </div>
+                    <div onclick="selectStatsCategory('faits-interessants')" style="cursor:pointer;background:#e8f5e9;padding:25px 15px;border-radius:12px;border:2px solid #c8e6c9;transition:transform 0.2s,box-shadow 0.2s" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+                        <div style="font-size:2em;margin-bottom:8px">🎯</div>
+                        <div style="font-weight:700;color:#2d5016">Faits intéressants</div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="stats-globales" class="content">
@@ -1022,7 +1228,7 @@
                 <h2 id="modalName"></h2>
                 <button class="modal-close" onclick="closeModal()">×</button>
             </div>
-            <div style="display:flex;background:#f8f9fa;border-bottom:2px solid #e0e0e0;overflow-x:auto">
+            <div class="modal-tabs" style="display:flex;background:#f8f9fa;border-bottom:2px solid #e0e0e0;overflow-x:auto">
                 <button class="modal-tab-btn active" onclick="showModalTab('stats')">📊 Général</button>
                 <button class="modal-tab-btn" onclick="showModalTab('formeActuelle')">⚡ Forme Actuelle</button>
                 <button class="modal-tab-btn" onclick="showModalTab('yearlyRankings')">🍎 Classements Annuels</button>
@@ -5196,7 +5402,6 @@
             html += '<th>Saisons</th>';
             html += '<th>Joueurs</th>';
             html += '<th>Meilleur Joueur</th>';
-            html += '<th>Champion</th>';
             html += '<th>Victoires</th>';
             html += '</tr></thead><tbody>';
 
@@ -5219,10 +5424,9 @@
                 }
 
                 if (topWinner) {
-                    html += `<td style="font-weight:bold;cursor:pointer" onclick="openPlayer('${topWinner[0].replace(/'/g, "\\'")}')">${topWinner[0]}${getPlayerApples(topWinner[0])}</td>`;
                     html += `<td style="color:#4a7c28;font-weight:bold">${topWinner[1]} 🍏</td>`;
                 } else {
-                    html += '<td>-</td><td>-</td>';
+                    html += '<td>-</td>';
                 }
                 html += '</tr>';
             });
@@ -6469,7 +6673,7 @@
 
                     <!-- Encart Top 3 -->
                     <div style="flex:1;background:#e8f5e9;padding:20px;border-radius:10px;text-align:center;border:2px solid #4a7c28">
-                        <h4 style="color:#1b5e20;margin-bottom:10px;font-size:0.9em;text-transform:uppercase">🥉 Top 3</h4>
+                        <h4 style="color:#1b5e20;margin-bottom:10px;font-size:0.9em;text-transform:uppercase">🏅 Podium</h4>
                         <div style="font-size:2em;font-weight:bold;color:#2d5016">${podiumCount}</div>
                         <div style="color:#2d5016;font-size:0.9em;font-weight:600">${podiumPct}%</div>
                     </div>
@@ -6489,8 +6693,37 @@
                     </div>
                 </div>
 
+                <!-- LIGNE 3 : Trophées (pommes, poires, médailles) -->
+                <div style="display:flex !important;gap:8px;margin-bottom:15px;width:100%;flex-wrap:wrap;justify-content:center">
+                    <div style="background:#f8fdf9;padding:10px 14px;border-radius:8px;text-align:center;border:1px solid #c8e6c9;min-width:70px">
+                        <div style="font-size:1.3em">🍏</div>
+                        <div style="font-size:1.4em;font-weight:bold;color:#4a7c28">${getPlayerSeasonWins(name)}</div>
+                        <div style="color:#666;font-size:0.7em">Pommes vertes</div>
+                    </div>
+                    <div style="background:#f8fdf9;padding:10px 14px;border-radius:8px;text-align:center;border:1px solid #c8e6c9;min-width:70px">
+                        <div style="font-size:1.3em">🍎</div>
+                        <div style="font-size:1.4em;font-weight:bold;color:#DC143C">${getPlayerYearlyFirstPlaces(name)}</div>
+                        <div style="color:#666;font-size:0.7em">Pommes rouges</div>
+                    </div>
+                    <div style="background:#f8fdf9;padding:10px 14px;border-radius:8px;text-align:center;border:1px solid #c8e6c9;min-width:70px">
+                        <div style="font-size:1.3em">🍐</div>
+                        <div style="font-size:1.4em;font-weight:bold;color:#9c27b0">${getPlayerPears(name)}</div>
+                        <div style="color:#666;font-size:0.7em">Poires</div>
+                    </div>
+                    <div style="background:#f8fdf9;padding:10px 14px;border-radius:8px;text-align:center;border:1px solid #c8e6c9;min-width:70px">
+                        <div style="font-size:1.3em">🥈</div>
+                        <div style="font-size:1.4em;font-weight:bold;color:#808080">${p.t2}</div>
+                        <div style="color:#666;font-size:0.7em">2ème place</div>
+                    </div>
+                    <div style="background:#f8fdf9;padding:10px 14px;border-radius:8px;text-align:center;border:1px solid #c8e6c9;min-width:70px">
+                        <div style="font-size:1.3em">🥉</div>
+                        <div style="font-size:1.4em;font-weight:bold;color:#CD7F32">${p.t3}</div>
+                        <div style="color:#666;font-size:0.7em">3ème place</div>
+                    </div>
+                </div>
+
                 <!-- SECTION CLASSEMENTS -->
-                <div style="background:#e8f5e9;padding:20px;border-radius:10px;border:2px solid #4a7c28;margin-top:20px">
+                <div style="background:#e8f5e9;padding:20px;border-radius:10px;border:2px solid #4a7c28;margin-top:5px">
                     <h3 style="color:#1b5e20;margin-bottom:15px">🏅 Classements</h3>
                     <div id="playerRankings" style="display:flex;flex-direction:column;gap:12px"></div>
                 </div>
@@ -6501,7 +6734,7 @@
                     <div id="playerGameRankings" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:20px"></div>
 
                     <h3 style="color:#2d5016;margin:20px 0 15px 0">🏅 Performances sur une Saison</h3>
-                    <div style="display:grid;grid-template-columns:repeat(2,1fr));gap:15px">
+                    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:15px">
                         <div id="bestSeasonPerf"></div>
                         <div id="worstSeasonPerf"></div>
                     </div>
@@ -7074,6 +7307,34 @@
                 yearlyTotal = yearRanking.length;
             }
 
+            // Calculer le meilleur classement annuel historique
+            let bestYearlyRank = null;
+            Object.keys(yearlyData).sort().forEach(yr => {
+                const yrSeasons = yearlyData[yr];
+                const pyd = {};
+                yrSeasons.forEach(s => {
+                    const tp = s.players.length;
+                    s.players.forEach((pl, idx) => {
+                        const pos = idx + 1;
+                        let pts = (tp - pos) + 1;
+                        pts += Math.floor(((tp - pos) + 1) / pos);
+                        if (pos <= 10) pts += (11 - pos);
+                        if (pos <= 5) pts += (6 - pos);
+                        if (pos <= 3) pts += (4 - pos);
+                        if (pos === 1) pts += 1;
+                        if (!pyd[pl]) pyd[pl] = { player: pl, pts: 0 };
+                        pyd[pl].pts += pts;
+                    });
+                });
+                const yrk = Object.values(pyd).sort((a, b) => b.pts - a.pts);
+                const plRk = yrk.findIndex(r => r.player === name) + 1;
+                if (plRk > 0) {
+                    if (!bestYearlyRank || plRk < bestYearlyRank.rank || (plRk === bestYearlyRank.rank && yrk.length > bestYearlyRank.total)) {
+                        bestYearlyRank = { rank: plRk, total: yrk.length, year: yr };
+                    }
+                }
+            });
+
             // Calculer le meilleur classement actuel (forme récente) historique
             let bestRecentFormRank = null;
             if (sortedSeasons.length >= 1) {
@@ -7158,9 +7419,17 @@
             // Classement Annuel
             if (yearlyRank) {
                 const rankSuffixYearly = yearlyRank === 1 ? 'er' : 'ème';
-                mainRankingsHtml += `<div style="display:flex;justify-content:space-between;align-items:center;padding:18px 20px;background:white;border-radius:12px;border-left:5px solid #c82333;box-shadow:0 2px 8px rgba(0,0,0,0.08)">`;
+                mainRankingsHtml += `<div style="background:white;border-radius:12px;border-left:5px solid #c82333;box-shadow:0 2px 8px rgba(0,0,0,0.08);overflow:hidden">`;
+                mainRankingsHtml += `<div style="display:flex;justify-content:space-between;align-items:center;padding:18px 20px">`;
                 mainRankingsHtml += `<span style="font-weight:700;color:#2d5016;font-size:1.15em">📅 Classement ${currentYear}</span>`;
                 mainRankingsHtml += `<span style="font-weight:bold;color:#c82333;font-size:1.4em">${yearlyRank}<span style="font-size:0.6em;vertical-align:super">${rankSuffixYearly}</span> <span style="font-size:0.7em;color:#888">/ ${yearlyTotal}</span></span>`;
+                mainRankingsHtml += `</div>`;
+                if (bestYearlyRank) {
+                    const bestYRSuffix = bestYearlyRank.rank === 1 ? 'er' : 'ème';
+                    mainRankingsHtml += `<div style="padding:6px 20px 10px;background:rgba(200,35,51,0.06);font-size:0.8em;color:#666;border-top:1px solid rgba(200,35,51,0.15)">`;
+                    mainRankingsHtml += `🏅 Meilleur : <strong style="color:#c82333">${bestYearlyRank.rank}${bestYRSuffix}/${bestYearlyRank.total}</strong> — en ${bestYearlyRank.year}`;
+                    mainRankingsHtml += `</div>`;
+                }
                 mainRankingsHtml += `</div>`;
             }
 

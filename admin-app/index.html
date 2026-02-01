@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GAMMOP - Administration</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --text-primary: #000000;
+            --text-secondary: #666666;
+            --text-accent: #2d5016;
+            --border-color: #e0e0e0;
+            --section-bg: #f8fdf9;
+            --section-border: #c8e6c9;
+            --card-bg: #ffffff;
+        }
+
+        body.dark-mode {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #252525;
+            --text-primary: #f5f5f5;
+            --text-secondary: #d1d5db;
+            --text-accent: #a7f3d0;
+            --border-color: #404040;
+            --section-bg: #2a2a2a;
+            --section-border: #404040;
+            --card-bg: #2a2a2a;
+        }
+
+        body.dark-mode h3 { color: #7bed9f !important; }
+        body.dark-mode [style*="color:#2d5016"], body.dark-mode [style*="color: #2d5016"] { color: #7bed9f !important; }
+        body.dark-mode [style*="color:#4a7c28"], body.dark-mode [style*="color: #4a7c28"] { color: #7bed9f !important; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-primary);
+        }
+
+        body.dark-mode { background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%); }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--bg-primary);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        header h1 { font-size: 2em; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; }
+        header p { font-size: 1em; opacity: 0.9; margin-top: 5px; }
+
+        .header-btns {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--border-color);
+            overflow-x: auto;
+            padding: 0 10px;
+        }
+
+        .tab-btn {
+            padding: 15px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover { color: var(--text-accent); background: rgba(74, 124, 40, 0.1); }
+        .tab-btn.active { color: #4a7c28; border-bottom-color: #4a7c28; }
+
+        .content { display: none; padding: 25px; }
+        .content.active { display: block; }
+
+        .section {
+            background: var(--section-bg);
+            border: 2px solid var(--section-border);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .section h3 { color: #2d5016; margin-bottom: 15px; font-size: 1.2em; }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 0.95em;
+        }
+
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.2); }
+        .btn-primary { background: #4a7c28; color: white; }
+        .btn-primary:hover { background: #3d6b1f; }
+        .btn-secondary { background: #6c757d; color: white; margin-right: 10px; }
+        .btn-secondary:hover { background: #5a6268; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-danger:hover { background: #c0392b; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-accent); }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1em;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #4a7c28;
+        }
+
+        .form-group textarea { min-height: 120px; resize: vertical; }
+
+        .msg {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-weight: 600;
+        }
+
+        .msg-success { background: #d4edda; color: #155724; border: 2px solid #c3e6cb; }
+        .msg-error { background: #f8d7da; color: #721c24; border: 2px solid #f5c6cb; }
+
+        .preview-box {
+            background: var(--section-bg);
+            border: 2px solid #4a7c28;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        /* Login screen */
+        #loginScreen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: calc(100vh - 40px);
+        }
+
+        .login-box {
+            background: var(--bg-primary);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .login-box h1 { color: #e74c3c; font-size: 2em; margin-bottom: 5px; }
+        .login-box p { color: var(--text-secondary); margin-bottom: 25px; }
+
+        /* Season cards */
+        .season-card {
+            background: var(--section-bg);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--section-border);
+        }
+
+        .season-card h4 { color: #2d5016; margin-bottom: 5px; }
+        .season-card p { color: var(--text-secondary); font-size: 0.9em; }
+
+        .season-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+        /* Confirm modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: var(--bg-primary);
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-content h2 { margin-bottom: 15px; color: var(--text-primary); }
+        .modal-content p { margin-bottom: 20px; line-height: 1.6; color: var(--text-secondary); }
+
+        /* Loading */
+        .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
+
+        @media (max-width: 768px) {
+            header h1 { font-size: 1.5em; }
+            .tabs { flex-direction: column; }
+            .tab-btn { width: 100%; text-align: left; }
+            .season-card { flex-direction: column; gap: 10px; }
+            .season-actions { width: 100%; }
+            .season-actions .btn { flex: 1; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ==================== LOGIN SCREEN ==================== -->
+<div id="loginScreen">
+    <div class="login-box">
+        <h1>GAMMOP</h1>
+        <p>Administration</p>
+        <div id="loginError" class="msg msg-error"></div>
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="loginEmail" placeholder="admin@example.com">
+        </div>
+        <div class="form-group">
+            <label>Mot de passe</label>
+            <input type="password" id="loginPassword" onkeypress="if(event.key==='Enter') handleLogin()">
+        </div>
+        <button class="btn btn-primary" onclick="handleLogin()" style="width:100%;padding:15px;font-size:1.1em">Se connecter</button>
+    </div>
+</div>
+
+<!-- ==================== ADMIN INTERFACE ==================== -->
+<div id="adminInterface" style="display:none">
+    <div class="container">
+        <header>
+            <h1>GAMMOP Admin</h1>
+            <p>Gestion des classements</p>
+            <div class="header-btns">
+                <button class="btn" onclick="toggleDarkMode()" style="background:#2d3748;color:white" title="Mode sombre">&#127769;</button>
+                <button class="btn btn-danger" onclick="handleLogout()">Deconnexion</button>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showAdminTab('seasons', this)">Saisons</button>
+            <button class="tab-btn" onclick="showAdminTab('add', this)">Ajouter</button>
+            <button class="tab-btn" onclick="showAdminTab('pseudos', this)">Pseudos</button>
+            <button class="tab-btn" onclick="showAdminTab('backup', this)">Backup</button>
+        </div>
+
+        <!-- TAB: SAISONS -->
+        <div id="seasons" class="content active">
+            <div class="section">
+                <h3>Liste des Saisons</h3>
+                <div id="seasonsList"><p class="loading">Chargement...</p></div>
+            </div>
+        </div>
+
+        <!-- TAB: AJOUTER -->
+        <div id="add" class="content">
+            <div class="section">
+                <h3 id="addTitle">Ajouter une Saison</h3>
+                <div id="successMsg" class="msg msg-success"></div>
+                <div id="errorMsg" class="msg msg-error"></div>
+
+                <div class="form-group">
+                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin:0">
+                        <input type="checkbox" id="isSpecialSeason" onchange="toggleSpecialSeasonFields()" style="margin:0;width:auto;flex-shrink:0">
+                        <span style="font-weight:bold">&#127824; Saison Speciale</span>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label>Jeu</label>
+                    <select id="seasonGame">
+                        <option value="Majority">Majority</option>
+                        <option value="Kulture">Kulture</option>
+                        <option value="Hungerity">Hungerity</option>
+                        <option value="Pronostik">Pronostik</option>
+                        <option value="GuessWer">GuessWer</option>
+                        <option value="GuessWat">GuessWat</option>
+                        <option value="GuessWo">GuessWo</option>
+                        <option value="KrossWord">KrossWord</option>
+                        <option value="Ptibak">Ptibak</option>
+                        <option value="Justepoi">Justepoi</option>
+                        <option value="Disgame">Disgame</option>
+                        <option value="Colanta">Colanta</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="normalSeasonNumberGroup">
+                    <label>Numero de Saison</label>
+                    <input type="number" id="seasonNumber" min="1" placeholder="Ex: 1">
+                </div>
+
+                <div class="form-group" id="specialSeasonNumberGroup" style="display:none">
+                    <label>Numero de Saison Speciale</label>
+                    <input type="number" id="specialSeasonNumber" min="1" placeholder="Ex: 1 (pour #1)">
+                </div>
+
+                <div id="specialityGroup" style="display:none">
+                    <div class="form-group">
+                        <label style="font-weight:bold">Specificite</label>
+                        <div style="margin-top:10px">
+                            <label style="display:flex;align-items:center;gap:6px;margin-bottom:10px;cursor:pointer">
+                                <input type="radio" name="specialityType" value="organizer" onchange="toggleSpecialityFields()" style="margin:0;width:auto;flex-shrink:0">
+                                <span>Organise par</span>
+                            </label>
+                            <div id="organizerField" style="display:none;margin-left:30px;margin-bottom:15px">
+                                <input type="text" id="organizerName" placeholder="Pseudo de l'organisateur" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:5px">
+                            </div>
+                            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                                <input type="radio" name="specialityType" value="other" onchange="toggleSpecialityFields()" style="margin:0;width:auto;flex-shrink:0">
+                                <span>Autre</span>
+                            </label>
+                            <div id="otherSpecialityField" style="display:none;margin-left:30px;margin-top:10px">
+                                <textarea id="otherSpeciality" placeholder="Decrire la specificite de cette saison..." style="width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;min-height:80px"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="seasonDate">
+                </div>
+
+                <div class="form-group">
+                    <label>Lien Google Docs (optionnel)</label>
+                    <input type="url" id="seasonGdocLink" placeholder="https://docs.google.com/...">
+                </div>
+
+                <div class="form-group">
+                    <label>Classement (un pseudo par ligne)</label>
+                    <textarea id="seasonRanking" placeholder="Pseudo1&#10;Pseudo2&#10;Pseudo3&#10;..."></textarea>
+                </div>
+
+                <div style="display:flex;gap:10px">
+                    <button class="btn btn-primary" id="addBtn" onclick="addSeason()">Ajouter la Saison</button>
+                    <button class="btn btn-secondary" id="cancelEditBtn" onclick="cancelEdit()" style="display:none">Annuler</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: PSEUDOS -->
+        <div id="pseudos" class="content">
+            <div class="section">
+                <h3>&#9888;&#65039; Pseudos Similaires Detectes</h3>
+                <p style="color:var(--text-secondary);margin-bottom:20px">Ces pseudos semblent etre identiques mais ne sont pas regroupes ensemble.</p>
+                <div id="similarPseudos"><p class="loading">Chargement...</p></div>
+            </div>
+
+            <div class="section">
+                <h3>&#128247; Photos de Profil Discord</h3>
+                <div id="discordSuccess" class="msg msg-success"></div>
+                <div id="discordError" class="msg msg-error"></div>
+                <p style="color:var(--text-secondary);margin-bottom:20px">Liez les pseudos du site avec les IDs utilisateurs Discord pour afficher les photos de profil.</p>
+                <div class="form-group">
+                    <label>Pseudo du site</label>
+                    <select id="discordPseudo"><option value="">-- Selectionner un pseudo --</option></select>
+                </div>
+                <div class="form-group">
+                    <label>ID utilisateur Discord</label>
+                    <input type="text" id="discordUserId" placeholder="Ex: 123456789012345678">
+                    <small style="color:var(--text-secondary);display:block;margin-top:5px">Pour obtenir l'ID : Activez le mode developpeur dans Discord, clic droit sur l'utilisateur > Copier l'identifiant</small>
+                </div>
+                <button class="btn btn-primary" onclick="linkDiscordProfile()">Lier le profil</button>
+                <div id="discordProfilesList" style="margin-top:20px"></div>
+            </div>
+
+            <div class="section">
+                <h3>&#8617;&#65039; Annuler un Regroupement</h3>
+                <div id="undoMergeSuccess" class="msg msg-success"></div>
+                <div id="undoMergeError" class="msg msg-error"></div>
+                <p style="color:var(--text-secondary);margin-bottom:20px">Annulez un regroupement de pseudos effectue par erreur.</p>
+                <div id="mergeHistoryList"></div>
+            </div>
+
+            <div class="section">
+                <h3>Renommer un Pseudo</h3>
+                <div id="pseudoSuccess" class="msg msg-success"></div>
+                <div id="pseudoError" class="msg msg-error"></div>
+                <div class="form-group">
+                    <label>Ancien Pseudo</label>
+                    <select id="oldPseudo" onchange="previewRename()"><option value="">-- Selectionner --</option></select>
+                </div>
+                <div class="form-group">
+                    <label>Nouveau Pseudo</label>
+                    <input type="text" id="newPseudo" oninput="previewRename()" placeholder="Nouveau nom">
+                </div>
+                <div id="preview" class="preview-box"></div>
+                <div style="display:flex;gap:10px;margin-top:20px">
+                    <button class="btn btn-primary" onclick="renamePseudo()">Renommer</button>
+                    <button class="btn btn-secondary" onclick="cancelRename()">Annuler</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: BACKUP -->
+        <div id="backup" class="content">
+            <div class="section">
+                <h3>Export des Donnees</h3>
+                <div id="backupSuccess" class="msg msg-success"></div>
+                <div id="backupError" class="msg msg-error"></div>
+                <p style="color:var(--text-secondary);margin-bottom:20px">Exportez vos donnees pour les sauvegarder ou les transferer.</p>
+                <div style="display:flex;gap:10px;flex-wrap:wrap">
+                    <button class="btn btn-primary" onclick="exportToClipboard()">Copier dans le Presse-papier</button>
+                    <button class="btn btn-primary" onclick="downloadBackup()">Telecharger Fichier JSON</button>
+                </div>
+            </div>
+            <div class="section">
+                <h3>Import des Donnees</h3>
+                <div class="form-group">
+                    <label>Coller les donnees JSON</label>
+                    <textarea id="importData" placeholder='[{"game":"Majority","name":"Majority Saison 1","date":"2024-01-01","players":["Joueur1","Joueur2"]}]'></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="importFromText()">Importer depuis le texte</button>
+                <div style="margin:20px 0;text-align:center;color:var(--text-secondary)">OU</div>
+                <div class="form-group">
+                    <label>Importer depuis un fichier</label>
+                    <input type="file" accept=".json" onchange="importFromFile(event)" style="padding:10px;border:2px dashed #4a7c28;border-radius:8px;background:var(--section-bg)">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div id="confirmModal" class="modal" onclick="if(event.target===this) closeConfirm(false)">
+    <div class="modal-content">
+        <h2>Confirmation</h2>
+        <p id="confirmMsg"></p>
+        <div style="display:flex;gap:10px">
+            <button class="btn btn-danger" onclick="closeConfirm(true)" style="flex:1">Confirmer</button>
+            <button class="btn btn-secondary" onclick="closeConfirm(false)" style="flex:1">Annuler</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ==================== SUPABASE CONFIG ====================
+const SUPABASE_URL = 'https://xxxxxxxx.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6...';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ==================== STATE ====================
+let seasons = [];
+let discordProfiles = {};
+let discordAvatars = {};
+let mergeHistory = [];
+let currentUser = null;
+let editingSeasonId = null;
+let confirmCb = null;
+let ignoredPairs = new Set();
+let currentSimilarGroups = [];
+
+// ==================== AUTH ====================
+async function checkSession() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+        currentUser = session.user;
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminInterface').style.display = '';
+        await loadAllData();
+    }
+}
+
+async function handleLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    if (!email || !password) return;
+
+    const errEl = document.getElementById('loginError');
+    errEl.style.display = 'none';
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+        errEl.textContent = error.message === 'Invalid login credentials'
+            ? 'Email ou mot de passe incorrect'
+            : error.message;
+        errEl.style.display = 'block';
+        return;
+    }
+
+    currentUser = data.user;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminInterface').style.display = '';
+    await loadAllData();
+}
+
+async function handleLogout() {
+    if (!confirm('Se deconnecter ?')) return;
+    await supabase.auth.signOut();
+    currentUser = null;
+    document.getElementById('adminInterface').style.display = 'none';
+    document.getElementById('loginScreen').style.display = '';
+}
+
+// ==================== DATA LOADING ====================
+async function loadAllData() {
+    await Promise.all([loadSeasons(), loadDiscordProfiles(), loadMergeHistory()]);
+    renderSeasonsList();
+    updatePseudosList();
+    updateSimilarPseudos();
+    renderDiscordProfilesList();
+    renderMergeHistory();
+}
+
+async function loadSeasons() {
+    const { data, error } = await supabase.from('seasons').select('*').order('date', { ascending: true });
+    if (error) { console.error('Error loading seasons:', error); return; }
+    seasons = (data || []).map(row => ({
+        id: row.id,
+        game: row.game,
+        name: row.name,
+        date: row.date,
+        players: row.players || [],
+        isSpecial: row.is_special || false,
+        specialNumber: row.special_number,
+        organizer: row.organizer,
+        speciality: row.speciality,
+        gdocLink: row.gdoc_link
+    }));
+}
+
+async function loadDiscordProfiles() {
+    const { data, error } = await supabase.from('discord_profiles').select('*');
+    if (error) { console.error('Error loading discord profiles:', error); return; }
+    discordProfiles = {};
+    discordAvatars = {};
+    (data || []).forEach(row => {
+        discordProfiles[row.pseudo] = row.discord_user_id;
+        if (row.avatar_url) discordAvatars[row.discord_user_id] = row.avatar_url;
+    });
+}
+
+async function loadMergeHistory() {
+    const { data, error } = await supabase.from('merge_history').select('*').order('merged_at', { ascending: false });
+    if (error) { console.error('Error loading merge history:', error); return; }
+    mergeHistory = data || [];
+}
+
+// ==================== UTILITY ====================
+function detectGameType(seasonName) {
+    const n = seasonName.toLowerCase();
+    if (n.includes('kulture')) return 'Kulture';
+    if (n.includes('hungerity')) return 'Hungerity';
+    if (n.includes('pronostik')) return 'Pronostik';
+    if (n.includes('guessw er') || n.includes('guessw-er') || n.includes('guesswer')) return 'GuessWer';
+    if (n.includes('guessw at') || n.includes('guessw-at') || n.includes('guesswat')) return 'GuessWat';
+    if (n.includes('guessw o') || n.includes('guessw-o') || n.includes('guesswo')) return 'GuessWo';
+    if (n.includes('krossword') || n.includes('kross word')) return 'KrossWord';
+    if (n.includes('ptibak')) return 'Ptibak';
+    if (n.includes('justepoi') || n.includes('juste poi')) return 'Justepoi';
+    if (n.includes('disgame')) return 'Disgame';
+    if (n.includes('colanta')) return 'Colanta';
+    if (n.includes('majority')) return 'Majority';
+    return 'Majority';
+}
+
+function getGameSymbol(g) {
+    if (!g) return '';
+    const n = g.toLowerCase();
+    if (n.includes('majority')) return ' \u{1F536}';
+    if (n.includes('hungerity')) return ' \u{1F506}';
+    if (n.includes('kulture')) return ' \u{1F7E4}';
+    if (n.includes('guesswat')) return ' \u{1F310}';
+    if (n.includes('pronostik')) return ' \u26BD';
+    if (n.includes('guesswer')) return ' \u{1F30D}';
+    if (n.includes('disgame')) return ' \u{1F47E}';
+    if (n.includes('justepoi')) return ' \u{1F39F}';
+    if (n.includes('krossword')) return ' \u274C';
+    if (n.includes('ptibak')) return ' \u{1F521}';
+    if (n.includes('colanta')) return ' \u{1F311}';
+    if (n.includes('guesswo')) return ' \u{1F468}\u{1F3FC}';
+    return '';
+}
+
+function getGameWithSymbol(g) { return g ? g + getGameSymbol(g) : ''; }
+
+function getSeasonNumber(season) {
+    const sorted = [...seasons].sort((a, b) => new Date(a.date) - new Date(b.date));
+    return sorted.findIndex(s => s.name === season.name && s.date === season.date) + 1;
+}
+
+function parseNames(text) {
+    return text.split('\n').map(l => {
+        l = l.trim();
+        if (!l) return null;
+        l = l.replace(/^(TOP\s*)?\d+[\s:.\-)\]]*\s*/gi, '');
+        const arrowMatch = l.match(/[-=]>|\u2192|>>|[>|]/);
+        if (arrowMatch) l = l.substring(arrowMatch.index + arrowMatch[0].length).trim();
+        if (l.includes(':')) {
+            const parts = l.split(':');
+            if (parts[1] && /\d/.test(parts[1])) l = parts[0];
+        }
+        l = l.replace(/\s*\d+\s*pts?\.?$/i, '').replace(/\s*\d+\s*points?\.?$/i, '').replace(/\s+\d+$/, '').replace(/\s*\d+\s*pt$/i, '');
+        l = l.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '');
+        l = l.replace(/\([^)]*\)/g, '').replace(/\[[^\]]*\]/g, '').replace(/\{[^}]*\}/g, '');
+        l = l.replace(/\s*[-_=+~#@%&*!?]+\s*$/g, '').replace(/^[-_=+~#@%&*!?]+\s*/g, '');
+        l = l.replace(/\.{2,}/g, '').replace(/[!?]{2,}/g, '');
+        l = l.replace(/\s+/g, ' ').trim();
+        l = l.replace(/^[^\w\s]+|[^\w\s]+$/gu, '');
+        return l.length >= 2 && /[a-zA-Z0-9_]/.test(l) ? l : null;
+    }).filter(Boolean);
+}
+
+// ==================== UI HELPERS ====================
+function showAdminTab(tab, btn) {
+    document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tab).classList.add('active');
+    if (btn) btn.classList.add('active');
+}
+
+function showMsg(text, type) {
+    const el = document.getElementById(type === 'success' ? 'successMsg' : 'errorMsg');
+    el.textContent = text; el.style.display = 'block';
+    if (type === 'success') document.getElementById('errorMsg').style.display = 'none';
+    else document.getElementById('successMsg').style.display = 'none';
+    setTimeout(() => el.style.display = 'none', 5000);
+}
+
+function showConfirm(msg, callback) {
+    document.getElementById('confirmMsg').innerHTML = msg.replace(/\n/g, '<br>');
+    document.getElementById('confirmModal').classList.add('active');
+    confirmCb = callback;
+}
+
+function closeConfirm(confirmed) {
+    document.getElementById('confirmModal').classList.remove('active');
+    if (confirmCb) { confirmCb(confirmed); confirmCb = null; }
+}
+
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    localStorage.setItem('gammopDarkMode', document.body.classList.contains('dark-mode'));
+}
+
+// ==================== TAB 1: SAISONS ====================
+function renderSeasonsList() {
+    const el = document.getElementById('seasonsList');
+    if (seasons.length === 0) { el.innerHTML = '<p style="color:var(--text-secondary)">Aucune saison</p>'; return; }
+
+    const sorted = [...seasons].sort((a, b) => new Date(b.date) - new Date(a.date));
+    el.innerHTML = sorted.map(s => {
+        const date = new Date(s.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+        const game = s.game || detectGameType(s.name);
+        const num = getSeasonNumber(s);
+        return `<div class="season-card">
+            <div>
+                <h4>${s.name} <span style="background:#667eea;color:white;padding:2px 8px;border-radius:4px;font-size:0.85em;font-weight:600;margin-left:8px">n\u00B0${num}</span></h4>
+                <p>${date} \u2022 <span style="background:#4a7c28;color:white;padding:2px 8px;border-radius:4px;font-size:0.9em;font-weight:600">${getGameWithSymbol(game)}</span> \u2022 ${s.players.length} joueurs</p>
+            </div>
+            <div class="season-actions">
+                <button class="btn btn-secondary" onclick="editSeason('${s.id}')">\u270F\uFE0F Modifier</button>
+                <button class="btn btn-danger" onclick="deleteSeason('${s.id}')">\u{1F5D1}\uFE0F Supprimer</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function editSeason(id) {
+    const s = seasons.find(x => x.id === id);
+    if (!s) return;
+
+    editingSeasonId = id;
+    showAdminTab('add', document.querySelectorAll('.tab-btn')[1]);
+
+    document.getElementById('addTitle').textContent = 'Modifier la Saison';
+    document.getElementById('addBtn').textContent = 'Enregistrer les Modifications';
+    document.getElementById('cancelEditBtn').style.display = '';
+
+    document.getElementById('isSpecialSeason').checked = s.isSpecial || false;
+    toggleSpecialSeasonFields();
+    document.getElementById('seasonGame').value = s.game || detectGameType(s.name);
+
+    if (s.isSpecial) {
+        document.getElementById('specialSeasonNumber').value = s.specialNumber || '';
+        if (s.organizer) {
+            const radio = document.querySelector('input[name="specialityType"][value="organizer"]');
+            if (radio) { radio.checked = true; toggleSpecialityFields(); }
+            document.getElementById('organizerName').value = s.organizer;
+        } else if (s.speciality) {
+            const radio = document.querySelector('input[name="specialityType"][value="other"]');
+            if (radio) { radio.checked = true; toggleSpecialityFields(); }
+            document.getElementById('otherSpeciality').value = s.speciality;
+        }
+    } else {
+        const match = s.name.match(/Saison (\d+)/);
+        document.getElementById('seasonNumber').value = match ? match[1] : '1';
+    }
+
+    document.getElementById('seasonDate').value = s.date;
+    document.getElementById('seasonGdocLink').value = s.gdocLink || '';
+    document.getElementById('seasonRanking').value = s.players.join('\n');
+}
+
+function cancelEdit() {
+    editingSeasonId = null;
+    document.getElementById('addTitle').textContent = 'Ajouter une Saison';
+    document.getElementById('addBtn').textContent = 'Ajouter la Saison';
+    document.getElementById('cancelEditBtn').style.display = 'none';
+    resetAddForm();
+    showAdminTab('seasons', document.querySelectorAll('.tab-btn')[0]);
+}
+
+async function deleteSeason(id) {
+    const s = seasons.find(x => x.id === id);
+    if (!s) return;
+    showConfirm(`Supprimer "${s.name}" ?\nCette action est irreversible.`, async (confirmed) => {
+        if (!confirmed) return;
+        const { error } = await supabase.from('seasons').delete().eq('id', id);
+        if (error) { alert('Erreur: ' + error.message); return; }
+        await loadSeasons();
+        renderSeasonsList();
+        showMsg(`"${s.name}" supprimee`, 'success');
+    });
+}
+
+// ==================== TAB 2: AJOUTER ====================
+function toggleSpecialSeasonFields() {
+    const isSpecial = document.getElementById('isSpecialSeason').checked;
+    document.getElementById('normalSeasonNumberGroup').style.display = isSpecial ? 'none' : '';
+    document.getElementById('specialSeasonNumberGroup').style.display = isSpecial ? '' : 'none';
+    document.getElementById('specialityGroup').style.display = isSpecial ? '' : 'none';
+    if (!isSpecial) {
+        document.getElementById('organizerName').value = '';
+        document.getElementById('otherSpeciality').value = '';
+        document.querySelectorAll('input[name="specialityType"]').forEach(r => r.checked = false);
+        document.getElementById('organizerField').style.display = 'none';
+        document.getElementById('otherSpecialityField').style.display = 'none';
+    }
+}
+
+function toggleSpecialityFields() {
+    const sel = document.querySelector('input[name="specialityType"]:checked');
+    if (!sel) return;
+    document.getElementById('organizerField').style.display = sel.value === 'organizer' ? '' : 'none';
+    document.getElementById('otherSpecialityField').style.display = sel.value === 'other' ? '' : 'none';
+}
+
+function resetAddForm() {
+    document.getElementById('seasonGame').value = 'Majority';
+    document.getElementById('seasonNumber').value = '';
+    document.getElementById('specialSeasonNumber').value = '';
+    document.getElementById('seasonDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('seasonGdocLink').value = '';
+    document.getElementById('seasonRanking').value = '';
+    document.getElementById('isSpecialSeason').checked = false;
+    document.getElementById('organizerName').value = '';
+    document.getElementById('otherSpeciality').value = '';
+    document.querySelectorAll('input[name="specialityType"]').forEach(r => r.checked = false);
+    toggleSpecialSeasonFields();
+}
+
+async function addSeason() {
+    const game = document.getElementById('seasonGame').value;
+    const isSpecial = document.getElementById('isSpecialSeason').checked;
+    const number = isSpecial
+        ? document.getElementById('specialSeasonNumber').value
+        : document.getElementById('seasonNumber').value;
+    const date = document.getElementById('seasonDate').value;
+    const gdocLink = document.getElementById('seasonGdocLink').value.trim();
+    const text = document.getElementById('seasonRanking').value.trim();
+
+    if (!game || !number || !date || !text) { showMsg('Tous les champs sont requis', 'error'); return; }
+
+    const players = parseNames(text);
+    if (players.length === 0) { showMsg('Aucun pseudo trouve', 'error'); return; }
+
+    const name = isSpecial ? `${game} #${number}` : `${game} Saison ${number}`;
+
+    const row = {
+        game, name, date, players,
+        is_special: isSpecial,
+        special_number: isSpecial ? parseInt(number) : null,
+        gdoc_link: gdocLink || null,
+        organizer: null, speciality: null
+    };
+
+    if (isSpecial) {
+        const specType = document.querySelector('input[name="specialityType"]:checked');
+        if (specType) {
+            if (specType.value === 'organizer') row.organizer = document.getElementById('organizerName').value.trim() || null;
+            else if (specType.value === 'other') row.speciality = document.getElementById('otherSpeciality').value.trim() || null;
+        }
+    }
+
+    let error;
+    if (editingSeasonId) {
+        ({ error } = await supabase.from('seasons').update(row).eq('id', editingSeasonId));
+        editingSeasonId = null;
+        document.getElementById('addTitle').textContent = 'Ajouter une Saison';
+        document.getElementById('addBtn').textContent = 'Ajouter la Saison';
+        document.getElementById('cancelEditBtn').style.display = 'none';
+    } else {
+        ({ error } = await supabase.from('seasons').insert(row));
+    }
+
+    if (error) { showMsg('Erreur: ' + error.message, 'error'); return; }
+
+    resetAddForm();
+    await loadSeasons();
+    renderSeasonsList();
+    updatePseudosList();
+
+    const typeMsg = isSpecial ? 'speciale ' : '';
+    showMsg(`Saison ${typeMsg}"${name}" enregistree (${players.length} joueurs)`, 'success');
+    setTimeout(() => showAdminTab('seasons', document.querySelectorAll('.tab-btn')[0]), 2000);
+}
+
+// ==================== TAB 3: PSEUDOS ====================
+function getAllPseudos() {
+    const pseudos = new Set();
+    seasons.forEach(s => s.players.forEach(p => pseudos.add(p)));
+    return Array.from(pseudos).sort();
+}
+
+function updatePseudosList() {
+    const sel = document.getElementById('oldPseudo');
+    const discordSel = document.getElementById('discordPseudo');
+    const pseudos = getAllPseudos();
+
+    sel.innerHTML = '<option value="">-- Selectionner --</option>';
+    discordSel.innerHTML = '<option value="">-- Selectionner un pseudo --</option>';
+
+    pseudos.forEach(p => {
+        sel.innerHTML += `<option value="${p}">${p}</option>`;
+        discordSel.innerHTML += `<option value="${p}">${p}</option>`;
+    });
+}
+
+// --- Similar Pseudos ---
+function levenshteinDistance(str1, str2) {
+    const len1 = str1.length, len2 = str2.length;
+    const matrix = Array(len2 + 1).fill(null).map(() => Array(len1 + 1).fill(0));
+    for (let i = 0; i <= len1; i++) matrix[0][i] = i;
+    for (let j = 0; j <= len2; j++) matrix[j][0] = j;
+    for (let j = 1; j <= len2; j++) {
+        for (let i = 1; i <= len1; i++) {
+            const cost = str1[i-1] === str2[j-1] ? 0 : 1;
+            matrix[j][i] = Math.min(matrix[j][i-1]+1, matrix[j-1][i]+1, matrix[j-1][i-1]+cost);
+        }
+    }
+    return matrix[len2][len1];
+}
+
+function arePseudosSimilar(p1, p2) {
+    const a = p1.toLowerCase().trim(), b = p2.toLowerCase().trim();
+    if (a === b) return true;
+    if (a.replace(/\s+/g, '') === b.replace(/\s+/g, '')) return true;
+    const ac = a.replace(/[^a-z0-9]/g, ''), bc = b.replace(/[^a-z0-9]/g, '');
+    if (ac === bc && ac.length > 0) return true;
+    if (p1.length > 4 && p2.length > 4 && levenshteinDistance(a, b) <= 2) return true;
+    if ((p1.length <= 4 || p2.length <= 4) && levenshteinDistance(a, b) === 1) return true;
+    return false;
+}
+
+function updateSimilarPseudos() {
+    const container = document.getElementById('similarPseudos');
+    const pseudoArray = getAllPseudos();
+
+    const graph = new Map();
+    pseudoArray.forEach(p => graph.set(p, new Set()));
+    for (let i = 0; i < pseudoArray.length; i++) {
+        for (let j = i + 1; j < pseudoArray.length; j++) {
+            const pairKey = [pseudoArray[i], pseudoArray[j]].sort().join('|||');
+            if (!ignoredPairs.has(pairKey) && arePseudosSimilar(pseudoArray[i], pseudoArray[j])) {
+                graph.get(pseudoArray[i]).add(pseudoArray[j]);
+                graph.get(pseudoArray[j]).add(pseudoArray[i]);
+            }
+        }
+    }
+
+    const visited = new Set();
+    const groups = [];
+    function dfs(pseudo, group) {
+        visited.add(pseudo); group.push(pseudo);
+        graph.get(pseudo).forEach(n => { if (!visited.has(n)) dfs(n, group); });
+    }
+    pseudoArray.forEach(p => {
+        if (!visited.has(p) && graph.get(p).size > 0) {
+            const group = []; dfs(p, group);
+            if (group.length > 1) groups.push(group.sort());
+        }
+    });
+
+    currentSimilarGroups = groups;
+
+    if (groups.length === 0) {
+        container.innerHTML = '<p style="color:#4a7c28;padding:20px;text-align:center;background:var(--section-bg);border-radius:8px">Aucun pseudo similaire detecte</p>';
+        return;
+    }
+
+    container.innerHTML = groups.map((group, gIdx) => {
+        let html = '<div style="background:#fff3cd;border:2px solid #ffc107;border-radius:10px;padding:20px;margin-bottom:15px">';
+        html += '<div style="font-size:1.1em;font-weight:bold;color:#2d5016;margin-bottom:10px">Groupe de pseudos similaires :</div>';
+        html += '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:15px">';
+        group.forEach((p, idx) => {
+            const escaped = p.replace(/"/g, '&quot;');
+            html += `<label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px;background:white;border-radius:6px;border:1px solid #ddd">
+                <input type="checkbox" id="pseudo_${gIdx}_${idx}" value="${escaped}" checked style="width:18px;height:18px;cursor:pointer">
+                <span style="font-weight:600;color:#2d5016">${p}</span></label>`;
+        });
+        html += '</div>';
+        html += `<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
+            <div style="flex:1;min-width:200px">
+                <label style="display:block;font-size:0.9em;color:#666;margin-bottom:5px;font-weight:600">Regrouper sur :</label>
+                <input type="text" id="mergeTarget_${gIdx}" placeholder="Pseudo final" style="width:100%;padding:10px;border:2px solid #ddd;border-radius:6px">
+            </div>
+            <button class="btn btn-primary" onclick="mergeSelectedPseudos(${gIdx})">Regrouper</button>
+            <button class="btn btn-secondary" onclick="ignoreGroup(${gIdx})">Ignorer</button>
+        </div></div>`;
+        return html;
+    }).join('');
+}
+
+async function mergeSelectedPseudos(gIdx) {
+    const group = currentSimilarGroups[gIdx];
+    const selected = [];
+    group.forEach((p, idx) => {
+        const cb = document.getElementById(`pseudo_${gIdx}_${idx}`);
+        if (cb && cb.checked) selected.push(p);
+    });
+    if (selected.length < 2) { alert('Selectionnez au moins 2 pseudos'); return; }
+
+    const target = document.getElementById(`mergeTarget_${gIdx}`)?.value.trim();
+    if (!target) { alert('Entrez le pseudo final'); return; }
+
+    if (!confirm(`Regrouper "${selected.join('", "')}" sous "${target}" ?`)) return;
+
+    // Update all affected seasons
+    const affected = seasons.filter(s => s.players.some(p => selected.includes(p)));
+    for (const s of affected) {
+        const newPlayers = s.players.map(p => selected.includes(p) ? target : p);
+        const seen = new Set(); const deduped = newPlayers.filter(p => { if (seen.has(p)) return false; seen.add(p); return true; });
+        const { error } = await supabase.from('seasons').update({ players: deduped }).eq('id', s.id);
+        if (error) console.error('Error updating season:', error);
+    }
+
+    // Update discord profiles
+    for (const p of selected) {
+        if (p !== target && discordProfiles[p]) {
+            await supabase.from('discord_profiles').update({ pseudo: target }).eq('pseudo', p);
+        }
+    }
+
+    // Record merge
+    await supabase.from('merge_history').insert({ source_pseudos: selected, target_pseudo: target });
+
+    // Ignore pairs
+    for (let i = 0; i < selected.length; i++) {
+        for (let j = i + 1; j < selected.length; j++) {
+            ignoredPairs.add([selected[i], selected[j]].sort().join('|||'));
+        }
+    }
+
+    await loadAllData();
+    alert(`Pseudos regroupes sous "${target}"`);
+}
+
+function ignoreGroup(gIdx) {
+    const group = currentSimilarGroups[gIdx];
+    for (let i = 0; i < group.length; i++) {
+        for (let j = i + 1; j < group.length; j++) {
+            ignoredPairs.add([group[i], group[j]].sort().join('|||'));
+        }
+    }
+    updateSimilarPseudos();
+}
+
+// --- Discord Profiles ---
+async function linkDiscordProfile() {
+    const pseudo = document.getElementById('discordPseudo')?.value;
+    const userId = document.getElementById('discordUserId')?.value.trim();
+    if (!pseudo || !userId) { showDiscordMsg('Remplissez les deux champs', 'error'); return; }
+    if (!/^\d+$/.test(userId)) { showDiscordMsg('L\'ID Discord doit etre numerique', 'error'); return; }
+
+    showDiscordMsg('Recuperation de l\'avatar...', 'success');
+
+    let avatarUrl = null;
+    try {
+        const { data, error } = await supabase.functions.invoke('discord-avatar', { body: { userId } });
+        if (!error && data && data.avatarUrl) avatarUrl = data.avatarUrl;
+    } catch (e) { console.warn('Edge function error:', e); }
+
+    const { error } = await supabase.from('discord_profiles').upsert(
+        { pseudo, discord_user_id: userId, avatar_url: avatarUrl },
+        { onConflict: 'pseudo' }
+    );
+
+    if (error) { showDiscordMsg('Erreur: ' + error.message, 'error'); return; }
+
+    document.getElementById('discordPseudo').value = '';
+    document.getElementById('discordUserId').value = '';
+    await loadDiscordProfiles();
+    renderDiscordProfilesList();
+    showDiscordMsg(`Profil Discord lie pour ${pseudo}`, 'success');
+}
+
+async function unlinkDiscordProfile(pseudo) {
+    if (!confirm(`Supprimer la liaison Discord pour "${pseudo}" ?`)) return;
+    const { error } = await supabase.from('discord_profiles').delete().eq('pseudo', pseudo);
+    if (error) { showDiscordMsg('Erreur: ' + error.message, 'error'); return; }
+    await loadDiscordProfiles();
+    renderDiscordProfilesList();
+    showDiscordMsg(`Liaison supprimee pour ${pseudo}`, 'success');
+}
+
+function renderDiscordProfilesList() {
+    const container = document.getElementById('discordProfilesList');
+    const entries = Object.entries(discordProfiles);
+    if (entries.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:15px;background:var(--bg-secondary);border-radius:8px">Aucun profil Discord lie</p>';
+        return;
+    }
+    container.innerHTML = '<div style="display:grid;gap:10px">' + entries.map(([pseudo, userId]) => {
+        const avatarUrl = discordAvatars[userId] || `https://cdn.discordapp.com/embed/avatars/${parseInt(userId) % 5}.png`;
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--section-bg);border:2px solid var(--section-border);border-radius:8px">
+            <div style="display:flex;align-items:center;gap:12px">
+                <img src="${avatarUrl}" alt="${pseudo}" style="width:32px;height:32px;border-radius:50%;background:#ddd" onerror="this.onerror=null;this.src='https://cdn.discordapp.com/embed/avatars/${parseInt(userId) % 5}.png'">
+                <div><div style="font-weight:600;color:var(--text-accent)">${pseudo}</div><div style="font-size:0.85em;color:var(--text-secondary)">ID: ${userId}</div></div>
+            </div>
+            <button class="btn btn-danger" onclick="unlinkDiscordProfile('${pseudo.replace(/'/g, "\\'")}')">Supprimer</button>
+        </div>`;
+    }).join('') + '</div>';
+}
+
+function showDiscordMsg(msg, type) {
+    const s = document.getElementById('discordSuccess'), e = document.getElementById('discordError');
+    if (type === 'success') { s.textContent = msg; s.style.display = 'block'; e.style.display = 'none'; setTimeout(() => s.style.display = 'none', 5000); }
+    else { e.textContent = msg; e.style.display = 'block'; s.style.display = 'none'; setTimeout(() => e.style.display = 'none', 5000); }
+}
+
+// --- Undo Merge ---
+function renderMergeHistory() {
+    const container = document.getElementById('mergeHistoryList');
+    if (mergeHistory.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:20px;background:var(--bg-secondary);border-radius:8px">Aucun regroupement effectue</p>';
+        return;
+    }
+    container.innerHTML = mergeHistory.map(record => {
+        const sources = record.source_pseudos.join(', ');
+        const date = new Date(record.merged_at).toLocaleString('fr-FR');
+        return `<div style="background:#fff3cd;border:2px solid #ffc107;border-radius:10px;padding:20px;margin-bottom:15px">
+            <div style="display:flex;justify-content:space-between;align-items:start">
+                <div style="flex:1">
+                    <div style="font-weight:bold;color:#2d5016;margin-bottom:5px">Regroupement vers "${record.target_pseudo}"</div>
+                    <div style="color:var(--text-secondary);font-size:0.9em;margin-bottom:8px">${date}</div>
+                    <div style="background:white;padding:10px;border-radius:6px;border:1px solid #ddd">
+                        <div style="color:var(--text-secondary);font-size:0.85em;margin-bottom:5px">Pseudos regroupes :</div>
+                        <div style="font-weight:600;color:#2d5016">${sources}</div>
+                    </div>
+                </div>
+                <button class="btn btn-danger" onclick="undoMerge('${record.id}')" style="margin-left:15px;white-space:nowrap">Annuler</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function undoMerge(mergeId) {
+    const record = mergeHistory.find(r => r.id === mergeId);
+    if (!record) return;
+
+    if (!confirm(`Annuler le regroupement vers "${record.target_pseudo}" ?\nCela va redistribuer les pseudos sources de maniere cyclique.`)) return;
+
+    let sourceIdx = 0;
+    const affected = seasons.filter(s => s.players.includes(record.target_pseudo));
+    for (const s of affected) {
+        const newPlayers = s.players.map(p => {
+            if (p === record.target_pseudo) {
+                const src = record.source_pseudos[sourceIdx % record.source_pseudos.length];
+                sourceIdx++;
+                return src;
+            }
+            return p;
+        });
+        const { error } = await supabase.from('seasons').update({ players: newPlayers }).eq('id', s.id);
+        if (error) console.error('Error undoing merge:', error);
+    }
+
+    await supabase.from('merge_history').delete().eq('id', mergeId);
+    await loadAllData();
+    showUndoMergeMsg('Regroupement annule avec succes', 'success');
+}
+
+function showUndoMergeMsg(msg, type) {
+    const s = document.getElementById('undoMergeSuccess'), e = document.getElementById('undoMergeError');
+    if (type === 'success') { s.textContent = msg; s.style.display = 'block'; e.style.display = 'none'; setTimeout(() => s.style.display = 'none', 5000); }
+    else { e.textContent = msg; e.style.display = 'block'; s.style.display = 'none'; setTimeout(() => e.style.display = 'none', 5000); }
+}
+
+// --- Rename ---
+function previewRename() {
+    const old = document.getElementById('oldPseudo')?.value;
+    const newP = document.getElementById('newPseudo')?.value.trim();
+    const preview = document.getElementById('preview');
+    if (!old || !newP || !preview) { if (preview) preview.style.display = 'none'; return; }
+    let count = 0; const affected = [];
+    seasons.forEach(s => { if (s.players.includes(old)) { count++; affected.push(s.name); } });
+    if (count === 0) { preview.innerHTML = '<p style="color:#e57373">Aucune occurrence</p>'; }
+    else { preview.innerHTML = `<p><strong>${old}</strong> \u2192 <strong style="color:#4a7c28">${newP}</strong></p><p style="color:var(--text-secondary)">Trouve dans <strong>${count}</strong> saison(s)</p><ul style="color:var(--text-secondary);margin-left:20px;margin-top:5px">${affected.map(s => `<li>${s}</li>`).join('')}</ul>`; }
+    preview.style.display = 'block';
+}
+
+async function renamePseudo() {
+    const old = document.getElementById('oldPseudo')?.value;
+    const newP = document.getElementById('newPseudo')?.value.trim();
+    if (!old || !newP) { showPseudoMsg('Remplir les deux champs', 'error'); return; }
+    if (old === newP) { showPseudoMsg('Pseudos identiques', 'error'); return; }
+
+    const affected = seasons.filter(s => s.players.includes(old));
+    if (affected.length === 0) { showPseudoMsg('Pseudo introuvable', 'error'); return; }
+
+    showConfirm(`Renommer "${old}" \u2192 "${newP}" ?\nAffectera ${affected.length} saison(s).\nAction irreversible.`, async (confirmed) => {
+        if (!confirmed) return;
+
+        for (const s of affected) {
+            const newPlayers = s.players.map(p => p === old ? newP : p);
+            const { error } = await supabase.from('seasons').update({ players: newPlayers }).eq('id', s.id);
+            if (error) console.error('Error renaming:', error);
+        }
+
+        // Update discord profile if exists
+        if (discordProfiles[old]) {
+            await supabase.from('discord_profiles').update({ pseudo: newP }).eq('pseudo', old);
+        }
+
+        document.getElementById('oldPseudo').value = '';
+        document.getElementById('newPseudo').value = '';
+        document.getElementById('preview').style.display = 'none';
+        await loadAllData();
+        showPseudoMsg(`Pseudo renomme (${affected.length} saison(s))`, 'success');
+    });
+}
+
+function cancelRename() {
+    document.getElementById('oldPseudo').value = '';
+    document.getElementById('newPseudo').value = '';
+    document.getElementById('preview').style.display = 'none';
+}
+
+function showPseudoMsg(text, type) {
+    const s = document.getElementById('pseudoSuccess'), e = document.getElementById('pseudoError');
+    if (type === 'success') { s.textContent = text; s.style.display = 'block'; e.style.display = 'none'; }
+    else { e.textContent = text; e.style.display = 'block'; s.style.display = 'none'; }
+    setTimeout(() => { s.style.display = 'none'; e.style.display = 'none'; }, 5000);
+}
+
+// ==================== TAB 4: BACKUP ====================
+function getBackupData() {
+    return {
+        version: 2,
+        seasons: seasons.map(s => ({
+            game: s.game, name: s.name, date: s.date, players: s.players,
+            isSpecial: s.isSpecial || false, specialNumber: s.specialNumber,
+            organizer: s.organizer, speciality: s.speciality, gdocLink: s.gdocLink
+        })),
+        discordProfiles: { ...discordProfiles },
+        discordAvatars: { ...discordAvatars }
+    };
+}
+
+function exportToClipboard() {
+    const data = JSON.stringify(getBackupData(), null, 2);
+    navigator.clipboard.writeText(data).then(() => {
+        showBackupMsg('Donnees copiees (saisons + profils Discord)', 'success');
+    }).catch(() => showBackupMsg('Erreur lors de la copie', 'error'));
+}
+
+function downloadBackup() {
+    const data = JSON.stringify(getBackupData(), null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `gammop-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showBackupMsg('Fichier telecharge', 'success');
+}
+
+async function processImportData(parsed) {
+    let importSeasons, importProfiles = {}, importAvatars = {};
+
+    if (Array.isArray(parsed)) {
+        importSeasons = parsed;
+    } else if (parsed && parsed.version === 2 && Array.isArray(parsed.seasons)) {
+        importSeasons = parsed.seasons;
+        importProfiles = parsed.discordProfiles || {};
+        importAvatars = parsed.discordAvatars || {};
+    } else {
+        return false;
+    }
+
+    if (!confirm(`Importer ${importSeasons.length} saison(s) ?\nCela REMPLACERA toutes les donnees existantes.`)) return 'cancelled';
+
+    // Delete all existing
+    await supabase.from('seasons').delete().gt('created_at', '1970-01-01');
+    await supabase.from('discord_profiles').delete().gt('created_at', '1970-01-01');
+
+    // Insert seasons in batches
+    const rows = importSeasons.map(s => ({
+        game: s.game || detectGameType(s.name),
+        name: s.name,
+        date: s.date,
+        players: s.players,
+        is_special: s.isSpecial || false,
+        special_number: s.specialNumber || null,
+        organizer: s.organizer || null,
+        speciality: s.speciality || null,
+        gdoc_link: s.gdocLink || null
+    }));
+
+    for (let i = 0; i < rows.length; i += 50) {
+        const batch = rows.slice(i, i + 50);
+        const { error } = await supabase.from('seasons').insert(batch);
+        if (error) { console.error('Import error:', error); return false; }
+    }
+
+    // Insert discord profiles
+    const profiles = Object.entries(importProfiles).map(([pseudo, userId]) => ({
+        pseudo, discord_user_id: userId, avatar_url: importAvatars[userId] || null
+    }));
+    if (profiles.length > 0) {
+        const { error } = await supabase.from('discord_profiles').insert(profiles);
+        if (error) console.error('Import discord error:', error);
+    }
+
+    return true;
+}
+
+async function importFromText() {
+    const text = document.getElementById('importData').value.trim();
+    if (!text) { showBackupMsg('Collez des donnees JSON', 'error'); return; }
+    try {
+        const parsed = JSON.parse(text);
+        const result = await processImportData(parsed);
+        if (result === 'cancelled') return;
+        if (!result) { showBackupMsg('Format invalide', 'error'); return; }
+        document.getElementById('importData').value = '';
+        await loadAllData();
+        showBackupMsg(`Import reussi ! ${seasons.length} saison(s)`, 'success');
+    } catch (e) { showBackupMsg('JSON invalide: ' + e.message, 'error'); }
+}
+
+async function importFromFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const parsed = JSON.parse(e.target.result);
+            const result = await processImportData(parsed);
+            if (result === 'cancelled') return;
+            if (!result) { showBackupMsg('Format invalide', 'error'); return; }
+            await loadAllData();
+            showBackupMsg(`Import reussi ! ${seasons.length} saison(s)`, 'success');
+        } catch (err) { showBackupMsg('Erreur lecture fichier: ' + err.message, 'error'); }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+}
+
+function showBackupMsg(text, type) {
+    const s = document.getElementById('backupSuccess'), e = document.getElementById('backupError');
+    if (type === 'success') { s.textContent = text; s.style.display = 'block'; e.style.display = 'none'; }
+    else { e.textContent = text; e.style.display = 'block'; s.style.display = 'none'; }
+    setTimeout(() => { s.style.display = 'none'; e.style.display = 'none'; }, 5000);
+}
+
+// ==================== INIT ====================
+(async function() {
+    // Dark mode
+    const dm = localStorage.getItem('gammopDarkMode');
+    if (dm === 'true') document.body.classList.add('dark-mode');
+
+    // Set today's date
+    const dateInput = document.getElementById('seasonDate');
+    if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+
+    // Check session
+    await checkSession();
+})();
+</script>
+</body>
+</html>

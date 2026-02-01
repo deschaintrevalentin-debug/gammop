@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GAMMOP - Classement Général</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -653,25 +654,6 @@
             box-shadow: 0 5px 15px rgba(74, 124, 40, 0.3);
         }
 
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-            margin-right: 10px;
-        }
-
-        .btn-secondary:hover {
-            background: #5a6268;
-        }
-
-        .btn-danger {
-            background: #e74c3c;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #c0392b;
-        }
-
         .form-group {
             margin-bottom: 20px;
         }
@@ -805,35 +787,6 @@
             color: #4a7c28;
         }
 
-        .msg {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
-            font-weight: 600;
-        }
-
-        .msg-success {
-            background: #d4edda;
-            color: #155724;
-            border: 2px solid #c3e6cb;
-        }
-
-        .msg-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 2px solid #f5c6cb;
-        }
-
-        .preview-box {
-            background: #f8fdf9;
-            border: 2px solid #4a7c28;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 15px;
-            display: none;
-        }
-
         @media (max-width: 768px) {
             header h1 {
                 font-size: 1.8em;
@@ -909,8 +862,6 @@
             </div>
             <div class="header-btns">
                 <button id="darkModeBtn" class="btn" onclick="toggleDarkMode()" style="background:#2d3748;color:white" title="Activer/Désactiver le mode sombre">🌙</button>
-                <button id="loginBtn" class="btn btn-primary" onclick="showLogin()">Admin</button>
-                <button id="logoutBtn" class="btn btn-danger" onclick="logout()" style="display:none">Déconnexion</button>
             </div>
         </header>
 
@@ -930,13 +881,11 @@
             <div id="statsDropdown" class="games-dropdown" onmouseover="keepStatsDropdown()" onmouseout="hideStatsDropdown()"></div>
             <button class="tab-btn" id="gamesTab" onclick="showTab('games', event)" onmouseover="showGamesDropdown()" onmouseout="hideGamesDropdown()">🎮 Jeux</button>
             <div id="gamesDropdown" class="games-dropdown" onmouseover="keepGamesDropdown()" onmouseout="hideGamesDropdown()"></div>
-            <button class="tab-btn admin" onclick="showTab('seasons', event)" style="display:none">Saisons</button>
-            <button class="tab-btn admin" onclick="showTab('add', event)" style="display:none">Ajouter</button>
-            <button class="tab-btn admin" onclick="showTab('pseudos', event)" style="display:none">Pseudos</button>
-            <button class="tab-btn admin" onclick="showTab('backup', event)" style="display:none">Backup</button>
         </div>
 
         <div id="home" class="content active">
+            <!-- Données Supabase -->
+            <div id="supabase-items" style="margin-bottom:20px"></div>
             <!-- Content loaded by updateHome() -->
         </div>
 
@@ -1062,209 +1011,8 @@
             <!-- Content loaded by updateSpecialPalmares() -->
         </div>
 
-        <div id="seasons" class="content">
-            <div class="section">
-                <h3>Liste des Saisons</h3>
-                <div id="seasonsList"></div>
-            </div>
-        </div>
 
-        <div id="add" class="content admin" style="display:none">
-            <div class="section">
-                <h3>Ajouter une Saison</h3>
-                <div id="successMsg" class="msg msg-success"></div>
-                <div id="errorMsg" class="msg msg-error"></div>
 
-                <div class="form-group">
-                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin:0">
-                        <input type="checkbox" id="isSpecialSeason" onchange="toggleSpecialSeasonFields()" style="margin:0;width:auto;flex-shrink:0">
-                        <span style="font-weight:bold">🍐 Saison Spéciale</span>
-                    </label>
-                </div>
-
-                <div class="form-group">
-                    <label>Jeu</label>
-                    <select id="seasonGame">
-                        <option value="Majority">Majority</option>
-                        <option value="Kulture">Kulture</option>
-                        <option value="Hungerity">Hungerity</option>
-                        <option value="Pronostik">Pronostik</option>
-                        <option value="GuessWer">GuessWer</option>
-                        <option value="GuessWat">GuessWat</option>
-                        <option value="GuessWo">GuessWo</option>
-                        <option value="KrossWord">KrossWord</option>
-                        <option value="Ptibak">Ptibak</option>
-                        <option value="Justepoi">Justepoi</option>
-                        <option value="Disgame">Disgame</option>
-                        <option value="Colanta">Colanta</option>
-                    </select>
-                </div>
-
-                <div class="form-group" id="normalSeasonNumberGroup">
-                    <label>Numéro de Saison</label>
-                    <input type="number" id="seasonNumber" min="1" placeholder="Ex: 1">
-                </div>
-
-                <div class="form-group" id="specialSeasonNumberGroup" style="display:none">
-                    <label>Numéro de Saison Spéciale</label>
-                    <input type="number" id="specialSeasonNumber" min="1" placeholder="Ex: 1 (pour #1)">
-                </div>
-
-                <div id="specialityGroup" style="display:none">
-                    <div class="form-group">
-                        <label style="font-weight:bold">Spécificité</label>
-                        <div style="margin-top:10px">
-                            <label style="display:flex;align-items:center;gap:6px;margin-bottom:10px;cursor:pointer">
-                                <input type="radio" name="specialityType" value="organizer" onchange="toggleSpecialityFields()" style="margin:0;width:auto;flex-shrink:0">
-                                <span>Organisé par</span>
-                            </label>
-                            <div id="organizerField" style="display:none;margin-left:30px;margin-bottom:15px">
-                                <input type="text" id="organizerName" placeholder="Pseudo de l'organisateur" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:5px">
-                            </div>
-
-                            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-                                <input type="radio" name="specialityType" value="other" onchange="toggleSpecialityFields()" style="margin:0;width:auto;flex-shrink:0">
-                                <span>Autre</span>
-                            </label>
-                            <div id="otherSpecialityField" style="display:none;margin-left:30px;margin-top:10px">
-                                <textarea id="otherSpeciality" placeholder="Décrire la spécificité de cette saison..." style="width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;min-height:80px"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Date</label>
-                    <input type="date" id="seasonDate">
-                </div>
-
-                <div class="form-group">
-                    <label>Lien Google Docs (optionnel)</label>
-                    <input type="url" id="seasonGdocLink" placeholder="https://docs.google.com/...">
-                </div>
-
-                <div class="form-group">
-                    <label>Classement (un pseudo par ligne)</label>
-                    <textarea id="seasonRanking" placeholder="Pseudo1&#10;Pseudo2&#10;Pseudo3&#10;..."></textarea>
-                </div>
-
-                <button class="btn btn-primary" onclick="addSeason()">Ajouter la Saison</button>
-            </div>
-        </div>
-
-        <div id="pseudos" class="content admin" style="display:none">
-            <div class="section">
-                <h3>⚠️ Pseudos Similaires Détectés</h3>
-                <p style="color:#666;margin-bottom:20px">Ces pseudos semblent être identiques mais ne sont pas regroupés ensemble.</p>
-                <div id="similarPseudos"></div>
-            </div>
-
-            <div class="section">
-                <h3>🖼️ Photos de Profil Discord</h3>
-                <div id="discordSuccess" class="msg msg-success"></div>
-                <div id="discordError" class="msg msg-error"></div>
-
-                <p style="color:#666;margin-bottom:20px">Liez les pseudos du site avec les IDs utilisateurs Discord pour afficher les photos de profil.</p>
-
-                <div class="form-group">
-                    <label>Token du Bot Discord</label>
-                    <input type="password" id="discordBotToken" placeholder="Collez votre token de bot Discord ici">
-                    <small style="color:#666;display:block;margin-top:5px;line-height:1.5">
-                        <strong>Configuration du bot :</strong><br>
-                        1. Créez un bot sur <a href="https://discord.com/developers/applications" target="_blank" style="color:#5865F2">discord.com/developers/applications</a><br>
-                        2. Dans "Bot" → Copiez le token<br>
-                        3. ⚠️ <strong>Pas besoin d'inviter le bot sur un serveur !</strong> Il peut récupérer les avatars publics avec juste l'ID utilisateur.<br>
-                        Le token est stocké localement dans votre navigateur.
-                    </small>
-                    <button class="btn" style="margin-top:10px;background:#5865F2;color:white" onclick="saveDiscordBotToken()">💾 Sauvegarder le token</button>
-                </div>
-
-                <div class="form-group">
-                    <label>Pseudo du site</label>
-                    <select id="discordPseudo">
-                        <option value="">-- Sélectionner un pseudo --</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>ID utilisateur Discord</label>
-                    <input type="text" id="discordUserId" placeholder="Ex: 123456789012345678">
-                    <small style="color:#666;display:block;margin-top:5px">Pour obtenir l'ID : Activez le mode développeur dans Discord, clic droit sur l'utilisateur → Copier l'identifiant</small>
-                </div>
-
-                <button class="btn btn-primary" onclick="linkDiscordProfile()">Lier le profil</button>
-
-                <div id="discordProfilesList" style="margin-top:20px"></div>
-            </div>
-
-            <div class="section">
-                <h3>↩️ Annuler un Regroupement</h3>
-                <div id="undoMergeSuccess" class="msg msg-success"></div>
-                <div id="undoMergeError" class="msg msg-error"></div>
-
-                <p style="color:#666;margin-bottom:20px">Annulez un regroupement de pseudos effectué par erreur. Cette action est irréversible.</p>
-
-                <div id="mergeHistoryList"></div>
-            </div>
-
-            <div class="section">
-                <h3>Renommer un Pseudo</h3>
-                <div id="pseudoSuccess" class="msg msg-success"></div>
-                <div id="pseudoError" class="msg msg-error"></div>
-
-                <div class="form-group">
-                    <label>Ancien Pseudo</label>
-                    <select id="oldPseudo" onchange="previewRename()">
-                        <option value="">-- Sélectionner --</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Nouveau Pseudo</label>
-                    <input type="text" id="newPseudo" oninput="previewRename()" placeholder="Nouveau nom">
-                </div>
-
-                <div id="preview" class="preview-box"></div>
-
-                <div style="display:flex;gap:10px;margin-top:20px">
-                    <button class="btn btn-primary" onclick="renamePseudo()">Renommer</button>
-                    <button class="btn btn-secondary" onclick="cancelRename()">Annuler</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="backup" class="content admin" style="display:none">
-            <div class="section">
-                <h3>Export des Données</h3>
-                <div id="backupSuccess" class="msg msg-success"></div>
-                <div id="backupError" class="msg msg-error"></div>
-
-                <p style="color:#666;margin-bottom:20px">Exportez vos données pour les sauvegarder ou les transférer vers un autre site.</p>
-
-                <div style="display:flex;gap:10px;flex-wrap:wrap">
-                    <button class="btn btn-primary" onclick="exportToClipboard()">Copier dans le Presse-papier</button>
-                    <button class="btn btn-primary" onclick="downloadBackup()">Télécharger Fichier JSON</button>
-                </div>
-            </div>
-
-            <div class="section">
-                <h3>Import des Données</h3>
-
-                <div class="form-group">
-                    <label>Coller les données JSON</label>
-                    <textarea id="importData" placeholder='[{"game":"Majority","name":"Majority Saison 1","date":"2024-01-01","players":["Joueur1","Joueur2"]}]'></textarea>
-                </div>
-
-                <button class="btn btn-primary" onclick="importFromText()">Importer depuis le texte</button>
-
-                <div style="margin:20px 0;text-align:center;color:#666">OU</div>
-
-                <div class="form-group">
-                    <label>Importer depuis un fichier</label>
-                    <input type="file" accept=".json" onchange="importFromFile(event)" style="padding:10px;border:2px dashed #4a7c28;border-radius:8px;background:#f8fdf9">
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Player Modal -->
@@ -1309,42 +1057,45 @@
         </div>
     </div>
 
-    <!-- Login Modal -->
-    <div id="loginModal" class="modal" onclick="if(event.target === this) closeLogin()">
-        <div class="modal-content" style="max-width:400px">
-            <div class="modal-header">
-                <h2>Connexion Admin</h2>
-                <button class="modal-close" onclick="closeLogin()">×</button>
-            </div>
-            <div class="modal-body">
-                <div id="loginError" class="msg msg-error"></div>
-                <div class="form-group">
-                    <label>Mot de passe</label>
-                    <input type="password" id="adminPass" onkeypress="if(event.key==='Enter') login()">
-                </div>
-                <button class="btn btn-primary" onclick="login()" style="width:100%">Se connecter</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Confirm Modal -->
-    <div id="confirmModal" class="modal">
-        <div class="modal-content" style="max-width:500px">
-            <div class="modal-header">
-                <h2>Confirmation</h2>
-            </div>
-            <div class="modal-body">
-                <p id="confirmMsg" style="margin-bottom:25px;font-size:1.1em;line-height:1.6"></p>
-                <div style="display:flex;gap:10px">
-                    <button class="btn btn-danger" onclick="closeConfirm(true)" style="flex:1">Confirmer</button>
-                    <button class="btn btn-secondary" onclick="closeConfirm(false)" style="flex:1">Annuler</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script>
-        const PASS = 'ADMIN_PASSWORD_PLACEHOLDER';
+        // ==================== SUPABASE (lecture seule) ====================
+        const SUPABASE_URL = 'https://xxxxxxxx.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6...';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function loadFromSupabase() {
+            try {
+                const { data, error } = await supabase
+                    .from('Gammop')
+                    .select('title, description, created_at')
+                    .eq('published', true)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                const container = document.getElementById('supabase-items');
+                if (container && data && data.length > 0) {
+                    container.innerHTML = data.map(item => `
+                        <div style="background:var(--card-bg);padding:15px;border-radius:10px;border-left:4px solid #4a7c28;margin-bottom:10px">
+                            <h4 style="color:#2d5016;margin-bottom:6px">${item.title || ''}</h4>
+                            <p style="color:var(--text-secondary);font-size:0.9em">${item.description || ''}</p>
+                            <small style="color:#999">${item.created_at ? new Date(item.created_at).toLocaleDateString('fr-FR') : ''}</small>
+                        </div>
+                    `).join('');
+                } else if (container) {
+                    container.innerHTML = '<p style="color:#999;text-align:center">Aucune donnée publiée.</p>';
+                }
+            } catch (err) {
+                console.error('Erreur Supabase:', err.message);
+            }
+        }
+        // ==================================================================
+
+        // Profils Discord (remplis par init() depuis Supabase)
+        window._discordProfiles = {};  // { pseudo: discordUserId }
+        window._discordAvatars = {};   // { discordUserId: avatarUrl }
+
         let seasons = [];
         let rankingData = [];
         let confirmCb = null;
@@ -1629,27 +1380,9 @@
             }
         }
 
-        function init() {
-            const saved = localStorage.getItem('gammopSeasons');
-            if (saved) {
-                try {
-                    seasons = JSON.parse(saved);
-                    // Attribuer le type de jeu basé sur le nom si non défini
-                    seasons = seasons.map(s => ({
-                        ...s,
-                        game: s.game || detectGameType(s.name)
-                    }));
-                    // Sauvegarder avec les types de jeu détectés
-                    localStorage.setItem('gammopSeasons', JSON.stringify(seasons));
-                } catch (e) {
-                    console.error('Error loading data:', e);
-                    seasons = [];
-                }
-            }
-
+        async function init() {
             // Charger la préférence de mode sombre AVANT de générer les tableaux
             const darkMode = localStorage.getItem('gammopDarkMode');
-            // Si aucune préférence n'est enregistrée, activer le mode sombre par défaut
             if (darkMode === null) {
                 document.body.classList.add('dark-mode');
                 localStorage.setItem('gammopDarkMode', 'true');
@@ -1658,20 +1391,55 @@
             }
             updateDarkModeButton();
 
-            calc();
-            checkAdmin();
+            // Charger les saisons depuis Supabase
+            try {
+                const { data, error } = await supabase
+                    .from('seasons')
+                    .select('*')
+                    .order('date', { ascending: false });
 
-            // Charger le token Discord bot s'il existe
-            const savedToken = localStorage.getItem('gammopDiscordBotToken');
-            if (savedToken) {
-                const tokenInput = document.getElementById('discordBotToken');
-                if (tokenInput) {
-                    tokenInput.value = savedToken;
-                }
+                if (error) throw error;
+
+                seasons = (data || []).map(row => ({
+                    game: row.game || detectGameType(row.name),
+                    name: row.name,
+                    date: row.date,
+                    players: row.players || [],
+                    isSpecial: row.is_special || false,
+                    specialNumber: row.special_number || null,
+                    organizer: row.organizer || '',
+                    speciality: row.speciality || '',
+                    gdocLink: row.gdoc_link || ''
+                }));
+            } catch (e) {
+                console.error('Erreur chargement saisons Supabase:', e);
+                seasons = [];
             }
 
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('seasonDate').value = today;
+            // Charger les profils Discord depuis Supabase
+            try {
+                const { data, error } = await supabase
+                    .from('discord_profiles')
+                    .select('*');
+
+                if (error) throw error;
+
+                window._discordProfiles = {};
+                window._discordAvatars = {};
+                (data || []).forEach(row => {
+                    window._discordProfiles[row.pseudo] = row.discord_user_id;
+                    if (row.avatar_url) {
+                        window._discordAvatars[row.discord_user_id] = row.avatar_url;
+                    }
+                });
+            } catch (e) {
+                console.error('Erreur chargement profils Discord:', e);
+            }
+
+            calc();
+
+            // Charger les données Supabase news (lecture seule)
+            loadFromSupabase();
         }
 
         function toggleDarkMode() {
@@ -1715,8 +1483,8 @@
             let html = '';
             filtered.forEach((p, idx) => {
                 const rank = rankingData.findIndex(player => player.player === p.player) + 1;
-                const discordProfiles = JSON.parse(localStorage.getItem('gammopDiscordProfiles') || '{}');
-                const discordAvatars = JSON.parse(localStorage.getItem('gammopDiscordAvatars') || '{}');
+                const discordProfiles = window._discordProfiles || {};
+                const discordAvatars = window._discordAvatars || {};
                 const userId = discordProfiles[p.player];
                 const avatarUrl = userId ? discordAvatars[userId] : null;
 
@@ -1850,7 +1618,6 @@
             updateYearsStats();
             updateGames();
             updateYearRanking();
-            updateSeasonsList();
             updateSpecialWinners();
             updateSpecialOrganizers();
             updateSpecialPalmares();
@@ -8264,463 +8031,11 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(tab).classList.add('active');
             if (evt && evt.target) evt.target.classList.add('active');
-            if (tab === 'pseudos') updatePseudosList();
-        }
-
-        function checkAdmin() {
-            const isAdmin = localStorage.getItem('gammopAdmin') === 'true';
-            document.querySelectorAll('.admin').forEach(el => el.style.display = isAdmin ? '' : 'none');
-            document.getElementById('loginBtn').style.display = isAdmin ? 'none' : '';
-            document.getElementById('logoutBtn').style.display = isAdmin ? '' : 'none';
-        }
-
-        function showLogin() {
-            document.getElementById('loginModal').classList.add('active');
-            document.getElementById('adminPass').focus();
-        }
-
-        function closeLogin() {
-            document.getElementById('loginModal').classList.remove('active');
-            document.getElementById('adminPass').value = '';
-            document.getElementById('loginError').style.display = 'none';
-        }
-
-        function login() {
-            if (document.getElementById('adminPass').value === PASS) {
-                localStorage.setItem('gammopAdmin', 'true');
-                checkAdmin();
-                closeLogin();
-                showMsg('Connexion réussie', 'success');
-            } else {
-                const err = document.getElementById('loginError');
-                err.textContent = 'Mot de passe incorrect';
-                err.style.display = 'block';
-            }
-        }
-
-        function logout() {
-            if (confirm('Se déconnecter ?')) {
-                localStorage.removeItem('gammopAdmin');
-                checkAdmin();
-                showTab('general');
-                showMsg('Déconnexion réussie', 'success');
-            }
-        }
-
-        function toggleSpecialSeasonFields() {
-            const isSpecial = document.getElementById('isSpecialSeason').checked;
-            document.getElementById('normalSeasonNumberGroup').style.display = isSpecial ? 'none' : '';
-            document.getElementById('specialSeasonNumberGroup').style.display = isSpecial ? '' : 'none';
-            document.getElementById('specialityGroup').style.display = isSpecial ? '' : 'none';
-
-            // Réinitialiser les champs si on décoche
-            if (!isSpecial) {
-                document.getElementById('organizerName').value = '';
-                document.getElementById('otherSpeciality').value = '';
-                const radios = document.querySelectorAll('input[name="specialityType"]');
-                radios.forEach(r => r.checked = false);
-                document.getElementById('organizerField').style.display = 'none';
-                document.getElementById('otherSpecialityField').style.display = 'none';
-            }
-        }
-
-        function toggleSpecialityFields() {
-            const selectedType = document.querySelector('input[name="specialityType"]:checked');
-            if (!selectedType) return;
-
-            if (selectedType.value === 'organizer') {
-                document.getElementById('organizerField').style.display = '';
-                document.getElementById('otherSpecialityField').style.display = 'none';
-            } else if (selectedType.value === 'other') {
-                document.getElementById('organizerField').style.display = 'none';
-                document.getElementById('otherSpecialityField').style.display = '';
-            }
-        }
-
-        function parseNames(text) {
-            return text.split('\n').map(l => {
-                l = l.trim();
-                if (!l) return null;
-
-                // Supprimer "TOP" et les numéros au début
-                l = l.replace(/^(TOP\s*)?\d+[\s:.\-)\]]*\s*/gi, '');
-
-                // Supprimer les flèches et symboles de séparation avec regex
-                // Chercher le pattern de flèches et prendre ce qui vient AVANT
-                const arrowMatch = l.match(/\s*[-=]>|→|>>|\s*$/);
-                if (arrowMatch && arrowMatch.index > 0) {
-                    // Prendre ce qui est AVANT la flèche
-                    l = l.substring(0, arrowMatch.index).trim();
-                }
-
-                // Si contient ":" avec des chiffres après, garder seulement ce qui est avant
-                if (l.includes(':')) {
-                    const parts = l.split(':');
-                    if (parts[1] && /\d/.test(parts[1])) l = parts[0];
-                }
-
-                // Supprimer les points/scores à la fin
-                l = l.replace(/\s*\d+\s*pts?\.?$/i, '').replace(/\s*\d+\s*points?\.?$/i, '').replace(/\s+\d+$/, '').replace(/\s*\d+\s*pt$/i, '');
-
-                // Supprimer TOUS les emojis (utiliser une regex unicode pour attraper tous les emojis)
-                l = l.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '');
-
-                // Supprimer le contenu entre parenthèses, crochets, accolades
-                l = l.replace(/\([^)]*\)/g, '').replace(/\[[^\]]*\]/g, '').replace(/\{[^}]*\}/g, '');
-
-                // Supprimer les caractères spéciaux en début/fin
-                l = l.replace(/\s*[-_=+~#@%&*!?]+\s*$/g, '').replace(/^[-_=+~#@%&*!?]+\s*/g, '');
-
-                // Nettoyer les répétitions
-                l = l.replace(/\.{2,}/g, '').replace(/[!?]{2,}/g, '');
-
-                // Normaliser les espaces multiples en un seul espace
-                l = l.replace(/\s+/g, ' ').trim();
-
-                // Supprimer les caractères non-alphanumériques au début et à la fin
-                l = l.replace(/^[^\w\s]+|[^\w\s]+$/gu, '');
-
-                // Accepter tout pseudo d'au moins 2 caractères contenant au moins une lettre ou chiffre
-                return l.length >= 2 && /[a-zA-Z0-9_]/.test(l) ? l : null;
-            }).filter(Boolean);
-        }
-
-        function addSeason() {
-            if (localStorage.getItem('gammopAdmin') !== 'true') {
-                showMsg('Connexion admin requise', 'error');
-                return;
-            }
-
-            const game = document.getElementById('seasonGame').value;
-            const isSpecial = document.getElementById('isSpecialSeason').checked;
-            const number = isSpecial ?
-                document.getElementById('specialSeasonNumber').value :
-                document.getElementById('seasonNumber').value;
-            const date = document.getElementById('seasonDate').value;
-            const gdocLink = document.getElementById('seasonGdocLink').value.trim();
-            const text = document.getElementById('seasonRanking').value.trim();
-
-            if (!game || !number || !date || !text) {
-                showMsg('Tous les champs sont requis', 'error');
-                return;
-            }
-
-            const players = parseNames(text);
-            if (players.length === 0) {
-                showMsg('Aucun pseudo trouvé', 'error');
-                return;
-            }
-
-            // Créer le nom de la saison
-            const name = isSpecial ? `${game} #${number}` : `${game} Saison ${number}`;
-            const season = {game, name, date, players};
-
-            if (gdocLink) {
-                season.gdocLink = gdocLink;
-            }
-
-            // Si c'est une saison spéciale, ajouter les propriétés spéciales
-            if (isSpecial) {
-                season.isSpecial = true;
-                season.specialNumber = parseInt(number);
-
-                const specialityType = document.querySelector('input[name="specialityType"]:checked');
-                if (specialityType) {
-                    if (specialityType.value === 'organizer') {
-                        const organizer = document.getElementById('organizerName').value.trim();
-                        if (organizer) {
-                            season.organizer = organizer;
-                        }
-                    } else if (specialityType.value === 'other') {
-                        const speciality = document.getElementById('otherSpeciality').value.trim();
-                        if (speciality) {
-                            season.speciality = speciality;
-                        }
-                    }
-                }
-            }
-
-            seasons.push(season);
-            seasons.sort((a, b) => {
-                if (a.game !== b.game) return a.game.localeCompare(b.game);
-                return new Date(a.date) - new Date(b.date);
-            });
-            localStorage.setItem('gammopSeasons', JSON.stringify(seasons));
-            calc();
-
-            // Réinitialiser le formulaire
-            document.getElementById('seasonGame').value = '';
-            document.getElementById('seasonNumber').value = '';
-            document.getElementById('specialSeasonNumber').value = '';
-            document.getElementById('seasonDate').value = '';
-            document.getElementById('seasonGdocLink').value = '';
-            document.getElementById('seasonRanking').value = '';
-            document.getElementById('isSpecialSeason').checked = false;
-            document.getElementById('organizerName').value = '';
-            document.getElementById('otherSpeciality').value = '';
-            const radios = document.querySelectorAll('input[name="specialityType"]');
-            radios.forEach(r => r.checked = false);
-            toggleSpecialSeasonFields(); // Réinitialiser l'affichage
-
-            const typeMsg = isSpecial ? 'spéciale' : '';
-            showMsg(`Saison ${typeMsg} "${name}" ajoutée (${players.length} joueurs)`, 'success');
-            setTimeout(() => showTab('seasons'), 2000);
-        }
-
-        function updateSeasonsList() {
-            const el = document.getElementById('seasonsList');
-            if (seasons.length === 0) {
-                el.innerHTML = '<p style="color:#666">Aucune saison</p>';
-                return;
-            }
-
-            el.innerHTML = '';
-            // Trier les saisons en ordre antéchronologique (de la plus récente à la moins récente)
-            const sortedSeasons = [...seasons].sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            sortedSeasons.forEach((s) => {
-                // Trouver l'index original dans le tableau seasons pour les fonctions edit/delete
-                const originalIndex = seasons.findIndex(season =>
-                    season.name === s.name && season.date === s.date
-                );
-
-                const date = new Date(s.date).toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'});
-                const game = s.game || detectGameType(s.name);
-                const seasonNum = getSeasonNumber(s);
-                const div = document.createElement('div');
-                div.style.cssText = 'background:#f1f8f4;padding:15px;border-radius:8px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center';
-                div.innerHTML = `<div><h4 style="color:#2d5016;margin-bottom:5px">${s.name} <span style="background:#667eea;color:white;padding:2px 8px;border-radius:4px;font-size:0.85em;font-weight:600;margin-left:8px">n°${seasonNum}</span></h4><p style="color:#666;font-size:0.9em">${date} • <span style="background:#4a7c28;color:white;padding:2px 8px;border-radius:4px;font-size:0.9em;font-weight:600">${getGameWithSymbol(game)}</span> • ${s.players.length} joueurs</p></div><div><button class="btn btn-secondary" onclick="editSeason(${originalIndex})">✏️ Modifier</button><button class="btn btn-danger" onclick="deleteSeason(${originalIndex})">🗑️ Supprimer</button></div>`;
-                el.appendChild(div);
-            });
-        }
-
-        function editSeason(i) {
-            if (localStorage.getItem('gammopAdmin') !== 'true') return;
-            const s = seasons[i];
-
-            document.getElementById('seasonGame').value = s.game || detectGameType(s.name);
-
-            const match = s.name.match(/Saison (\d+)/);
-            const seasonNum = match ? match[1] : '1';
-            document.getElementById('seasonNumber').value = seasonNum;
-
-            document.getElementById('seasonDate').value = s.date;
-            document.getElementById('seasonRanking').value = s.players.join('\n');
-            seasons.splice(i, 1);
-            localStorage.setItem('gammopSeasons', JSON.stringify(seasons));
-            showTab('add');
-            showMsg(`Modification de "${s.name}"`, 'success');
-        }
-
-        function deleteSeason(i) {
-            if (localStorage.getItem('gammopAdmin') !== 'true') return;
-            const s = seasons[i];
-            showConfirm(`Supprimer "${s.name}" ?\nCette action est irréversible.`, confirmed => {
-                if (confirmed) {
-                    seasons.splice(i, 1);
-                    localStorage.setItem('gammopSeasons', JSON.stringify(seasons));
-                    calc();
-                    showMsg(`"${s.name}" supprimée`, 'success');
-                }
-            });
-        }
-
-        function updatePseudosList() {
-            const sel = document.getElementById('oldPseudo');
-            const discordSel = document.getElementById('discordPseudo');
-
-            if (!sel) return;
-            const pseudos = new Set();
-            seasons.forEach(s => s.players.forEach(p => pseudos.add(p)));
-
-            sel.innerHTML = '<option value="">-- Sélectionner --</option>';
-            if (discordSel) discordSel.innerHTML = '<option value="">-- Sélectionner un pseudo --</option>';
-
-            Array.from(pseudos).sort().forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p;
-                opt.textContent = p;
-                sel.appendChild(opt);
-
-                if (discordSel) {
-                    const opt2 = document.createElement('option');
-                    opt2.value = p;
-                    opt2.textContent = p;
-                    discordSel.appendChild(opt2);
-                }
-            });
-
-            // Mettre à jour la détection des pseudos similaires
-            updateSimilarPseudos();
-
-            // Mettre à jour l'historique des regroupements
-            updateMergeHistory();
-
-            // Mettre à jour la liste des profils Discord
-            updateDiscordProfilesList();
-        }
-
-        function saveDiscordBotToken() {
-            if (localStorage.getItem('gammopAdmin') !== 'true') {
-                showDiscordMsg('Connexion admin requise', 'error');
-                return;
-            }
-
-            const token = document.getElementById('discordBotToken')?.value.trim();
-
-            if (!token) {
-                showDiscordMsg('Veuillez entrer un token', 'error');
-                return;
-            }
-
-            localStorage.setItem('gammopDiscordBotToken', token);
-            showDiscordMsg('✅ Token sauvegardé avec succès', 'success');
-        }
-
-        async function linkDiscordProfile() {
-            if (localStorage.getItem('gammopAdmin') !== 'true') {
-                showDiscordMsg('Connexion admin requise', 'error');
-                return;
-            }
-
-            const pseudo = document.getElementById('discordPseudo')?.value;
-            const userId = document.getElementById('discordUserId')?.value.trim();
-            const botToken = localStorage.getItem('gammopDiscordBotToken');
-
-            if (!pseudo || !userId) {
-                showDiscordMsg('Veuillez remplir les deux champs', 'error');
-                return;
-            }
-
-            // Vérifier que l'ID est bien numérique
-            if (!/^\d+$/.test(userId)) {
-                showDiscordMsg('L\'ID Discord doit être numérique', 'error');
-                return;
-            }
-
-            if (!botToken) {
-                showDiscordMsg('⚠️ Aucun token bot configuré. L\'avatar par défaut sera utilisé.', 'error');
-                // On continue quand même pour permettre la liaison sans avatar
-            }
-
-            // Récupérer les liaisons existantes
-            const discordProfiles = JSON.parse(localStorage.getItem('gammopDiscordProfiles') || '{}');
-            const discordAvatars = JSON.parse(localStorage.getItem('gammopDiscordAvatars') || '{}');
-
-            // Tenter de récupérer l'avatar via l'API Discord
-            if (botToken) {
-                try {
-                    showDiscordMsg('🔄 Récupération de l\'avatar...', 'success');
-
-                    // Utiliser le proxy local pour éviter les problèmes CORS
-                    const response = await fetch(`http://localhost:3000/api/discord/users/${userId}`, {
-                        headers: {
-                            'Authorization': `Bot ${botToken}`
-                        }
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({}));
-                        const errorMsg = errorData.message || `HTTP ${response.status}`;
-
-                        if (response.status === 401) {
-                            throw new Error(`Token invalide. Vérifiez que vous avez copié le bon token depuis discord.com/developers/applications`);
-                        } else if (response.status === 403) {
-                            throw new Error(`Accès refusé. Le bot doit avoir l'intent "GUILD_MEMBERS" activé dans les Bot settings`);
-                        } else if (response.status === 404) {
-                            throw new Error(`Utilisateur introuvable. Vérifiez que l'ID Discord est correct`);
-                        } else {
-                            throw new Error(`Erreur API Discord: ${errorMsg}`);
-                        }
-                    }
-
-                    const userData = await response.json();
-
-                    // Stocker l'URL de l'avatar
-                    if (userData.avatar) {
-                        const avatarUrl = `https://cdn.discordapp.com/avatars/${userId}/${userData.avatar}.${userData.avatar.startsWith('a_') ? 'gif' : 'png'}`;
-                        discordAvatars[userId] = avatarUrl;
-                        localStorage.setItem('gammopDiscordAvatars', JSON.stringify(discordAvatars));
-                    } else {
-                        // L'utilisateur n'a pas d'avatar personnalisé
-                        console.log('Cet utilisateur utilise l\'avatar par défaut Discord');
-                    }
-                } catch (error) {
-                    console.error('Erreur lors de la récupération de l\'avatar:', error);
-                    showDiscordMsg(`⚠️ ${error.message}. La liaison sera quand même créée.`, 'error');
-                    await new Promise(resolve => setTimeout(resolve, 3000));
-                }
-            }
-
-            // Ajouter ou mettre à jour la liaison
-            discordProfiles[pseudo] = userId;
-            localStorage.setItem('gammopDiscordProfiles', JSON.stringify(discordProfiles));
-
-            // Réinitialiser les champs
-            document.getElementById('discordPseudo').value = '';
-            document.getElementById('discordUserId').value = '';
-
-            // Mettre à jour l'affichage
-            updateDiscordProfilesList();
-            calc();
-
-            showDiscordMsg(`✅ Profil Discord lié avec succès pour ${pseudo}`, 'success');
-        }
-
-        function updateDiscordProfilesList() {
-            const container = document.getElementById('discordProfilesList');
-            if (!container) return;
-
-            const discordProfiles = JSON.parse(localStorage.getItem('gammopDiscordProfiles') || '{}');
-            const discordAvatars = JSON.parse(localStorage.getItem('gammopDiscordAvatars') || '{}');
-            const entries = Object.entries(discordProfiles);
-
-            if (entries.length === 0) {
-                container.innerHTML = '<p style="color:#666;text-align:center;padding:15px;background:#f8f9fa;border-radius:8px">Aucun profil Discord lié</p>';
-                return;
-            }
-
-            let html = '<div style="display:grid;gap:10px">';
-            entries.forEach(([pseudo, userId]) => {
-                // Utiliser l'avatar récupéré via l'API si disponible
-                const avatarUrl = discordAvatars[userId] || `https://cdn.discordapp.com/embed/avatars/${parseInt(userId) % 5}.png`;
-
-                html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:#f8fdf9;border:2px solid #c8e6c9;border-radius:8px">`;
-                html += `<div style="display:flex;align-items:center;gap:12px">`;
-                html += `<img src="${avatarUrl}" alt="${pseudo}" style="width:32px;height:32px;border-radius:50%;background:#ddd" onerror="this.onerror=null;this.src='https://cdn.discordapp.com/embed/avatars/${parseInt(userId) % 5}.png'">`;
-                html += `<div><div style="font-weight:600;color:#2d5016">${pseudo}</div><div style="font-size:0.85em;color:#666">ID: ${userId}</div></div>`;
-                html += `</div>`;
-                html += `<button class="btn btn-danger" onclick="unlinkDiscordProfile('${pseudo.replace(/'/g, "\\'")}')">Supprimer</button>`;
-                html += `</div>`;
-            });
-            html += '</div>';
-
-            container.innerHTML = html;
-        }
-
-        function unlinkDiscordProfile(pseudo) {
-            if (localStorage.getItem('gammopAdmin') !== 'true') {
-                showDiscordMsg('Connexion admin requise', 'error');
-                return;
-            }
-
-            if (!confirm(`Voulez-vous vraiment supprimer la liaison Discord pour "${pseudo}" ?`)) {
-                return;
-            }
-
-            const discordProfiles = JSON.parse(localStorage.getItem('gammopDiscordProfiles') || '{}');
-            delete discordProfiles[pseudo];
-            localStorage.setItem('gammopDiscordProfiles', JSON.stringify(discordProfiles));
-
-            updateDiscordProfilesList();
-            calc();
-
-            showDiscordMsg(`✅ Liaison Discord supprimée pour ${pseudo}`, 'success');
         }
 
         function getDiscordAvatar(pseudo) {
-            const discordProfiles = JSON.parse(localStorage.getItem('gammopDiscordProfiles') || '{}');
-            const discordAvatars = JSON.parse(localStorage.getItem('gammopDiscordAvatars') || '{}');
+            const discordProfiles = window._discordProfiles || {};
+            const discordAvatars = window._discordAvatars || {};
             const userId = discordProfiles[pseudo];
 
             if (!userId) return '';
@@ -8736,653 +8051,6 @@
             return `<img src="https://cdn.discordapp.com/embed/avatars/${parseInt(userId) % 5}.png" alt="${pseudo}" style="width:28px;height:28px;border-radius:50%;margin-right:8px;vertical-align:middle" onerror="this.style.display='none'">`;
         }
 
-        function showDiscordMsg(msg, type) {
-            const successEl = document.getElementById('discordSuccess');
-            const errorEl = document.getElementById('discordError');
-
-            if (type === 'success') {
-                successEl.textContent = msg;
-                successEl.style.display = 'block';
-                errorEl.style.display = 'none';
-                setTimeout(() => successEl.style.display = 'none', 5000);
-            } else {
-                errorEl.textContent = msg;
-                errorEl.style.display = 'block';
-                successEl.style.display = 'none';
-                setTimeout(() => errorEl.style.display = 'none', 5000);
-            }
-        }
-
-        function updateMergeHistory() {
-            const container = document.getElementById('mergeHistoryList');
-            if (!container) return;
-
-            const mergeHistory = JSON.parse(localStorage.getItem('gammopMergeHistory') || '[]');
-
-            if (mergeHistory.length === 0) {
-                container.innerHTML = '<p style="color:#666;text-align:center;padding:20px;background:#f8f9fa;border-radius:8px">Aucun regroupement effectué</p>';
-                return;
-            }
-
-            let html = '';
-            // Afficher en ordre antéchronologique (plus récent en premier)
-            [...mergeHistory].reverse().forEach((record, idx) => {
-                const reverseIdx = mergeHistory.length - 1 - idx;
-                const sourcesText = record.sources.join(', ');
-
-                html += `<div style="background:#fff3cd;border:2px solid #ffc107;border-radius:10px;padding:20px;margin-bottom:15px">`;
-                html += `<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px">`;
-                html += `<div style="flex:1">`;
-                html += `<div style="font-weight:bold;color:#2d5016;margin-bottom:5px;font-size:1.05em">`;
-                html += `Regroupement vers "${record.target}"`;
-                html += `</div>`;
-                html += `<div style="color:#666;font-size:0.9em;margin-bottom:8px">${record.timestamp}</div>`;
-                html += `<div style="background:white;padding:10px;border-radius:6px;border:1px solid #ddd">`;
-                html += `<div style="color:#666;font-size:0.85em;margin-bottom:5px">Pseudos regroupés :</div>`;
-                html += `<div style="font-weight:600;color:#2d5016">${sourcesText}</div>`;
-                html += `</div>`;
-                html += `</div>`;
-                html += `<button class="btn btn-danger" onclick="undoMerge(${reverseIdx})" style="margin-left:15px;white-space:nowrap">↩️ Annuler</button>`;
-                html += `</div>`;
-                html += `</div>`;
-            });
-
-            container.innerHTML = html;
-        }
-
-        function undoMerge(historyIndex) {
-            if (localStorage.getItem('gammopAdmin') !== 'true') {
-                showUndoMergeMsg('Connexion admin requise', 'error');
-                return;
-            }
-
-            const mergeHistory = JSON.parse(localStorage.getItem('gammopMergeHistory') || '[]');
-            const record = mergeHistory[historyIndex];
-
-            if (!record) {
-                showUndoMergeMsg('Enregistrement introuvable', 'error');
-                return;
-            }
-
-            const sourcesText = record.sources.join('", "');
-            if (!confirm(`Voulez-vous vraiment annuler ce regroupement ?\n\nCela va séparer "${record.target}" en plusieurs pseudos : "${sourcesText}"\n\nATTENTION : Cette action est irréversible !`)) {
-                return;
-            }
-
-            // Vérifier que le pseudo cible existe encore
-            const currentPseudos = new Set();
-            seasons.forEach(s => s.players.forEach(p => currentPseudos.add(p)));
-
-            if (!currentPseudos.has(record.target)) {
-                showUndoMergeMsg(`Le pseudo "${record.target}" n'existe plus dans les données actuelles`, 'error');
-                return;
-            }
-
-            // Pour chaque saison, remplacer le pseudo cible par les pseudos sources
-            // On doit déterminer quel pseudo source utiliser pour chaque occurrence
-            // Pour simplifier, on va demander à l'utilisateur de mapper manuellement
-
-            // Créer une copie de sauvegarde avant modification
-            const backupSeasons = JSON.parse(JSON.stringify(seasons));
-
-            try {
-                // Compteur pour distribuer les pseudos sources de manière cyclique
-                let sourceIndex = 0;
-
-                seasons.forEach(season => {
-                    season.players = season.players.map(player => {
-                        if (player === record.target) {
-                            // Remplacer par un pseudo source en rotation
-                            const sourcePseudo = record.sources[sourceIndex % record.sources.length];
-                            sourceIndex++;
-                            return sourcePseudo;
-                        }
-                        return player;
-                    });
-                });
-
-                // Sauvegarder les modifications
-                localStorage.setItem('gammopSeasons', JSON.stringify(seasons));
-
-                // Supprimer l'enregistrement de l'historique
-                mergeHistory.splice(historyIndex, 1);
-                localStorage.setItem('gammopMergeHistory', JSON.stringify(mergeHistory));
-
-                // Recalculer et actualiser
-                calc();
-                updatePseudosList();
-
-                showUndoMergeMsg(`✅ Regroupement annulé avec succès. Les pseudos "${sourcesText}" ont été restaurés.`, 'success');
-
-            } catch (error) {
-                // En cas d'erreur, restaurer la sauvegarde
-                seasons = backupSeasons;
-                localStorage.setItem('gammopSeasons', JSON.stringify(seasons));
-                calc();
-                showUndoMergeMsg(`❌ Erreur lors de l'annulation : ${error.message}`, 'error');
-            }
-        }
-
-        function showUndoMergeMsg(msg, type) {
-            const successEl = document.getElementById('undoMergeSuccess');
-            const errorEl = document.getElementById('undoMergeError');
-
-            if (type === 'success') {
-                successEl.textContent = msg;
-                successEl.style.display = 'block';
-                errorEl.style.display = 'none';
-                setTimeout(() => successEl.style.display = 'none', 5000);
-            } else {
-                errorEl.textContent = msg;
-                errorEl.style.display = 'block';
-                successEl.style.display = 'none';
-                setTimeout(() => errorEl.style.display = 'none', 5000);
-            }
-        }
-
-        // Distance de Levenshtein pour calculer la similarité entre deux chaînes
-        function levenshteinDistance(str1, str2) {
-            const len1 = str1.length;
-            const len2 = str2.length;
-            const matrix = Array(len2 + 1).fill(null).map(() => Array(len1 + 1).fill(0));
-
-            for (let i = 0; i <= len1; i++) matrix[0][i] = i;
-            for (let j = 0; j <= len2; j++) matrix[j][0] = j;
-
-            for (let j = 1; j <= len2; j++) {
-                for (let i = 1; i <= len1; i++) {
-                    const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
-                    matrix[j][i] = Math.min(
-                        matrix[j][i - 1] + 1,
-                        matrix[j - 1][i] + 1,
-                        matrix[j - 1][i - 1] + cost
-                    );
-                }
-            }
-            return matrix[len2][len1];
-        }
-
-        function arePseudosSimilar(p1, p2) {
-            const p1Lower = p1.toLowerCase().trim();
-            const p2Lower = p2.toLowerCase().trim();
-
-            // Même pseudo en ignorant la casse
-            if (p1Lower === p2Lower) return true;
-
-            // Différence d'espaces uniquement
-            if (p1Lower.replace(/\s+/g, '') === p2Lower.replace(/\s+/g, '')) return true;
-
-            // Différence de ponctuation uniquement
-            const p1Clean = p1Lower.replace(/[^a-z0-9]/g, '');
-            const p2Clean = p2Lower.replace(/[^a-z0-9]/g, '');
-            if (p1Clean === p2Clean && p1Clean.length > 0) return true;
-
-            // Distance de Levenshtein (max 2 caractères de différence pour les pseudos de plus de 4 caractères)
-            if (p1.length > 4 && p2.length > 4) {
-                const distance = levenshteinDistance(p1Lower, p2Lower);
-                if (distance <= 2) return true;
-            }
-
-            // Pour les pseudos courts, tolérance de 1 caractère
-            if (p1.length <= 4 || p2.length <= 4) {
-                const distance = levenshteinDistance(p1Lower, p2Lower);
-                if (distance === 1) return true;
-            }
-
-            return false;
-        }
-
-        let ignoredPairs = new Set();
-
-        function updateSimilarPseudos() {
-            const container = document.getElementById('similarPseudos');
-            if (!container) return;
-
-            const pseudos = new Set();
-            seasons.forEach(s => s.players.forEach(p => pseudos.add(p)));
-            const pseudoArray = Array.from(pseudos).sort();
-
-            // Construire un graphe de similarité
-            const graph = new Map();
-            pseudoArray.forEach(p => graph.set(p, new Set()));
-
-            for (let i = 0; i < pseudoArray.length; i++) {
-                for (let j = i + 1; j < pseudoArray.length; j++) {
-                    const p1 = pseudoArray[i];
-                    const p2 = pseudoArray[j];
-                    const pairKey = [p1, p2].sort().join('|||');
-
-                    if (!ignoredPairs.has(pairKey) && arePseudosSimilar(p1, p2)) {
-                        graph.get(p1).add(p2);
-                        graph.get(p2).add(p1);
-                    }
-                }
-            }
-
-            // Trouver les composantes connexes (groupes de pseudos similaires)
-            const visited = new Set();
-            const similarGroups = [];
-
-            function dfs(pseudo, group) {
-                visited.add(pseudo);
-                group.push(pseudo);
-                graph.get(pseudo).forEach(neighbor => {
-                    if (!visited.has(neighbor)) {
-                        dfs(neighbor, group);
-                    }
-                });
-            }
-
-            pseudoArray.forEach(pseudo => {
-                if (!visited.has(pseudo) && graph.get(pseudo).size > 0) {
-                    const group = [];
-                    dfs(pseudo, group);
-                    if (group.length > 1) {
-                        similarGroups.push(group.sort());
-                    }
-                }
-            });
-
-            if (similarGroups.length === 0) {
-                container.innerHTML = '<p style="color:#4a7c28;padding:20px;text-align:center;background:#e8f5e9;border-radius:8px">✅ Aucun pseudo similaire détecté</p>';
-                return;
-            }
-
-            let html = '';
-            similarGroups.forEach((group, groupIdx) => {
-                html += `<div style="background:#fff3cd;border:2px solid #ffc107;border-radius:10px;padding:20px;margin-bottom:15px">`;
-                html += `<div style="margin-bottom:15px">`;
-                html += `<div style="font-size:1.1em;font-weight:bold;color:#2d5016;margin-bottom:10px">Groupe de pseudos similaires :</div>`;
-
-                // Afficher tous les pseudos du groupe avec des checkboxes
-                html += `<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:15px">`;
-                group.forEach((pseudo, idx) => {
-                    html += `<label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px;background:white;border-radius:6px;border:1px solid #ddd">`;
-                    html += `<input type="checkbox" id="pseudo_${groupIdx}_${idx}" value="${pseudo.replace(/"/g, '&quot;')}" checked style="width:18px;height:18px;cursor:pointer">`;
-                    html += `<span style="font-weight:600;color:#2d5016">${pseudo}</span>`;
-                    html += `</label>`;
-                });
-                html += `</div>`;
-                html += `</div>`;
-
-                html += `<div style="display:flex;gap:10px;flex-wrap:wrap">`;
-                html += `<div style="flex:1;min-width:250px;background:white;padding:15px;border-radius:8px;border:2px solid #c8e6c9">`;
-                html += `<label style="display:block;font-size:0.9em;color:#666;margin-bottom:8px;font-weight:600">Regrouper les pseudos sélectionnés sur :</label>`;
-                html += `<input type="text" id="mergeTarget_${groupIdx}" placeholder="Pseudo final" style="width:100%;padding:10px;border:2px solid #ddd;border-radius:6px;font-size:0.95em;margin-bottom:10px">`;
-                html += `<button class="btn btn-primary" style="width:100%;padding:10px;font-size:0.95em" onclick="mergeSelectedPseudos(${groupIdx})">Regrouper les sélectionnés</button>`;
-                html += `</div>`;
-
-                html += `<div style="display:flex;flex-direction:column;gap:8px">`;
-                html += `<button class="btn btn-secondary" style="padding:10px 20px;font-size:0.9em;white-space:nowrap" onclick="ignoreGroup(${groupIdx})">Ignorer ce groupe</button>`;
-                html += `</div>`;
-                html += `</div>`;
-                html += `</div>`;
-            });
-
-            container.innerHTML = html;
-
-            // Stocker les groupes pour y accéder plus tard
-            window.currentSimilarGroups = similarGroups;
-        }
-
-        function mergeSelectedPseudos(groupIdx) {
-            if (localStorage.getItem('gammopAdmin') !== 'true') {
-                alert('Connexion admin requise');
-                return;
-            }
-
-            const group = window.currentSimilarGroups[groupIdx];
-            const selectedPseudos = [];
-
-            // Récupérer les pseudos cochés
-            group.forEach((pseudo, idx) => {
-                const checkbox = document.getElementById(`pseudo_${groupIdx}_${idx}`);
-                if (checkbox && checkbox.checked) {
-                    selectedPseudos.push(pseudo);
-                }
-            });
-
-            if (selectedPseudos.length < 2) {
-                alert('Veuillez sélectionner au moins 2 pseudos à regrouper');
-                return;
-            }
-
-            const targetInput = document.getElementById(`mergeTarget_${groupIdx}`);
-            const target = targetInput?.value.trim();
-
-            if (!target) {
-                alert('Veuillez entrer le pseudo final sur lequel regrouper');
-                return;
-            }
-
-            const pseudoNames = selectedPseudos.join('", "');
-            if (!confirm(`Voulez-vous vraiment regrouper "${pseudoNames}" sous le pseudo "${target}" ?`)) {
-                return;
-            }
-
-            // Sauvegarder l'historique du regroupement AVANT de faire les modifications
-            const mergeHistory = JSON.parse(localStorage.getItem('gammopMergeHistory') || '[]');
-            const mergeRecord = {
-                id: Date.now(),
-                date: new Date().toISOString(),
-                target: target,
-                sources: [...selectedPseudos],
-                timestamp: new Date().toLocaleString('fr-FR')
-            };
-            mergeHistory.push(mergeRecord);
-            localStorage.setItem('gammopMergeHistory', JSON.stringify(mergeHistory));
-
-            // Renommer tous les pseudos sélectionnés vers target
-            selectedPseudos.forEach(oldPseudo => {
-                seasons.forEach(s => {
-                    s.players = s.players.map(p => p === oldPseudo ? target : p);
-                });
-            });
-
-            // Sauvegarder les données
-            localStorage.setItem('gammopSeasons', JSON.stringify(seasons));
-
-            // Recalculer et actualiser
-            calc();
-            updatePseudosList();
-
-            // Marquer comme ignoré toutes les paires de ce groupe
-            for (let i = 0; i < selectedPseudos.length; i++) {
-                for (let j = i + 1; j < selectedPseudos.length; j++) {
-                    const pairKey = [selectedPseudos[i], selectedPseudos[j]].sort().join('|||');
-                    ignoredPairs.add(pairKey);
-                }
-            }
-
-            alert(`✅ Les pseudos "${pseudoNames}" ont été regroupés sous "${target}"`);
-        }
-
-        function ignoreGroup(groupIdx) {
-            const group = window.currentSimilarGroups[groupIdx];
-
-            // Marquer comme ignoré toutes les paires de ce groupe
-            for (let i = 0; i < group.length; i++) {
-                for (let j = i + 1; j < group.length; j++) {
-                    const pairKey = [group[i], group[j]].sort().join('|||');
-                    ignoredPairs.add(pairKey);
-                }
-            }
-
-            updateSimilarPseudos();
-        }
-
-        function ignoreSimilarity(pairKey) {
-            ignoredPairs.add(pairKey);
-            updateSimilarPseudos();
-        }
-
-        function mergePseudos(pseudoList, idx) {
-            if (localStorage.getItem('gammopAdmin') !== 'true') {
-                alert('Connexion admin requise');
-                return;
-            }
-
-            const targetInput = document.getElementById(`mergeTarget_${idx}`);
-            const target = targetInput?.value.trim();
-
-            if (!target) {
-                alert('Veuillez entrer le pseudo final sur lequel regrouper');
-                return;
-            }
-
-            const pseudoNames = pseudoList.join('", "');
-            if (!confirm(`Voulez-vous vraiment regrouper "${pseudoNames}" sous le pseudo "${target}" ?`)) {
-                return;
-            }
-
-            // Renommer tous les pseudos vers target
-            pseudoList.forEach(oldPseudo => {
-                seasons.forEach(s => {
-                    s.players = s.players.map(p => p === oldPseudo ? target : p);
-                });
-            });
-
-            // Sauvegarder les données
-            localStorage.setItem('gammopSeasons', JSON.stringify(seasons));
-
-            // Recalculer et actualiser
-            calc();
-            updatePseudosList();
-
-            // Marquer comme ignoré toutes les paires de ce groupe
-            for (let i = 0; i < pseudoList.length; i++) {
-                for (let j = i + 1; j < pseudoList.length; j++) {
-                    const pairKey = [pseudoList[i], pseudoList[j]].sort().join('|||');
-                    ignoredPairs.add(pairKey);
-                }
-            }
-
-            alert(`✅ Les pseudos "${pseudoNames}" ont été regroupés sous "${target}"`);
-        }
-
-        function previewRename() {
-            const old = document.getElementById('oldPseudo')?.value;
-            const newP = document.getElementById('newPseudo')?.value.trim();
-            const preview = document.getElementById('preview');
-
-            if (!old || !newP || !preview) {
-                if (preview) preview.style.display = 'none';
-                return;
-            }
-
-            let count = 0;
-            const affected = [];
-            seasons.forEach(s => {
-                if (s.players.includes(old)) {
-                    count++;
-                    affected.push(s.name);
-                }
-            });
-
-            if (count === 0) {
-                preview.innerHTML = '<p style="color:#e57373">Aucune occurrence</p>';
-            } else {
-                preview.innerHTML = `<p><strong>${old}</strong> → <strong style="color:#4a7c28">${newP}</strong></p><p style="color:#666">Trouvé dans <strong>${count}</strong> saison(s)</p><ul style="color:#666;margin-left:20px;margin-top:5px">${affected.map(s=>`<li>${s}</li>`).join('')}</ul>`;
-            }
-            preview.style.display = 'block';
-        }
-
-        function renamePseudo() {
-            if (localStorage.getItem('gammopAdmin') !== 'true') {
-                showPseudoMsg('Connexion admin requise', 'error');
-                return;
-            }
-
-            const old = document.getElementById('oldPseudo')?.value;
-            const newP = document.getElementById('newPseudo')?.value.trim();
-
-            if (!old || !newP) {
-                showPseudoMsg('Remplir les deux champs', 'error');
-                return;
-            }
-
-            if (old === newP) {
-                showPseudoMsg('Pseudos identiques', 'error');
-                return;
-            }
-
-            let count = 0;
-            seasons.forEach(s => {
-                if (s.players.includes(old)) count++;
-            });
-
-            if (count === 0) {
-                showPseudoMsg('Pseudo introuvable', 'error');
-                return;
-            }
-
-            showConfirm(`Renommer "${old}" → "${newP}" ?\nAffectera ${count} saison(s).\nAction irréversible.`, confirmed => {
-                if (!confirmed) {
-                    showPseudoMsg('Annulé', 'error');
-                    return;
-                }
-
-                let modified = 0;
-                seasons.forEach(s => {
-                    for (let i = 0; i < s.players.length; i++) {
-                        if (s.players[i] === old) {
-                            s.players[i] = newP;
-                            modified++;
-                        }
-                    }
-                });
-
-                localStorage.setItem('gammopSeasons', JSON.stringify(seasons));
-                calc();
-
-                document.getElementById('oldPseudo').value = '';
-                document.getElementById('newPseudo').value = '';
-                document.getElementById('preview').style.display = 'none';
-                updatePseudosList();
-
-                showPseudoMsg(`Pseudo renommé ! ${modified} occurrence(s) modifiée(s)`, 'success');
-            });
-        }
-
-        function cancelRename() {
-            document.getElementById('oldPseudo').value = '';
-            document.getElementById('newPseudo').value = '';
-            document.getElementById('preview').style.display = 'none';
-        }
-
-        function showMsg(text, type) {
-            const el = document.getElementById(type === 'success' ? 'successMsg' : 'errorMsg');
-            el.textContent = text;
-            el.style.display = 'block';
-            if (type === 'success') document.getElementById('errorMsg').style.display = 'none';
-            else document.getElementById('successMsg').style.display = 'none';
-            setTimeout(() => el.style.display = 'none', 5000);
-        }
-
-        function showPseudoMsg(text, type) {
-            const el = document.getElementById(type === 'success' ? 'pseudoSuccess' : 'pseudoError');
-            el.textContent = text;
-            el.style.display = 'block';
-            if (type === 'success') document.getElementById('pseudoError').style.display = 'none';
-            else document.getElementById('pseudoSuccess').style.display = 'none';
-        }
-
-        function showConfirm(msg, callback) {
-            document.getElementById('confirmMsg').innerHTML = msg.replace(/\n/g, '<br>');
-            document.getElementById('confirmModal').classList.add('active');
-            confirmCb = callback;
-        }
-
-        function closeConfirm(confirmed) {
-            document.getElementById('confirmModal').classList.remove('active');
-            if (confirmCb) {
-                confirmCb(confirmed);
-                confirmCb = null;
-            }
-        }
-
-        function getBackupData() {
-            return {
-                version: 2,
-                seasons: seasons,
-                discordProfiles: JSON.parse(localStorage.getItem('gammopDiscordProfiles') || '{}'),
-                discordAvatars: JSON.parse(localStorage.getItem('gammopDiscordAvatars') || '{}')
-            };
-        }
-
-        function exportToClipboard() {
-            const data = JSON.stringify(getBackupData(), null, 2);
-            navigator.clipboard.writeText(data).then(() => {
-                showBackupMsg('Données copiées dans le presse-papier (saisons + profils Discord) !', 'success');
-            }).catch(() => {
-                showBackupMsg('Erreur lors de la copie. Utilisez le téléchargement à la place.', 'error');
-            });
-        }
-
-        function downloadBackup() {
-            const data = JSON.stringify(getBackupData(), null, 2);
-            const blob = new Blob([data], {type: 'application/json'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `gammop-backup-${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            showBackupMsg('Fichier téléchargé avec succès !', 'success');
-        }
-
-        function processImportData(parsed) {
-            if (Array.isArray(parsed)) {
-                // Ancien format : tableau de saisons uniquement
-                seasons = parsed.map(s => ({ ...s, game: s.game || detectGameType(s.name) }));
-                localStorage.setItem('gammopSeasons', JSON.stringify(seasons));
-            } else if (parsed && parsed.version === 2 && Array.isArray(parsed.seasons)) {
-                // Nouveau format v2 : saisons + Discord
-                seasons = parsed.seasons.map(s => ({ ...s, game: s.game || detectGameType(s.name) }));
-                localStorage.setItem('gammopSeasons', JSON.stringify(seasons));
-                if (parsed.discordProfiles) {
-                    localStorage.setItem('gammopDiscordProfiles', JSON.stringify(parsed.discordProfiles));
-                }
-                if (parsed.discordAvatars) {
-                    localStorage.setItem('gammopDiscordAvatars', JSON.stringify(parsed.discordAvatars));
-                }
-            } else {
-                return false;
-            }
-            return true;
-        }
-
-        function importFromText() {
-            const text = document.getElementById('importData').value.trim();
-            if (!text) {
-                showBackupMsg('Veuillez coller des données JSON', 'error');
-                return;
-            }
-
-            try {
-                const parsed = JSON.parse(text);
-                if (!processImportData(parsed)) {
-                    showBackupMsg('Format invalide : données non reconnues', 'error');
-                    return;
-                }
-                calc();
-                document.getElementById('importData').value = '';
-                showBackupMsg(`Import réussi ! ${seasons.length} saison(s) chargée(s)`, 'success');
-            } catch (e) {
-                showBackupMsg('Erreur : JSON invalide. Vérifiez le format des données.', 'error');
-            }
-        }
-
-        function importFromFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const parsed = JSON.parse(e.target.result);
-                    if (!processImportData(parsed)) {
-                        showBackupMsg('Format invalide : données non reconnues', 'error');
-                        return;
-                    }
-                    calc();
-                    showBackupMsg(`Import réussi ! ${seasons.length} saison(s) chargée(s)`, 'success');
-                } catch (err) {
-                    showBackupMsg('Erreur lors de la lecture du fichier', 'error');
-                }
-            };
-            reader.readAsText(file);
-            event.target.value = '';
-        }
-
-        function showBackupMsg(text, type) {
-            const el = document.getElementById(type === 'success' ? 'backupSuccess' : 'backupError');
-            el.textContent = text;
-            el.style.display = 'block';
-            if (type === 'success') document.getElementById('backupError').style.display = 'none';
-            else document.getElementById('backupSuccess').style.display = 'none';
-            setTimeout(() => el.style.display = 'none', 5000);
-        }
 
         init();
     </script>

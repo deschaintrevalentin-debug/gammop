@@ -1425,7 +1425,11 @@
                     speciality: row.speciality || '',
                     gdocLink: row.gdoc_link || ''
                 }));
-                if (debugMode) debugLog.push('seasons: ' + seasons.length + ' loaded');
+                if (debugMode) {
+                    debugLog.push('seasons: ' + seasons.length + ' loaded (table: public.seasons)');
+                    if (seasons.length > 0) debugLog.push('  premier: ' + seasons[0].name + ' (' + seasons[0].date + ')');
+                    if (seasons.length === 0) debugLog.push('  ⚠ AUCUNE SAISON EN BASE — importez via l\'admin');
+                }
             } catch (e) {
                 console.error('Erreur chargement saisons Supabase:', e);
                 seasonsError = e.message || e;

@@ -1060,13 +1060,18 @@
 
     <script>
         // ==================== SUPABASE (lecture seule) ====================
-        const SUPABASE_URL = 'https://xxxxxxxx.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6...';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const SUPABASE_URL = 'https://kxpixfddhqltyxnmeuzl.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4cGl4ZmRkaHFsdHl4bm1ldXpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4ODk5NDIsImV4cCI6MjA4NTQ2NTk0Mn0.9Ld6co_CfTt3JBzjySpkDH_PVIYXf9h8QBqUPlmpPxE';
+        if (!window.supabase) {
+            document.body.innerHTML = '<div style="padding:40px;text-align:center;color:#721c24;background:#f8d7da;border-radius:8px;margin:40px">'
+                + '<h2>Erreur</h2><p>Supabase SDK non chargé.</p></div>';
+            throw new Error('Supabase SDK not loaded');
+        }
+        const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function loadFromSupabase() {
             try {
-                const { data, error } = await supabase
+                const { data, error } = await sb
                     .from('Gammop')
                     .select('title, description, created_at')
                     .eq('published', true)
@@ -1381,6 +1386,9 @@
         }
 
         async function init() {
+            var debugMode = new URLSearchParams(window.location.search).has('debug');
+            var debugLog = [];
+
             // Charger la préférence de mode sombre AVANT de générer les tableaux
             const darkMode = localStorage.getItem('gammopDarkMode');
             if (darkMode === null) {
@@ -1391,9 +1399,12 @@
             }
             updateDarkModeButton();
 
+            if (debugMode) debugLog.push('SUPABASE_URL: ' + SUPABASE_URL);
+
             // Charger les saisons depuis Supabase
+            var seasonsError = null;
             try {
-                const { data, error } = await supabase
+                const { data, error } = await sb
                     .from('seasons')
                     .select('*')
                     .order('date', { ascending: false });
@@ -1411,14 +1422,18 @@
                     speciality: row.speciality || '',
                     gdocLink: row.gdoc_link || ''
                 }));
+                if (debugMode) debugLog.push('seasons: ' + seasons.length + ' loaded');
             } catch (e) {
                 console.error('Erreur chargement saisons Supabase:', e);
+                seasonsError = e.message || e;
                 seasons = [];
+                if (debugMode) debugLog.push('seasons: ERROR — ' + seasonsError);
             }
 
             // Charger les profils Discord depuis Supabase
+            var profilesCount = 0;
             try {
-                const { data, error } = await supabase
+                const { data, error } = await sb
                     .from('discord_profiles')
                     .select('*');
 
@@ -1427,19 +1442,31 @@
                 window._discordProfiles = {};
                 window._discordAvatars = {};
                 (data || []).forEach(row => {
+                    profilesCount++;
                     window._discordProfiles[row.pseudo] = row.discord_user_id;
                     if (row.avatar_url) {
                         window._discordAvatars[row.discord_user_id] = row.avatar_url;
                     }
                 });
+                if (debugMode) debugLog.push('discord_profiles: ' + profilesCount + ' loaded');
             } catch (e) {
                 console.error('Erreur chargement profils Discord:', e);
+                if (debugMode) debugLog.push('discord_profiles: ERROR — ' + (e.message || e));
             }
 
             calc();
 
             // Charger les données Supabase news (lecture seule)
             loadFromSupabase();
+
+            // Debug panel
+            if (debugMode) {
+                console.log('[GAMMOP DEBUG]', debugLog);
+                var panel = document.createElement('div');
+                panel.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#1a1a2e;color:#0f0;font-family:monospace;font-size:12px;padding:10px 15px;z-index:99999;max-height:150px;overflow:auto;border-top:2px solid #0f0';
+                panel.innerHTML = '<strong>[GAMMOP DEBUG]</strong><br>' + debugLog.join('<br>');
+                document.body.appendChild(panel);
+            }
         }
 
         function toggleDarkMode() {
@@ -8029,7 +8056,8 @@
         function showTab(tab, evt) {
             document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(tab).classList.add('active');
+            var el = document.getElementById(tab);
+            if (el) el.classList.add('active');
             if (evt && evt.target) evt.target.classList.add('active');
         }
 
@@ -8052,7 +8080,13 @@
         }
 
 
-        init();
+        init().catch(function(err) {
+            console.error('[GAMMOP] init() failed:', err);
+            var el = document.getElementById('home');
+            if (el) el.innerHTML = '<div style="padding:30px;text-align:center;color:#721c24;background:#f8d7da;border-radius:10px;margin:20px">'
+                + '<h3>Erreur de chargement</h3><p>' + (err.message || err) + '</p>'
+                + '<p style="margin-top:10px"><button onclick="location.reload()" style="padding:8px 20px;cursor:pointer">Recharger</button></p></div>';
+        });
     </script>
 </body>
 </html>

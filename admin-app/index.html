@@ -516,6 +516,15 @@
 </div>
 
 <script>
+// ==================== GLOBAL ERROR HANDLER ====================
+window.addEventListener('unhandledrejection', function(event) {
+    console.error('[UNHANDLED REJECTION]', event.reason);
+    var el = document.getElementById('testResult');
+    if (el) el.innerHTML = '<span style="color:red">ERREUR NON CAPTUREE: ' + (event.reason && event.reason.message ? event.reason.message : String(event.reason)) + '</span>';
+    var log = document.getElementById('importLog');
+    if (log) { log.style.display = 'block'; log.textContent += '[UNHANDLED] ' + (event.reason && event.reason.message ? event.reason.message : String(event.reason)) + '\n'; }
+});
+
 // ==================== SUPABASE CONFIG ====================
 const SUPABASE_URL = 'https://kxpixfddhqltyxnmeuzl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4cGl4ZmRkaHFsdHl4bm1ldXpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4ODk5NDIsImV4cCI6MjA4NTQ2NTk0Mn0.9Ld6co_CfTt3JBzjySpkDH_PVIYXf9h8QBqUPlmpPxE';
@@ -1463,61 +1472,90 @@ function clearImportLog() {
 }
 
 async function callEdgeFunction(payload) {
-    // 1. Get user JWT
-    var resp = await sb.auth.getSession();
-    var session = resp.data.session;
-    if (!session) {
-        throw new Error('Non connecte. Reconnectez-vous (GitHub / Magic Link) puis reessayez.');
+    // Helper: timeout wrapper for any promise
+    function withTimeout(promise, ms, label) {
+        return Promise.race([
+            promise,
+            new Promise(function(_, reject) {
+                setTimeout(function() { reject(new Error('TIMEOUT apres ' + (ms/1000) + 's sur: ' + label)); }, ms);
+            })
+        ]);
     }
+
+    // 1. Get user JWT (timeout 5s)
+    importLog('[EDGE] 1/4 - Recuperation session...');
+    var resp;
+    try {
+        resp = await withTimeout(sb.auth.getSession(), 5000, 'getSession()');
+    } catch (e) {
+        throw new Error('getSession() a echoue: ' + e.message);
+    }
+
+    if (!resp || !resp.data || !resp.data.session) {
+        throw new Error('Non connecte (session null). Reconnectez-vous (GitHub / Magic Link).');
+    }
+    var session = resp.data.session;
 
     var url = SUPABASE_URL + '/functions/v1/import-seasons';
+    importLog('[EDGE] 2/4 - Session OK: ' + (session.user.email || session.user.id));
     importLog('[EDGE] URL: ' + url);
     importLog('[EDGE] Mode: ' + (payload.mode || 'replace'));
-    importLog('[EDGE] Auth: ' + (session.user.email || session.user.id));
-    importLog('[EDGE] JWT (20 premiers chars): ' + session.access_token.substring(0, 20) + '...');
     console.log('[EDGE] Calling:', url, 'mode:', payload.mode);
 
-    // 2. Call Edge Function
+    // 2. Call Edge Function (timeout 30s)
+    importLog('[EDGE] 3/4 - Appel fetch...');
     var response;
     try {
-        response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + session.access_token,
-                'apikey': SUPABASE_ANON_KEY
-            },
-            body: JSON.stringify(payload)
-        });
+        response = await withTimeout(
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + session.access_token,
+                    'apikey': SUPABASE_ANON_KEY
+                },
+                body: JSON.stringify(payload)
+            }),
+            30000,
+            'fetch Edge Function'
+        );
     } catch (networkErr) {
-        importLog('[EDGE] ERREUR RESEAU: ' + networkErr.message);
-        console.error('[EDGE] Network error:', networkErr);
-        throw new Error('Erreur reseau: ' + networkErr.message + '. Verifiez que la Edge Function est deployee.');
+        importLog('[EDGE] ERREUR: ' + networkErr.message);
+        console.error('[EDGE] Fetch error:', networkErr);
+        throw new Error(networkErr.message + '. La Edge Function est-elle deployee ? Verifiez Supabase > Edge Functions.');
     }
 
-    importLog('[EDGE] HTTP status: ' + response.status + ' ' + response.statusText);
-    console.log('[EDGE] Response status:', response.status);
+    importLog('[EDGE] HTTP ' + response.status + ' ' + response.statusText);
+    console.log('[EDGE] Response:', response.status, response.statusText);
 
-    // 3. Parse response (handle non-JSON responses)
-    var rawBody = await response.text();
-    importLog('[EDGE] Body (500 premiers chars): ' + rawBody.substring(0, 500));
-    console.log('[EDGE] Response body:', rawBody);
+    // 3. Parse response body
+    importLog('[EDGE] 4/4 - Lecture reponse...');
+    var rawBody;
+    try {
+        rawBody = await withTimeout(response.text(), 5000, 'response.text()');
+    } catch (e) {
+        throw new Error('Impossible de lire la reponse: ' + e.message);
+    }
+
+    importLog('[EDGE] Body: ' + rawBody.substring(0, 500));
+    console.log('[EDGE] Body:', rawBody);
 
     var result;
     try {
         result = JSON.parse(rawBody);
     } catch (parseErr) {
-        throw new Error('Edge Function a retourne du non-JSON (status ' + response.status + '). Body: ' + rawBody.substring(0, 200));
+        throw new Error('Reponse non-JSON (HTTP ' + response.status + '). Body: ' + rawBody.substring(0, 300));
     }
 
     // 4. Check HTTP status
     if (!response.ok) {
-        var errMsg = result.error || 'Erreur inconnue';
-        if (result.details) errMsg += ' (' + result.details + ')';
+        var errMsg = result.error || 'Erreur ' + response.status;
+        if (result.details) errMsg += ' — ' + result.details;
         errMsg += ' [HTTP ' + response.status + ']';
         throw new Error(errMsg);
     }
 
+    importLog('[EDGE] OK !');
     return result;
 }
 
@@ -1663,15 +1701,19 @@ async function importFromFile(event) {
 // --- Test: insert 1 season via Edge Function ---
 async function testInsertOneSeason() {
     var el = document.getElementById('testResult');
-    el.innerHTML = '<span style="color:orange">Test en cours via Edge Function...</span>';
-    clearImportLog();
+    if (!el) { alert('Element #testResult introuvable'); return; }
 
     try {
+        el.innerHTML = '<span style="color:orange">Test en cours via Edge Function...</span>';
+        clearImportLog();
+        importLog('[TEST] Debut du test...');
+
         var result = await callEdgeFunction({ mode: 'test' });
 
-        importLog('[TEST] Reponse Edge Function: ' + JSON.stringify(result));
+        importLog('[TEST] Reponse: ' + JSON.stringify(result));
 
         // Verification independante
+        importLog('[TEST] Verification count(*)...');
         var dbCount = await verifyDbCount();
 
         if (dbCount === 0) {
@@ -1689,8 +1731,10 @@ async function testInsertOneSeason() {
 
         await loadAllData();
     } catch (err) {
-        importLog('[TEST] ERREUR: ' + err.message);
-        el.innerHTML = '<span style="color:red">ECHEC Edge Function: ' + err.message + '</span>';
+        console.error('[TEST] Exception:', err);
+        importLog('[TEST] ERREUR: ' + (err.message || String(err)));
+        el.innerHTML = '<span style="color:red">ECHEC: ' + (err.message || String(err))
+            + '</span><br><small style="color:#999">Voir le log ci-dessous et la console (F12) pour details.</small>';
     }
 }
 

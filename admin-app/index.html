@@ -247,21 +247,23 @@
 </head>
 <body>
 
-<!-- Detect magic link hash SYNCHRONOUSLY before any screen renders -->
+<!-- Detect auth callback SYNCHRONOUSLY before any screen renders -->
 <script>
     (function() {
-        var h = window.location.hash;
-        if (h && h.indexOf('access_token') !== -1) {
-            document.documentElement.setAttribute('data-magic-link-pending', 'true');
+        var h = window.location.hash || '';
+        var s = window.location.search || '';
+        // Magic Link / OAuth implicit: #access_token   |   OAuth PKCE: ?code=
+        if (h.indexOf('access_token') !== -1 || s.indexOf('code=') !== -1) {
+            document.documentElement.setAttribute('data-auth-callback', 'true');
         }
     })();
 </script>
 
-<!-- ==================== LOADING SCREEN (magic link callback) ==================== -->
+<!-- ==================== LOADING SCREEN (auth callback) ==================== -->
 <div id="loadingScreen" style="display:none">
     <div class="login-box" style="text-align:center">
         <h1>GAMMOP</h1>
-        <p style="margin-top:20px;font-size:1.2em">Connexion en cours via Magic Link...</p>
+        <p id="loadingText" style="margin-top:20px;font-size:1.2em">Connexion en cours...</p>
         <div id="loadingError" class="msg msg-error" style="margin-top:15px"></div>
     </div>
 </div>
@@ -519,6 +521,8 @@ let currentSimilarGroups = [];
 
 // ==================== AUTH ====================
 
+let authResolved = false; // tracks whether we have shown a screen
+
 // --- Screen helpers: only ONE screen visible at a time ---
 function hideAllScreens() {
     document.getElementById('loadingScreen').style.display = 'none';
@@ -533,14 +537,18 @@ function showLoadingScreen() {
 
 function showAdmin(user) {
     hideAllScreens();
+    authResolved = true;
     currentUser = user;
     document.getElementById('adminInterface').style.display = '';
+    console.log('[AUTH] session found — showing admin for', user.email || user.id);
 }
 
 function showLogin() {
     hideAllScreens();
+    authResolved = true;
     currentUser = null;
     document.getElementById('loginScreen').style.display = '';
+    console.log('[AUTH] no session — showing login');
 }
 
 // --- Message helpers ---
@@ -565,8 +573,8 @@ function showLoadingError(msg) {
     errEl.style.display = 'block';
 }
 
-// --- Magic Link callback: detect tokens in hash, consume them ---
-async function handleMagicLinkCallback() {
+// --- Magic Link / implicit OAuth callback: tokens in hash ---
+async function handleHashCallback() {
     const hash = window.location.hash.substring(1);
     if (!hash) return false;
 
@@ -576,11 +584,11 @@ async function handleMagicLinkCallback() {
 
     if (!accessToken || !refreshToken) return false;
 
-    // Show loading screen immediately
+    console.log('[AUTH] hash callback detected — consuming tokens');
     showLoadingScreen();
 
     // Clean URL to remove tokens
-    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    window.history.replaceState(null, '', window.location.pathname);
 
     const { data, error } = await supabase.auth.setSession({
         access_token: accessToken,
@@ -588,28 +596,37 @@ async function handleMagicLinkCallback() {
     });
 
     if (error) {
+        console.error('[AUTH] setSession error:', error.message);
         showLoadingError('Erreur d\'authentification : ' + error.message);
-        // After a delay, fall back to login screen so user can retry
-        setTimeout(() => showLogin(), 4000);
+        setTimeout(() => showLogin(), 3000);
         return false;
     }
 
+    console.log('[AUTH] setSession OK');
     return true;
 }
 
 // --- Session check ---
 async function checkSession() {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error) {
+    try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+            console.error('[AUTH] getSession error:', error.message);
+            showLogin();
+            showLoginError('Erreur de session : ' + error.message);
+            return;
+        }
+        if (session) {
+            showAdmin(session.user);
+            await loadAllData();
+        } else {
+            console.log('[AUTH] getSession returned null');
+            showLogin();
+        }
+    } catch (e) {
+        console.error('[AUTH] checkSession exception:', e);
         showLogin();
-        showLoginError('Erreur de session : ' + error.message);
-        return;
-    }
-    if (session) {
-        showAdmin(session.user);
-        await loadAllData();
-    } else {
-        showLogin();
+        showLoginError('Erreur inattendue : ' + e.message);
     }
 }
 
@@ -684,9 +701,12 @@ async function handleLogout() {
     showLogin();
 }
 
-// --- Auth state listener: auto-redirect on session changes ---
+// --- Auth state listener: catches OAuth PKCE exchange, token refresh, etc. ---
 supabase.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN' && session) {
+    console.log('[AUTH] onAuthStateChange:', event, session ? session.user.email || session.user.id : 'null');
+    if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION')) {
+        // Only act if we haven't already shown admin (avoid double loadAllData)
+        if (currentUser && currentUser.id === session.user.id) return;
         showAdmin(session.user);
         await loadAllData();
     } else if (event === 'SIGNED_OUT') {
@@ -1478,14 +1498,37 @@ function showBackupMsg(text, type) {
     const dateInput = document.getElementById('seasonDate');
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 
-    // If magic link hash detected (flag set by inline script), show loading immediately
-    if (document.documentElement.getAttribute('data-magic-link-pending') === 'true') {
-        showLoadingScreen();
-    }
+    const isAuthCallback = document.documentElement.getAttribute('data-auth-callback') === 'true';
 
-    // Consume magic link tokens if present, then check session
-    await handleMagicLinkCallback();
-    await checkSession();
+    // Safety fallback: if nothing has resolved after 3s, force login screen
+    setTimeout(() => {
+        if (!authResolved) {
+            console.warn('[AUTH] fallback timeout — forcing login screen');
+            showLogin();
+        }
+    }, 3000);
+
+    if (isAuthCallback) {
+        // Auth callback in progress (Magic Link hash OR OAuth PKCE ?code=)
+        // Show loading immediately, let SDK + onAuthStateChange handle the rest
+        showLoadingScreen();
+        console.log('[AUTH] auth callback detected — showing loader, waiting for SDK...');
+
+        // If hash contains tokens, consume them explicitly
+        await handleHashCallback();
+
+        // For PKCE (?code=), the SDK exchanges the code automatically.
+        // onAuthStateChange will fire SIGNED_IN when done → showAdmin().
+        // checkSession as secondary check after a short delay for PKCE to complete.
+        await new Promise(r => setTimeout(r, 500));
+        if (!authResolved) {
+            console.log('[AUTH] post-callback — checking session...');
+            await checkSession();
+        }
+    } else {
+        // Normal load (no callback) — just check existing session
+        await checkSession();
+    }
 })();
 </script>
 </body>

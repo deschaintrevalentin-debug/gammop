@@ -485,6 +485,13 @@
                     <label>Importer depuis un fichier</label>
                     <input type="file" accept=".json" onchange="importFromFile(event)" style="padding:10px;border:2px dashed #4a7c28;border-radius:8px;background:var(--section-bg)">
                 </div>
+                <div id="importLog" style="margin-top:15px;padding:12px;background:#1a1a2e;color:#0f0;font-family:monospace;font-size:12px;border-radius:8px;display:none;max-height:200px;overflow:auto;white-space:pre-wrap"></div>
+            </div>
+            <div class="section">
+                <h3>Test Supabase</h3>
+                <p style="color:var(--text-secondary);margin-bottom:10px">Insere 1 saison de test dans public.seasons pour verifier que l'ecriture fonctionne.</p>
+                <button class="btn btn-secondary" onclick="testInsertOneSeason()">Test insert 1 saison</button>
+                <div id="testResult" style="margin-top:10px"></div>
             </div>
         </div>
     </div>
@@ -1404,9 +1411,22 @@ function downloadBackup() {
     showBackupMsg('Fichier telecharge', 'success');
 }
 
-async function processImportData(parsed) {
-    let importSeasons, importProfiles = {}, importAvatars = {};
+// --- Import log helper ---
+function importLog(msg) {
+    console.log(msg);
+    var el = document.getElementById('importLog');
+    if (el) { el.style.display = 'block'; el.textContent += msg + '\n'; }
+}
+function clearImportLog() {
+    var el = document.getElementById('importLog');
+    if (el) { el.textContent = ''; el.style.display = 'none'; }
+}
 
+async function processImportData(parsed) {
+    clearImportLog();
+    var importSeasons, importProfiles = {}, importAvatars = {};
+
+    // --- Parse format ---
     if (Array.isArray(parsed)) {
         importSeasons = parsed;
     } else if (parsed && parsed.version === 2 && Array.isArray(parsed.seasons)) {
@@ -1414,136 +1434,218 @@ async function processImportData(parsed) {
         importProfiles = parsed.discordProfiles || {};
         importAvatars = parsed.discordAvatars || {};
     } else {
-        showBackupMsg('Format JSON non reconnu (ni tableau, ni version 2)', 'error');
+        showBackupMsg('Format JSON non reconnu (ni tableau, ni objet version:2 avec .seasons)', 'error');
         return false;
     }
 
-    // 1. Verify auth BEFORE doing anything
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) {
-        showBackupMsg('ERREUR: Vous n\'etes pas authentifie. Reconnectez-vous puis reessayez.', 'error');
-        console.error('[IMPORT] No active session — inserts will be blocked by RLS');
-        return false;
-    }
-    console.log('[IMPORT] Auth OK, user:', session.user.email || session.user.id);
+    importLog('[IMPORT] JSON rows parsed: ' + importSeasons.length);
 
-    if (!confirm(`Importer ${importSeasons.length} saison(s) ?\nCela REMPLACERA toutes les donnees existantes.`)) return 'cancelled';
-
-    console.log('[IMPORT] Starting import:', importSeasons.length, 'seasons');
-
-    // 2. Delete existing data
-    const { error: delSeasonsErr } = await sb.from('seasons').delete().gt('created_at', '1970-01-01');
-    if (delSeasonsErr) {
-        console.error('[IMPORT] Delete seasons failed:', delSeasonsErr);
-        showBackupMsg('Erreur suppression saisons: ' + delSeasonsErr.message, 'error');
-        return false;
-    }
-    console.log('[IMPORT] Delete seasons OK');
-
-    const { error: delProfilesErr } = await sb.from('discord_profiles').delete().gt('created_at', '1970-01-01');
-    if (delProfilesErr) {
-        console.error('[IMPORT] Delete profiles failed:', delProfilesErr);
-        showBackupMsg('Erreur suppression profils: ' + delProfilesErr.message, 'error');
-        return false;
-    }
-    console.log('[IMPORT] Delete profiles OK');
-
-    // 3. Build rows for insert
-    const rows = importSeasons.map(s => ({
-        game: s.game || detectGameType(s.name),
-        name: s.name,
-        date: s.date,
-        players: s.players,
-        is_special: s.isSpecial || false,
-        special_number: s.specialNumber || null,
-        organizer: s.organizer || null,
-        speciality: s.speciality || null,
-        gdoc_link: s.gdocLink || null
-    }));
-
-    // 4. Insert seasons in batches of 50
-    let insertedCount = 0;
-    for (let i = 0; i < rows.length; i += 50) {
-        const batch = rows.slice(i, i + 50);
-        const { data: insertData, error: insertErr } = await sb.from('seasons').insert(batch).select();
-        if (insertErr) {
-            console.error('[IMPORT] Insert batch ' + i + ' error:', insertErr);
-            showBackupMsg('Erreur insert saisons (batch ' + (i/50+1) + '): ' + insertErr.message, 'error');
-            return false;
-        }
-        const batchInserted = insertData ? insertData.length : 0;
-        insertedCount += batchInserted;
-        console.log('[IMPORT] Batch', (i/50+1), ':', batchInserted, 'rows inserted (sent', batch.length, ')');
-        if (batchInserted === 0) {
-            showBackupMsg('ERREUR: Supabase a accepte l\'insert mais 0 rows retournees. Verifiez RLS (auth.role = authenticated requis).', 'error');
+    // --- Validate required fields on first row ---
+    if (importSeasons.length > 0) {
+        var sample = importSeasons[0];
+        importLog('[IMPORT] Sample row: ' + JSON.stringify(sample).substring(0, 200));
+        if (!sample.name || !sample.date || !sample.players) {
+            showBackupMsg('ERREUR: Champs manquants. Chaque saison doit avoir: name, date, players. Sample: ' + JSON.stringify(sample).substring(0, 100), 'error');
             return false;
         }
     }
 
-    // 5. Insert discord profiles
-    const profiles = Object.entries(importProfiles).map(([pseudo, userId]) => ({
-        pseudo, discord_user_id: userId, avatar_url: importAvatars[userId] || null
-    }));
+    // --- 1. Check auth ---
+    var sessionData;
+    try {
+        var resp = await sb.auth.getSession();
+        sessionData = resp.data.session;
+    } catch (e) {
+        showBackupMsg('ERREUR getSession: ' + e.message, 'error');
+        return false;
+    }
+    if (!sessionData) {
+        showBackupMsg('NON CONNECTE — import impossible. Reconnectez-vous (GitHub / Magic Link) puis reessayez.', 'error');
+        importLog('[IMPORT] STOP: no active session. RLS will block all writes.');
+        return false;
+    }
+    importLog('[IMPORT] Auth OK: ' + (sessionData.user.email || sessionData.user.id));
+    importLog('[IMPORT] Access token (first 20 chars): ' + sessionData.access_token.substring(0, 20) + '...');
+
+    if (!confirm('Importer ' + importSeasons.length + ' saison(s) ?\nCela REMPLACERA toutes les donnees existantes.')) return 'cancelled';
+
+    // --- 2. Delete existing ---
+    importLog('[IMPORT] Deleting existing seasons...');
+    var del1 = await sb.from('seasons').delete().gt('created_at', '1970-01-01');
+    if (del1.error) {
+        showBackupMsg('ERREUR delete seasons: ' + del1.error.message + ' (code: ' + del1.error.code + ')', 'error');
+        importLog('[IMPORT] STOP: delete seasons failed: ' + JSON.stringify(del1.error));
+        return false;
+    }
+    importLog('[IMPORT] Delete seasons OK');
+
+    importLog('[IMPORT] Deleting existing discord_profiles...');
+    var del2 = await sb.from('discord_profiles').delete().gt('created_at', '1970-01-01');
+    if (del2.error) {
+        showBackupMsg('ERREUR delete profiles: ' + del2.error.message, 'error');
+        importLog('[IMPORT] STOP: delete profiles failed: ' + JSON.stringify(del2.error));
+        return false;
+    }
+    importLog('[IMPORT] Delete profiles OK');
+
+    // --- 3. Build rows ---
+    var rows = importSeasons.map(function(s) {
+        return {
+            game: s.game || detectGameType(s.name),
+            name: s.name,
+            date: s.date,
+            players: s.players,
+            is_special: s.isSpecial || false,
+            special_number: s.specialNumber || null,
+            organizer: s.organizer || null,
+            speciality: s.speciality || null,
+            gdoc_link: s.gdocLink || null
+        };
+    });
+    importLog('[IMPORT] Built ' + rows.length + ' rows for insert');
+    importLog('[IMPORT] First row: ' + JSON.stringify(rows[0]).substring(0, 200));
+
+    // --- 4. Insert in batches, using .select() to get back inserted rows ---
+    var insertedCount = 0;
+    for (var i = 0; i < rows.length; i += 50) {
+        var batch = rows.slice(i, i + 50);
+        var batchNum = Math.floor(i / 50) + 1;
+        importLog('[IMPORT] Inserting batch ' + batchNum + ' (' + batch.length + ' rows)...');
+
+        var res = await sb.from('seasons').insert(batch).select();
+
+        if (res.error) {
+            showBackupMsg('ERREUR insert batch ' + batchNum + ': ' + res.error.message + ' (code: ' + (res.error.code || '?') + ', details: ' + (res.error.details || '?') + ')', 'error');
+            importLog('[IMPORT] STOP: insert error: ' + JSON.stringify(res.error));
+            return false;
+        }
+
+        var returned = res.data ? res.data.length : 0;
+        insertedCount += returned;
+        importLog('[IMPORT] Batch ' + batchNum + ': sent=' + batch.length + ', returned=' + returned);
+
+        if (returned === 0) {
+            showBackupMsg('ERREUR: insert accepte mais 0 rows retournees. RLS bloque probablement (auth.role() != authenticated). Verifiez votre connexion.', 'error');
+            importLog('[IMPORT] STOP: 0 rows returned — RLS is blocking the insert');
+            return false;
+        }
+    }
+    importLog('[IMPORT] Rows inserted: ' + insertedCount);
+
+    // --- 5. Insert discord profiles ---
+    var profiles = Object.entries(importProfiles).map(function(entry) {
+        return { pseudo: entry[0], discord_user_id: entry[1], avatar_url: importAvatars[entry[1]] || null };
+    });
     if (profiles.length > 0) {
-        const { data: profData, error: profErr } = await sb.from('discord_profiles').insert(profiles).select();
-        if (profErr) {
-            console.error('[IMPORT] Insert discord error:', profErr);
-            showBackupMsg('Erreur insert profils: ' + profErr.message, 'error');
+        importLog('[IMPORT] Inserting ' + profiles.length + ' discord profiles...');
+        var profRes = await sb.from('discord_profiles').insert(profiles).select();
+        if (profRes.error) {
+            importLog('[IMPORT] WARNING: discord profiles error: ' + profRes.error.message);
         } else {
-            console.log('[IMPORT] Discord profiles inserted:', profData ? profData.length : 0);
+            importLog('[IMPORT] Discord profiles inserted: ' + (profRes.data ? profRes.data.length : 0));
         }
     }
 
-    // 6. VERIFY: count rows actually in Supabase right now
-    const { data: verifyData, error: verifyErr } = await sb.from('seasons').select('id');
-    const verifiedCount = verifyErr ? -1 : (verifyData ? verifyData.length : 0);
-    console.log('[IMPORT] VERIFY: seasons in DB =', verifiedCount, '(expected', insertedCount, ')');
+    // --- 6. VERIFY: read back from public.seasons ---
+    importLog('[IMPORT] Verifying: SELECT id FROM seasons...');
+    var verify = await sb.from('seasons').select('id');
+    if (verify.error) {
+        showBackupMsg('ERREUR verification: ' + verify.error.message, 'error');
+        importLog('[IMPORT] STOP: verify select failed: ' + JSON.stringify(verify.error));
+        return false;
+    }
+    var dbCount = verify.data ? verify.data.length : 0;
+    importLog('[IMPORT] Rows in DB after import: ' + dbCount + ' (expected: ' + insertedCount + ')');
 
-    if (verifiedCount === 0) {
-        showBackupMsg('ERREUR: Import semble OK mais la base contient 0 seasons. Possible probleme RLS ou auth.', 'error');
+    if (dbCount === 0) {
+        showBackupMsg('ERREUR CRITIQUE: La base contient 0 seasons apres import. Les inserts n\'ont pas persiste. Verifiez RLS et auth.', 'error');
         return false;
     }
 
-    return { inserted: insertedCount, verified: verifiedCount };
+    return { inserted: insertedCount, verified: dbCount };
 }
 
 async function importFromText() {
-    const text = document.getElementById('importData').value.trim();
+    var text = document.getElementById('importData').value.trim();
     if (!text) { showBackupMsg('Collez des donnees JSON', 'error'); return; }
     try {
-        const parsed = JSON.parse(text);
-        const result = await processImportData(parsed);
+        var parsed = JSON.parse(text);
+        var result = await processImportData(parsed);
         if (result === 'cancelled') return;
-        if (!result) return; // error already shown by processImportData
+        if (!result) return;
         document.getElementById('importData').value = '';
         await loadAllData();
-        showBackupMsg('Import OK ! Supabase: ' + result.verified + ' seasons verifiees en base. Admin: ' + seasons.length + ' saison(s) chargees.', 'success');
+        showBackupMsg('Import OK ! Supabase: ' + result.verified + ' seasons en base. Admin: ' + seasons.length + ' chargees.', 'success');
     } catch (e) { showBackupMsg('JSON invalide: ' + e.message, 'error'); }
 }
 
 async function importFromFile(event) {
-    const file = event.target.files[0];
+    var file = event.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
+    var reader = new FileReader();
     reader.onload = async function(e) {
         try {
-            const parsed = JSON.parse(e.target.result);
-            const result = await processImportData(parsed);
+            var parsed = JSON.parse(e.target.result);
+            var result = await processImportData(parsed);
             if (result === 'cancelled') return;
-            if (!result) return; // error already shown by processImportData
+            if (!result) return;
             await loadAllData();
-            showBackupMsg('Import OK ! Supabase: ' + result.verified + ' seasons verifiees en base. Admin: ' + seasons.length + ' saison(s) chargees.', 'success');
+            showBackupMsg('Import OK ! Supabase: ' + result.verified + ' seasons en base. Admin: ' + seasons.length + ' chargees.', 'success');
         } catch (err) { showBackupMsg('Erreur lecture fichier: ' + err.message, 'error'); }
     };
     reader.readAsText(file);
     event.target.value = '';
 }
 
+// --- Test: insert 1 season to verify Supabase write works ---
+async function testInsertOneSeason() {
+    var el = document.getElementById('testResult');
+    el.innerHTML = '<span style="color:orange">Test en cours...</span>';
+
+    // Check auth
+    var resp = await sb.auth.getSession();
+    var session = resp.data.session;
+    if (!session) {
+        el.innerHTML = '<span style="color:red">ECHEC: Non connecte. Reconnectez-vous d\'abord.</span>';
+        return;
+    }
+    el.innerHTML = '<span style="color:orange">Auth OK (' + (session.user.email || session.user.id) + '). Insert en cours...</span>';
+
+    var testRow = {
+        game: 'Test',
+        name: 'Test Saison (supprimer)',
+        date: new Date().toISOString().split('T')[0],
+        players: ['Joueur1', 'Joueur2', 'Joueur3'],
+        is_special: false
+    };
+
+    var res = await sb.from('seasons').insert(testRow).select();
+
+    if (res.error) {
+        el.innerHTML = '<span style="color:red">ECHEC INSERT: ' + res.error.message + ' (code: ' + (res.error.code || '?') + ', details: ' + (res.error.details || '') + ')</span>';
+        console.error('[TEST] Insert failed:', res.error);
+        return;
+    }
+
+    if (!res.data || res.data.length === 0) {
+        el.innerHTML = '<span style="color:red">ECHEC: Insert OK mais 0 rows retournees. RLS bloque.</span>';
+        return;
+    }
+
+    // Verify with a separate SELECT
+    var verify = await sb.from('seasons').select('id, name').eq('name', 'Test Saison (supprimer)');
+    var found = verify.data ? verify.data.length : 0;
+
+    el.innerHTML = '<span style="color:green">SUCCES ! Row inseree (id: ' + res.data[0].id + '). Verification SELECT: ' + found + ' row(s) trouvee(s). Allez dans Supabase > Table Editor pour confirmer.</span>';
+    console.log('[TEST] Insert OK:', res.data[0]);
+
+    await loadAllData();
+}
+
 function showBackupMsg(text, type) {
-    const s = document.getElementById('backupSuccess'), e = document.getElementById('backupError');
+    var s = document.getElementById('backupSuccess'), e = document.getElementById('backupError');
     if (type === 'success') { s.textContent = text; s.style.display = 'block'; e.style.display = 'none'; }
     else { e.textContent = text; e.style.display = 'block'; s.style.display = 'none'; }
-    setTimeout(() => { s.style.display = 'none'; e.style.display = 'none'; }, 5000);
 }
 
 // ==================== INIT ====================

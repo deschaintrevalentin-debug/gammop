@@ -64,7 +64,7 @@
 
         /* Darker numbers in player profile stats cards (dark mode) */
         body.dark-mode .profile-stat-number {
-            color: #f5f5f5 !important;
+            color: #2e7d32 !important;
         }
 
         body.dark-mode h3 {
@@ -7028,8 +7028,8 @@
             const yearlyRankings = [];
             const yearlyData = {};
 
-            // Grouper les saisons par année
-            seasons.forEach(season => {
+            // Grouper les saisons par année (exclure les saisons spéciales)
+            seasons.filter(s => !s.isSpecial).forEach(season => {
                 const year = new Date(season.date).getFullYear();
                 if (!yearlyData[year]) {
                     yearlyData[year] = [];
@@ -7266,9 +7266,9 @@
             palmaresHtml += '</div></div>';
 
             // ==================== NOUVEAU: Calcul des classements par jeu ====================
-            // Calculer les statistiques pour chaque jeu pour TOUS les joueurs
+            // Calculer les statistiques pour chaque jeu pour TOUS les joueurs (exclure les saisons spéciales)
             const allGameStats = {};
-            seasons.forEach(season => {
+            seasons.filter(s => !s.isSpecial).forEach(season => {
                 const game = season.game || detectGameType(season.name);
 
                 if (!allGameStats[game]) {

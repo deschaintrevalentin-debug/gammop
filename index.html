@@ -58,6 +58,15 @@
             color: #7bed9f !important;
         }
 
+        body.dark-mode .home-description {
+            color: #2e7d32 !important;
+        }
+
+        /* Darker numbers in player profile stats cards (dark mode) */
+        body.dark-mode .profile-stat-number {
+            color: #f5f5f5 !important;
+        }
+
         body.dark-mode h3 {
             color: #7bed9f !important;
         }
@@ -787,6 +796,100 @@
             color: #4a7c28;
         }
 
+        /* Hamburger menu */
+        .hamburger-btn {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            z-index: 1001;
+        }
+
+        .hamburger-btn span {
+            display: block;
+            width: 24px;
+            height: 3px;
+            background: white;
+            margin: 5px 0;
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+
+        .mobile-menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .mobile-menu-overlay.show {
+            display: block;
+        }
+
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            height: 100%;
+            background: var(--bg-primary);
+            z-index: 1000;
+            overflow-y: auto;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+            padding-top: 60px;
+        }
+
+        .mobile-menu.show {
+            transform: translateX(0);
+        }
+
+        .mobile-menu .mobile-menu-item {
+            display: block;
+            width: 100%;
+            padding: 15px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.2s;
+        }
+
+        .mobile-menu .mobile-menu-item:hover,
+        .mobile-menu .mobile-menu-item.active {
+            background: #e8f5e9;
+            color: #4a7c28;
+        }
+
+        body.dark-mode .mobile-menu .mobile-menu-item:hover,
+        body.dark-mode .mobile-menu .mobile-menu-item.active {
+            background: #374151;
+            color: #7bed9f;
+        }
+
+        .mobile-menu-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: var(--text-primary);
+            padding: 5px 10px;
+        }
+
         @media (max-width: 768px) {
             body {
                 padding: 5px;
@@ -816,25 +919,23 @@
                 flex-wrap: wrap;
             }
 
+            .hamburger-btn {
+                display: block;
+                position: absolute;
+                top: 20px;
+                left: 15px;
+            }
+
+            .mobile-menu {
+                display: block;
+            }
+
             .search-container {
                 max-width: 100%;
             }
 
             .tabs {
-                flex-wrap: nowrap;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                scrollbar-width: none;
-            }
-
-            .tabs::-webkit-scrollbar {
                 display: none;
-            }
-
-            .tab-btn {
-                padding: 10px 12px;
-                font-size: 0.85em;
-                flex-shrink: 0;
             }
 
             .content {
@@ -1032,7 +1133,26 @@
 </head>
 <body>
     <div class="container">
+        <!-- Mobile menu -->
+        <div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="closeMobileMenu()"></div>
+        <nav class="mobile-menu" id="mobileMenu">
+            <button class="mobile-menu-close" onclick="closeMobileMenu()">&times;</button>
+            <button class="mobile-menu-item active" onclick="showTab('home', event); closeMobileMenu()">🏠 Accueil</button>
+            <button class="mobile-menu-item" onclick="showTab('recent', event); closeMobileMenu()">⚡ Classement actuel</button>
+            <button class="mobile-menu-item" onclick="showTab('general', event); closeMobileMenu()">🏆 Classement général</button>
+            <button class="mobile-menu-item" onclick="showTab('years', event); closeMobileMenu()">🍎 Classement annuel</button>
+            <button class="mobile-menu-item" onclick="showTab('winners', event); closeMobileMenu()">🍏 Vainqueurs</button>
+            <button class="mobile-menu-item" onclick="showTab('special-winners', event); closeMobileMenu()">🍐 Saisons Spéciales</button>
+            <button class="mobile-menu-item" onclick="showTab('stats', event); closeMobileMenu()">📈 Statistiques</button>
+            <button class="mobile-menu-item" onclick="showTab('games', event); closeMobileMenu()">🎮 Jeux</button>
+        </nav>
+
         <header>
+            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleMobileMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
             <h1>GAMMOP</h1>
             <p>Serveur Discord de jeux</p>
             <div class="search-container">
@@ -1684,6 +1804,18 @@
             }
         }
 
+        function toggleMobileMenu() {
+            document.getElementById('mobileMenu').classList.toggle('show');
+            document.getElementById('mobileMenuOverlay').classList.toggle('show');
+            document.body.style.overflow = document.getElementById('mobileMenu').classList.contains('show') ? 'hidden' : '';
+        }
+
+        function closeMobileMenu() {
+            document.getElementById('mobileMenu').classList.remove('show');
+            document.getElementById('mobileMenuOverlay').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
             const isDark = document.body.classList.contains('dark-mode');
@@ -1711,18 +1843,43 @@
                 return;
             }
 
-            // Filtrer les joueurs
+            // Filtrer les joueurs (normaux + spéciaux uniquement)
             const filtered = rankingData.filter(p =>
                 p.player.toLowerCase().includes(query)
-            ).slice(0, 10); // Limiter à 10 résultats
+            ).slice(0, 8);
 
-            if (filtered.length === 0) {
+            // Ajouter les joueurs qui n'ont participé qu'à des saisons spéciales
+            const specialOnly = (window._specialOnlyPlayers || []).filter(name =>
+                name.toLowerCase().includes(query)
+            ).slice(0, 4);
+
+            if (filtered.length === 0 && specialOnly.length === 0) {
                 resultsDiv.innerHTML = '<div style="padding:15px;color:var(--text-secondary);text-align:center">Aucun joueur trouvé</div>';
                 resultsDiv.classList.add('show');
                 return;
             }
 
             let html = '';
+
+            // Ajouter les joueurs spéciaux-uniquement à la fin
+            specialOnly.forEach(spName => {
+                const discordProfiles = window._discordProfiles || {};
+                const discordAvatars = window._discordAvatars || {};
+                const userId = discordProfiles[spName];
+                const avatarUrl = userId ? discordAvatars[userId] : null;
+
+                html += `<div class="search-result-item" onmousedown="openPlayer('${spName.replace(/'/g, "\\'")}')">`;
+                if (avatarUrl) {
+                    html += `<img src="${avatarUrl}" class="search-result-avatar" onerror="this.src='https://cdn.discordapp.com/embed/avatars/${userId ? parseInt(userId) % 5 : 0}.png'">`;
+                } else {
+                    html += `<div class="search-result-avatar" style="background:#9c27b0;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:1.2em">${spName.charAt(0).toUpperCase()}</div>`;
+                }
+                html += `<div class="search-result-info">`;
+                html += `<div class="search-result-name">${spName}${getPlayerPearsHTML(spName)}</div>`;
+                html += `<div class="search-result-stats">🍐 Saisons spéciales uniquement</div>`;
+                html += `</div></div>`;
+            });
+
             filtered.forEach((p, idx) => {
                 const rank = rankingData.findIndex(player => player.player === p.player) + 1;
                 const discordProfiles = window._discordProfiles || {};
@@ -1849,6 +2006,16 @@
                 return a.player.localeCompare(b.player);
             });
 
+            // Build list of players who only appear in special seasons
+            const normalPlayerNames = new Set(rankingData.map(p => p.player));
+            const specialOnlyPlayersSet = new Set();
+            seasons.filter(s => s.isSpecial).forEach(s => {
+                s.players.forEach(pl => {
+                    if (!normalPlayerNames.has(pl)) specialOnlyPlayersSet.add(pl);
+                });
+            });
+            window._specialOnlyPlayers = Array.from(specialOnlyPlayersSet).sort();
+
             var updateFns = [
                 updateHome, updateGeneral, updateRecentRanking, updateStats,
                 updateLeaders, updateLeadersRecentForm, updateWinners,
@@ -1968,7 +2135,7 @@
             const lastGameDate = lastGame ? new Date(lastGame.date).toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'}) : 'N/A';
 
             let html = '<div style="text-align:center;padding:40px 20px;background:linear-gradient(135deg,#f8fdf9,#e8f5e9);border-radius:15px;margin-bottom:30px">';
-            html += '<p style="color:#2d5016;font-size:1.3em;max-width:700px;margin:0 auto;line-height:1.6">Serveur discord de mini-jeux, retrouvez toutes les statistiques et les classements sur ce site</p>';
+            html += '<p class="home-description" style="color:#2d5016;font-size:1.3em;max-width:700px;margin:0 auto;line-height:1.6">Serveur discord de mini-jeux, retrouvez toutes les statistiques et les classements sur ce site</p>';
             html += '</div>';
 
             // Explication du système de classement
@@ -2397,7 +2564,7 @@
 
                     if (pos === 1) {
                         bgColor = 'linear-gradient(135deg,#FFD700,#FFA500)';
-                        icon = '🥇🍏';
+                        icon = '🥇';
                         textColor = 'white';
                     } else if (pos === 2) {
                         bgColor = 'linear-gradient(135deg,#C0C0C0,#A9A9A9)';
@@ -2628,7 +2795,7 @@
 
                     if (pos === 1) {
                         bgColor = 'linear-gradient(135deg,#FFD700,#FFA500)';
-                        icon = '🥇🍏';
+                        icon = '🥇';
                         textColor = 'white';
                     } else if (pos === 2) {
                         bgColor = 'linear-gradient(135deg,#C0C0C0,#A9A9A9)';
@@ -4638,7 +4805,6 @@
             html += '</div>';
             html += '</span>';
             html += '</div>';
-            html += `<button class="btn download-btn" onclick="downloadAsImage('recentSection', 'classement-recent-gammop.png')" style="background:#5865F2;color:white;display:flex;align-items:center;gap:8px">📥 Télécharger en image</button>`;
             html += '</div>';
 
             html += '<p style="color:#666;margin-bottom:20px">Classement basé sur les performances des ' + recentSeasonsCount + ' parties les plus récentes</p>';
@@ -5639,7 +5805,6 @@
             let html = `<div class="section" id="gameSection${gameSafeId}">`;
             html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">`;
             html += `<h3 style="margin:0;display:flex;align-items:center;gap:10px">🎮 ${getGameWithSymbol(selectedGame)} <span style="font-size:0.7em;color:#666;font-weight:normal">(${gameSeasons.length} saison${gameSeasons.length > 1 ? 's' : ''})</span></h3>`;
-            html += `<button class="btn download-btn" onclick="downloadAsImage('gameSection${gameSafeId}', 'classement-${gameSafeId}-gammop.png')" style="background:#5865F2;color:white;display:flex;align-items:center;gap:8px">📥 Télécharger en image</button>`;
             html += `</div>`;
 
             // Classement général du jeu
@@ -5695,7 +5860,7 @@
                     let bgColor, icon, textColor;
                     if (position === 1) {
                         bgColor = 'linear-gradient(135deg,#FFD700,#FFA500)';
-                        icon = '🥇🍏';
+                        icon = '🥇';
                         textColor = 'white';
                     } else if (position === 2) {
                         bgColor = 'linear-gradient(135deg,#C0C0C0,#A9A9A9)';
@@ -5846,7 +6011,6 @@
             let html = `<div class="section" id="yearSection${selectedYear}">`;
             html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">`;
             html += `<h3 style="margin:0;display:flex;align-items:center;gap:10px">📅 Année ${selectedYear} <span style="font-size:0.7em;color:#666;font-weight:normal">(${yearSeasons.length} saison${yearSeasons.length > 1 ? 's' : ''})</span></h3>`;
-            html += `<button class="btn download-btn" onclick="downloadAsImage('yearSection${selectedYear}', 'classement-${selectedYear}-gammop.png')" style="background:#5865F2;color:white;display:flex;align-items:center;gap:8px">📥 Télécharger en image</button>`;
             html += `</div>`;
 
             // Classement général de l'année
@@ -6105,9 +6269,9 @@
             const tab = document.getElementById('gamesTab');
             const rect = tab.getBoundingClientRect();
 
-            // Récupérer tous les jeux uniques avec leurs saisons
+            // Récupérer tous les jeux uniques avec leurs saisons (hors saisons spéciales)
             const gamesSeasonsMap = {};
-            seasons.forEach(s => {
+            seasons.filter(s => !s.isSpecial).forEach(s => {
                 const game = s.game || detectGameType(s.name);
                 if (!gamesSeasonsMap[game]) {
                     gamesSeasonsMap[game] = [];
@@ -6543,7 +6707,14 @@
 
         function openPlayer(name) {
             const p = rankingData.find(x => x.player === name);
-            if (!p) return;
+            const isSpecialOnly = !p && (window._specialOnlyPlayers || []).includes(name);
+            if (!p && !isSpecialOnly) return;
+
+            // Special-season-only player: show minimal profile
+            if (isSpecialOnly) {
+                openSpecialOnlyPlayer(name);
+                return;
+            }
 
             // Récupérer l'avatar pour l'afficher dans le header
             const avatarHtmlSmall = getDiscordAvatar(name);
@@ -6679,8 +6850,8 @@
                     <!-- Encart Participations -->
                     <div style="flex:1;background:#e8f5e9;padding:25px;border-radius:10px;text-align:center;border:2px solid #4a7c28">
                         <h4 style="color:#1b5e20;margin-bottom:10px;font-size:1em;text-transform:uppercase">🎮 Participations</h4>
-                        <div style="font-size:2.5em;font-weight:bold;color:#2d5016">${p.games}</div>
-                        <div style="color:#2d5016;font-size:1em;font-weight:600">${partPct}% des ${seasons.length} parties</div>
+                        <div class="profile-stat-number" style="font-size:2.5em;font-weight:bold;color:#2d5016">${p.games}</div>
+                        <div class="profile-stat-number" style="color:#2d5016;font-size:1em;font-weight:600">${partPct}% des ${normalSeasonsCount} parties</div>
                     </div>
                 </div>
 
@@ -6689,29 +6860,29 @@
                     <!-- Encart Victoires -->
                     <div style="flex:1;background:#e8f5e9;padding:20px;border-radius:10px;text-align:center;border:2px solid #4a7c28">
                         <h4 style="color:#1b5e20;margin-bottom:10px;font-size:0.9em;text-transform:uppercase">🏆 Victoires</h4>
-                        <div style="font-size:2em;font-weight:bold;color:#2d5016">${p.w}</div>
-                        <div style="color:#2d5016;font-size:0.9em;font-weight:600">${wPct}%</div>
+                        <div class="profile-stat-number" style="font-size:2em;font-weight:bold;color:#2d5016">${p.w}</div>
+                        <div class="profile-stat-number" style="color:#2d5016;font-size:0.9em;font-weight:600">${wPct}%</div>
                     </div>
 
                     <!-- Encart Top 3 -->
                     <div style="flex:1;background:#e8f5e9;padding:20px;border-radius:10px;text-align:center;border:2px solid #4a7c28">
                         <h4 style="color:#1b5e20;margin-bottom:10px;font-size:0.9em;text-transform:uppercase">🏅 Podium</h4>
-                        <div style="font-size:2em;font-weight:bold;color:#2d5016">${podiumCount}</div>
-                        <div style="color:#2d5016;font-size:0.9em;font-weight:600">${podiumPct}%</div>
+                        <div class="profile-stat-number" style="font-size:2em;font-weight:bold;color:#2d5016">${podiumCount}</div>
+                        <div class="profile-stat-number" style="color:#2d5016;font-size:0.9em;font-weight:600">${podiumPct}%</div>
                     </div>
 
                     <!-- Encart Top 5 -->
                     <div style="flex:1;background:#e8f5e9;padding:20px;border-radius:10px;text-align:center;border:2px solid #4a7c28">
                         <h4 style="color:#1b5e20;margin-bottom:10px;font-size:0.9em;text-transform:uppercase">⭐ Top 5</h4>
-                        <div style="font-size:2em;font-weight:bold;color:#2d5016">${p.t5}</div>
-                        <div style="color:#2d5016;font-size:0.9em;font-weight:600">${t5Pct}%</div>
+                        <div class="profile-stat-number" style="font-size:2em;font-weight:bold;color:#2d5016">${p.t5}</div>
+                        <div class="profile-stat-number" style="color:#2d5016;font-size:0.9em;font-weight:600">${t5Pct}%</div>
                     </div>
 
                     <!-- Encart Top 10 -->
                     <div style="flex:1;background:#e8f5e9;padding:20px;border-radius:10px;text-align:center;border:2px solid #4a7c28">
                         <h4 style="color:#1b5e20;margin-bottom:10px;font-size:0.9em;text-transform:uppercase">🌟 Top 10</h4>
-                        <div style="font-size:2em;font-weight:bold;color:#2d5016">${p.t10}</div>
-                        <div style="color:#2d5016;font-size:0.9em;font-weight:600">${t10Pct}%</div>
+                        <div class="profile-stat-number" style="font-size:2em;font-weight:bold;color:#2d5016">${p.t10}</div>
+                        <div class="profile-stat-number" style="color:#2d5016;font-size:0.9em;font-weight:600">${t10Pct}%</div>
                     </div>
                 </div>
 
@@ -8366,8 +8537,133 @@
             }
         }
 
+        function openSpecialOnlyPlayer(name) {
+            // Minimal profile for players who only participated in special seasons
+            const avatarHtmlSmall = getDiscordAvatar(name);
+            const avatarSmall = avatarHtmlSmall ?
+                avatarHtmlSmall.replace(/width:28px;height:28px/, 'width:50px;height:50px;margin-left:12px') :
+                '<div style="width:50px;height:50px;border-radius:50%;background:#ddd;display:inline-flex;align-items:center;justify-content:center;font-size:1.5em;margin-left:12px">👤</div>';
+
+            document.getElementById('modalName').innerHTML = name + getPlayerApples(name) + avatarSmall;
+
+            // Hide all modal tabs, show only Saisons Spéciales
+            document.querySelectorAll('.modal-tabs .modal-tab-btn').forEach(btn => {
+                btn.style.display = 'none';
+            });
+            // Show only the special seasons tab button and make it active
+            document.querySelectorAll('.modal-tabs .modal-tab-btn').forEach(btn => {
+                if (btn.textContent.includes('Saisons Spéciales')) {
+                    btn.style.display = '';
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Hide all tab contents, show only special
+            document.querySelectorAll('.modal-tab-content').forEach(tab => tab.classList.remove('active'));
+            document.getElementById('modalTabSpecial').classList.add('active');
+
+            // Clear other tabs
+            document.getElementById('modalStats').innerHTML = '';
+            document.getElementById('modalFormeActuelle').innerHTML = '';
+            document.getElementById('modalPalmares').innerHTML = '';
+            document.getElementById('modalYearlyRankings').innerHTML = '';
+            document.getElementById('modalEvolution').innerHTML = '';
+            document.getElementById('modalGames').innerHTML = '';
+
+            // Populate special seasons tab
+            const specialSeasons = seasons.filter(s => s.isSpecial);
+            const playerSpecialSeasons = specialSeasons.filter(s => s.players.includes(name));
+            const specialWins = playerSpecialSeasons.filter(s => s.players[0] === name);
+            const specialParticipations = playerSpecialSeasons.length;
+            const specialWinCount = specialWins.length;
+            const specialWinRate = specialParticipations > 0 ? Math.round((specialWinCount / specialParticipations) * 100) : 0;
+
+            let specialHtml = '<div style="background:#f8fdf9;padding:20px;border-radius:10px;border:2px solid #c8e6c9;margin-bottom:20px">';
+            specialHtml += '<h3 style="color:#2d5016;margin-bottom:20px">🍐 Bilan des Saisons Spéciales</h3>';
+
+            if (specialParticipations === 0) {
+                specialHtml += '<p style="color:var(--text-secondary);text-align:center;padding:40px">Ce joueur n\'a pas encore participé à des saisons spéciales.</p>';
+                specialHtml += '</div>';
+            } else {
+                specialHtml += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:20px">';
+                specialHtml += '<div style="background:white;padding:15px;border-radius:8px;text-align:center;border:2px solid #4a7c28">';
+                specialHtml += '<div style="font-size:2em;font-weight:bold;color:#4a7c28;margin-bottom:5px">🍐 ' + specialWinCount + '</div>';
+                specialHtml += '<div style="font-size:0.9em;color:#666">Victoire' + (specialWinCount > 1 ? 's' : '') + '</div>';
+                specialHtml += '</div>';
+                specialHtml += '<div style="background:white;padding:15px;border-radius:8px;text-align:center;border:2px solid #2196F3">';
+                specialHtml += '<div style="font-size:2em;font-weight:bold;color:#2196F3;margin-bottom:5px">' + specialParticipations + '</div>';
+                specialHtml += '<div style="font-size:0.9em;color:#666">Participation' + (specialParticipations > 1 ? 's' : '') + '</div>';
+                specialHtml += '</div>';
+                specialHtml += '<div style="background:white;padding:15px;border-radius:8px;text-align:center;border:2px solid #9C27B0">';
+                specialHtml += '<div style="font-size:2em;font-weight:bold;color:#9C27B0;margin-bottom:5px">' + specialWinRate + '%</div>';
+                specialHtml += '<div style="font-size:0.9em;color:#666">Taux de victoire</div>';
+                specialHtml += '</div>';
+                specialHtml += '</div>';
+
+                if (specialWinCount > 0) {
+                    specialHtml += '<div style="background:white;padding:20px;border-radius:10px;border:2px solid #c8e6c9;margin-bottom:20px">';
+                    specialHtml += '<h4 style="color:#2d5016;margin-bottom:15px">🏆 Saisons Spéciales Gagnées</h4>';
+                    specialHtml += '<div style="display:grid;gap:10px">';
+                    specialWins.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(s => {
+                        const date = new Date(s.date).toLocaleDateString('fr-FR', {day:'numeric', month:'short', year:'numeric'});
+                        specialHtml += '<div style="background:#f8fdf9;padding:12px;border-radius:8px;border-left:4px solid #4a7c28">';
+                        specialHtml += '<div style="font-weight:bold;color:#2d5016;margin-bottom:5px">' + s.name + '</div>';
+                        specialHtml += '<div style="font-size:0.85em;color:#666">' + date;
+                        if (s.gdocLink) specialHtml += ' • <a href="' + s.gdocLink + '" target="_blank" style="color:#5865F2;text-decoration:none">📄 Voir les résultats</a>';
+                        specialHtml += '</div>';
+                        if (s.organizer) specialHtml += '<div style="font-size:0.85em;color:var(--text-secondary)">👔 Organisé par <strong>' + s.organizer + '</strong></div>';
+                        else if (s.speciality) specialHtml += '<div style="font-size:0.85em;color:var(--text-secondary)">' + s.speciality + '</div>';
+                        specialHtml += '</div>';
+                    });
+                    specialHtml += '</div></div>';
+                }
+
+                specialHtml += '<div style="background:white;padding:20px;border-radius:10px;border:2px solid #c8e6c9">';
+                specialHtml += '<h4 style="color:#2d5016;margin-bottom:15px">📋 Toutes les Participations</h4>';
+                specialHtml += '<div style="display:grid;gap:10px">';
+                playerSpecialSeasons.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(s => {
+                    const position = s.players.indexOf(name) + 1;
+                    const isWinner = position === 1;
+                    const date = new Date(s.date).toLocaleDateString('fr-FR', {day:'numeric', month:'short', year:'numeric'});
+                    const borderColor = isWinner ? '#FFD700' : '#c8e6c9';
+                    specialHtml += '<div style="background:#f8fdf9;padding:12px;border-radius:8px;border-left:4px solid ' + borderColor + '">';
+                    specialHtml += '<div style="display:flex;justify-content:space-between;align-items:center">';
+                    specialHtml += '<div>';
+                    specialHtml += '<div style="font-weight:bold;color:#2d5016;margin-bottom:5px">' + s.name + '</div>';
+                    specialHtml += '<div style="font-size:0.85em;color:#666">' + date;
+                    if (s.gdocLink) specialHtml += ' • <a href="' + s.gdocLink + '" target="_blank" style="color:#5865F2;text-decoration:none">📄 Voir les résultats</a>';
+                    specialHtml += '</div>';
+                    if (s.organizer) specialHtml += '<div style="font-size:0.85em;color:var(--text-secondary);margin-top:3px">👔 Organisé par <strong>' + s.organizer + '</strong></div>';
+                    else if (s.speciality) specialHtml += '<div style="font-size:0.85em;color:var(--text-secondary);margin-top:3px">' + s.speciality + '</div>';
+                    specialHtml += '</div>';
+                    specialHtml += '<div style="text-align:right">';
+                    if (isWinner) specialHtml += '<div style="font-size:1.5em;font-weight:bold;color:#FFD700">🏆 1er</div>';
+                    else specialHtml += '<div style="font-size:1.2em;font-weight:bold;color:#666">' + position + (position === 1 ? 'er' : 'ème') + '</div>';
+                    specialHtml += '</div>';
+                    specialHtml += '</div>';
+                    specialHtml += '</div>';
+                });
+                specialHtml += '</div></div>';
+                specialHtml += '</div>';
+            }
+
+            document.getElementById('modalSpecialSeasons').innerHTML = specialHtml;
+
+            document.getElementById('playerModal').classList.add('active');
+
+            if (!_skipHashUpdate) {
+                history.pushState(null, '', '#player/' + encodeURIComponent(name));
+            }
+        }
+
         function closeModal() {
             document.getElementById('playerModal').classList.remove('active');
+            // Restore all modal tab buttons visibility for next openPlayer call
+            document.querySelectorAll('.modal-tabs .modal-tab-btn').forEach(btn => {
+                btn.style.display = '';
+            });
             // Replace player hash with the underlying active tab hash
             if (window.location.hash.startsWith('#player/')) {
                 var activeContent = document.querySelector('.content.active');
@@ -8439,7 +8735,9 @@
             // Player modal: #player/PlayerName
             if (hash.startsWith('player/')) {
                 var playerName = decodeURIComponent(hash.substring(7));
-                if (rankingData && rankingData.find(function(x) { return x.player === playerName; })) {
+                var inRanking = rankingData && rankingData.find(function(x) { return x.player === playerName; });
+                var isSpecialOnly = !inRanking && (window._specialOnlyPlayers || []).indexOf(playerName) !== -1;
+                if (inRanking || isSpecialOnly) {
                     openPlayer(playerName);
                 }
                 _skipHashUpdate = false;

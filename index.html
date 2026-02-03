@@ -1334,6 +1334,76 @@
     </div>
 
     <!-- Player Modal -->
+    <div id="mentions-legales" class="content">
+        <div class="section" style="max-width:800px;margin:0 auto">
+            <h2 style="color:var(--text-accent);margin-bottom:20px">📜 Mentions Légales</h2>
+
+            <div style="margin-bottom:25px">
+                <h3 style="color:var(--text-accent);margin-bottom:10px">1. Éditeur du site</h3>
+                <p style="color:var(--text-primary);line-height:1.8">
+                    Le site <strong>GAMMOP</strong> est édité par <strong>Emmop</strong>, dans le cadre du projet GAMMOP.<br>
+                    Email de contact : <a href="mailto:gammope@gmail.com" style="color:#4a7c28">gammope@gmail.com</a>
+                </p>
+            </div>
+
+            <div style="margin-bottom:25px">
+                <h3 style="color:var(--text-accent);margin-bottom:10px">2. Hébergement</h3>
+                <p style="color:var(--text-primary);line-height:1.8">
+                    Ce site est hébergé par <strong>Vercel Inc.</strong><br>
+                    440 N Barranca Avenue #4133, Covina, CA 91723, États-Unis<br>
+                    Site web : <a href="https://vercel.com" target="_blank" rel="noopener noreferrer" style="color:#4a7c28">vercel.com</a>
+                </p>
+            </div>
+
+            <div style="margin-bottom:25px">
+                <h3 style="color:var(--text-accent);margin-bottom:10px">3. Objet du site</h3>
+                <p style="color:var(--text-primary);line-height:1.8">
+                    GAMMOP est un site qui répertorie les classements de mini-jeux organisés sur un serveur Discord. Le site a également vocation à proposer à terme la possibilité de jouer à certains jeux en ligne.
+                </p>
+            </div>
+
+            <div style="margin-bottom:25px">
+                <h3 style="color:var(--text-accent);margin-bottom:10px">4. Propriété intellectuelle</h3>
+                <p style="color:var(--text-primary);line-height:1.8">
+                    L'ensemble du contenu du site GAMMOP (textes, graphismes, images, logos, icônes, structure) est la propriété exclusive de l'éditeur, sauf mention contraire. Toute reproduction, représentation, modification, publication ou adaptation de tout ou partie des éléments du site est interdite sans autorisation préalable.
+                </p>
+            </div>
+
+            <div style="margin-bottom:25px">
+                <h3 style="color:var(--text-accent);margin-bottom:10px">5. Données personnelles</h3>
+                <p style="color:var(--text-primary);line-height:1.8">
+                    Le site GAMMOP collecte et affiche des pseudonymes de joueurs Discord dans le cadre du classement des mini-jeux. Aucune donnée personnelle sensible n'est collectée. Les pseudonymes affichés sont ceux utilisés publiquement sur le serveur Discord.<br><br>
+                    Conformément au Règlement Général sur la Protection des Données (RGPD), tout joueur peut demander la suppression ou la modification de ses données en contactant l'éditeur à l'adresse : <a href="mailto:gammope@gmail.com" style="color:#4a7c28">gammope@gmail.com</a>.
+                </p>
+            </div>
+
+            <div style="margin-bottom:25px">
+                <h3 style="color:var(--text-accent);margin-bottom:10px">6. Cookies</h3>
+                <p style="color:var(--text-primary);line-height:1.8">
+                    Le site GAMMOP n'utilise pas de cookies de suivi ni de cookies publicitaires. Seuls des cookies techniques strictement nécessaires au fonctionnement du site (comme la préférence de thème sombre/clair) peuvent être utilisés.
+                </p>
+            </div>
+
+            <div style="margin-bottom:25px">
+                <h3 style="color:var(--text-accent);margin-bottom:10px">7. Limitation de responsabilité</h3>
+                <p style="color:var(--text-primary);line-height:1.8">
+                    L'éditeur s'efforce de fournir des informations aussi précises que possible. Toutefois, il ne pourra être tenu responsable des omissions, des inexactitudes ou des carences dans la mise à jour des classements et statistiques.
+                </p>
+            </div>
+
+            <div>
+                <h3 style="color:var(--text-accent);margin-bottom:10px">8. Droit applicable</h3>
+                <p style="color:var(--text-primary);line-height:1.8">
+                    Les présentes mentions légales sont régies par le droit français. En cas de litige, les tribunaux français seront seuls compétents.
+                </p>
+            </div>
+
+            <div style="margin-top:30px;padding-top:20px;border-top:1px solid var(--border-color);text-align:center;color:var(--text-secondary);font-size:0.85em">
+                Dernière mise à jour : Février 2025
+            </div>
+        </div>
+    </div>
+
     <div id="playerModal" class="modal" onclick="if(event.target === this) closeModal()">
         <div class="modal-content">
             <div class="modal-header">
@@ -2368,6 +2438,12 @@
             html += '</div>';
             html += '</div>';
 
+            // Footer avec lien mentions légales
+            html += '<div style="margin-top:40px;padding:20px;text-align:center;border-top:1px solid var(--border-color);color:var(--text-secondary);font-size:0.85em">';
+            html += '<span>© ' + new Date().getFullYear() + ' GAMMOP</span>';
+            html += ' • <span style="cursor:pointer;text-decoration:underline" onclick="showTab(\'mentions-legales\', event)">Mentions légales</span>';
+            html += '</div>';
+
             el.innerHTML = html;
         }
 
@@ -2546,8 +2622,8 @@
                 html += `<div style="background:${isNewLeader?'#e8f5e9':'#f8fdf9'};border-left:5px solid ${isNewLeader?'#FFD700':'#4a7c28'};padding:20px;margin-bottom:12px;border-radius:8px">`;
                 html += `<div style="margin-bottom:15px">`;
                 html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:5px">`;
-                html += `<span style="background:#4a7c28;color:white;padding:4px 10px;border-radius:12px;font-size:0.8em;font-weight:600">n°${h.seasonNumber}</span>`;
-                html += `<span style="font-size:1.1em;font-weight:bold;color:#2d5016">${h.season}</span>`;
+                html += `<span style="background:#4a7c28;color:white;padding:4px 10px;border-radius:12px;font-size:0.8em;font-weight:600;cursor:pointer" onclick="showSeasonDetail('${h.season.replace(/'/g, "\\'")}')">n°${h.seasonNumber}</span>`;
+                html += `<span style="font-size:1.1em;font-weight:bold;color:#2d5016;cursor:pointer;text-decoration:underline dotted" onclick="showSeasonDetail('${h.season.replace(/'/g, "\\'")}')">${h.season}</span>`;
                 html += `</div>`;
                 html += `<div style="font-size:0.85em;color:#999">${date} • ${getGameWithSymbol(h.game)}</div>`;
                 if (isNewLeader) {
@@ -2777,8 +2853,8 @@
                 html += `<div style="background:${isNewLeader?'#e8f5e9':'#f8fdf9'};border-left:5px solid ${isNewLeader?'#FFD700':'#4a7c28'};padding:20px;margin-bottom:12px;border-radius:8px">`;
                 html += `<div style="margin-bottom:15px">`;
                 html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:5px">`;
-                html += `<span style="background:#4a7c28;color:white;padding:4px 10px;border-radius:12px;font-size:0.8em;font-weight:600">n°${h.seasonNumber}</span>`;
-                html += `<span style="font-size:1.1em;font-weight:bold;color:#2d5016">${h.season}</span>`;
+                html += `<span style="background:#4a7c28;color:white;padding:4px 10px;border-radius:12px;font-size:0.8em;font-weight:600;cursor:pointer" onclick="showSeasonDetail('${h.season.replace(/'/g, "\\'")}')">n°${h.seasonNumber}</span>`;
+                html += `<span style="font-size:1.1em;font-weight:bold;color:#2d5016;cursor:pointer;text-decoration:underline dotted" onclick="showSeasonDetail('${h.season.replace(/'/g, "\\'")}')">${h.season}</span>`;
                 html += `</div>`;
                 html += `<div style="font-size:0.85em;color:#999">${date} • ${getGameWithSymbol(h.game)}</div>`;
                 if (isNewLeader) {
@@ -4926,7 +5002,7 @@
 
                 // Colonne Saison gagnée
                 html += `<td style="padding:15px">`;
-                html += `<div style="font-size:1.1em;font-weight:600;color:#4a7c28;margin-bottom:4px">${w.season}</div>`;
+                html += `<div style="font-size:1.1em;font-weight:600;color:#4a7c28;margin-bottom:4px;cursor:pointer;text-decoration:underline dotted" onclick="showSeasonDetail('${w.season.replace(/'/g, "\\'")}')">${w.season}</div>`;
                 html += `<div style="font-size:0.9em;color:var(--text-secondary)">${date} • ${getGameWithSymbol(w.game)}</div>`;
                 html += `</td>`;
 
@@ -4983,7 +5059,7 @@
                         html += `<div style="display:flex;flex-direction:column;gap:4px">`;
                         wins.forEach(w => {
                             const seasonName = w.name.replace(game + ' ', '');
-                            html += `<span style="background:var(--section-bg);padding:5px 10px;border-radius:6px;border:1px solid var(--border-color);font-size:0.85em;color:var(--text-primary)">${seasonName} <span style="color:var(--text-secondary)">(n°${w.num})</span></span>`;
+                            html += `<span style="background:var(--section-bg);padding:5px 10px;border-radius:6px;border:1px solid var(--border-color);font-size:0.85em;color:var(--text-primary);cursor:pointer" onclick="showSeasonDetail('${w.name.replace(/'/g, "\\'")}')">${seasonName} <span style="color:var(--text-secondary)">(n°${w.num})</span></span>`;
                         });
                         html += `</div></div>`;
                     });
@@ -5301,7 +5377,7 @@
 
                 // Colonne Saison
                 html += `<td style="padding:15px">`;
-                html += `<div style="font-weight:600;font-size:1.05em">${w.season}</div>`;
+                html += `<div style="font-weight:600;font-size:1.05em;cursor:pointer;text-decoration:underline dotted" onclick="showSeasonDetail('${w.season.replace(/'/g, "\\'")}')">${w.season}</div>`;
                 if (w.gdocLink) {
                     html += `<a href="${w.gdocLink}" target="_blank" style="font-size:0.85em;color:#5865F2;text-decoration:none">📄 Voir les résultats</a>`;
                 }
@@ -6354,9 +6430,10 @@
             // Afficher le détail de la saison
             const contentEl = document.getElementById('gameContent');
             const date = new Date(season.date).toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'});
+            const isSpecial = season.isSpecial || false;
 
             let html = '<div class="section">';
-            html += `<h2 style="color:var(--text-accent);margin-bottom:10px"><span style="cursor:pointer;text-decoration:underline dotted" onclick="showGameRanking('${season.game.replace(/'/g, "\\'")}')">${getGameWithSymbol(season.game)}</span> ${season.name}</h2>`;
+            html += `<h2 style="color:var(--text-accent);margin-bottom:10px"><span style="cursor:pointer;text-decoration:underline dotted" onclick="showGameRanking('${season.game.replace(/'/g, "\\'")}')">${getGameWithSymbol(season.game)}</span> ${season.name}${isSpecial ? ' <span style="background:#8b9a2b;color:white;padding:3px 10px;border-radius:12px;font-size:0.6em;vertical-align:middle">🍐 Spéciale</span>' : ''}</h2>`;
             html += `<p style="color:var(--text-secondary);margin-bottom:20px;font-size:1.1em">📅 ${date}</p>`;
 
             // Lien Google Docs si disponible
@@ -6383,7 +6460,7 @@
                 const position = idx + 1;
                 const bgColor = idx % 2 === 0 ? 'var(--section-bg)' : 'var(--card-bg)';
                 let medal = '';
-                if (position === 1) medal = '🍏';
+                if (position === 1) medal = isSpecial ? '🍐' : '🍏';
                 else if (position === 2) medal = '🥈';
                 else if (position === 3) medal = '🥉';
 
@@ -6402,6 +6479,11 @@
             // Cacher le dropdown
             const dropdown = document.getElementById('gamesDropdown');
             dropdown.classList.remove('show');
+
+            // Update URL hash
+            if (!_skipHashUpdate) {
+                history.pushState(null, '', '#season/' + encodeURIComponent(seasonName));
+            }
         }
 
         function selectGameFromDropdown(game) {
@@ -7218,9 +7300,9 @@
                 palmaresHtml += `<div style="max-height:200px;overflow-y:auto;margin-top:12px;padding-top:12px;border-top:1px solid #e0e0e0">`;
                 wonSeasons.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(ws => {
                     const wsDate = new Date(ws.date).toLocaleDateString('fr-FR', {day:'numeric', month:'short', year:'numeric'});
-                    palmaresHtml += `<div style="background:#f8fdf9;padding:8px;border-radius:6px;margin-bottom:6px;text-align:left">`;
-                    palmaresHtml += `<div style="font-weight:600;color:#2d5016;font-size:0.85em">${getGameWithSymbol(ws.game)}</div>`;
-                    palmaresHtml += `<div style="color:#666;font-size:0.75em;margin-top:3px">${wsDate}</div>`;
+                    palmaresHtml += `<div style="background:#f8fdf9;padding:8px;border-radius:6px;margin-bottom:6px;text-align:left;cursor:pointer" onclick="closeModal();showSeasonDetail('${ws.name.replace(/'/g, "\\'")}')" onmouseover="this.style.background='#e8f5e9'" onmouseout="this.style.background='#f8fdf9'">`;
+                    palmaresHtml += `<div style="font-weight:600;color:#2d5016;font-size:0.85em">${ws.name}</div>`;
+                    palmaresHtml += `<div style="color:#666;font-size:0.75em;margin-top:3px">${wsDate} • ${getGameWithSymbol(ws.game)}</div>`;
                     palmaresHtml += `</div>`;
                 });
                 palmaresHtml += `</div>`;
@@ -7249,12 +7331,12 @@
                 palmaresHtml += `<div style="max-height:200px;overflow-y:auto;margin-top:12px;padding-top:12px;border-top:1px solid #e0e0e0">`;
                 wonSpecialSeasons.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(ws => {
                     const wsDate = new Date(ws.date).toLocaleDateString('fr-FR', {day:'numeric', month:'short', year:'numeric'});
-                    palmaresHtml += `<div style="background:#f9f5ff;padding:8px;border-radius:6px;margin-bottom:6px;text-align:left">`;
-                    palmaresHtml += `<div style="font-weight:600;color:#7b1fa2;font-size:0.85em">${getGameWithSymbol(ws.game)}</div>`;
+                    palmaresHtml += `<div style="background:#f9f5ff;padding:8px;border-radius:6px;margin-bottom:6px;text-align:left;cursor:pointer" onclick="closeModal();showSeasonDetail('${ws.name.replace(/'/g, "\\'")}')" onmouseover="this.style.background='#f0e6ff'" onmouseout="this.style.background='#f9f5ff'">`;
+                    palmaresHtml += `<div style="font-weight:600;color:#7b1fa2;font-size:0.85em">${ws.name}</div>`;
                     if (ws.speciality) {
                         palmaresHtml += `<div style="color:#9c27b0;font-size:0.75em;margin-top:2px">${ws.speciality}</div>`;
                     }
-                    palmaresHtml += `<div style="color:#666;font-size:0.75em;margin-top:3px">${wsDate}</div>`;
+                    palmaresHtml += `<div style="color:#666;font-size:0.75em;margin-top:3px">${wsDate} • ${getGameWithSymbol(ws.game)}</div>`;
                     palmaresHtml += `</div>`;
                 });
                 palmaresHtml += `</div>`;
@@ -7329,7 +7411,13 @@
             // Générer le HTML pour les classements par jeu
             let gameRankingsHtml = '';
             const playerGamesPlayed = Object.keys(allGameStats).filter(game => allGameStats[game][name]);
-            const sortedGames = playerGamesPlayed.sort((a, b) => allGameStats[b][name].games - allGameStats[a][name].games);
+            // Trier par classement du joueur (meilleur classement en premier)
+            const sortedGames = playerGamesPlayed.sort((a, b) => {
+                const rankA = gameRankings[a].findIndex(p => p.player === name) + 1;
+                const rankB = gameRankings[b].findIndex(p => p.player === name) + 1;
+                if (rankA !== rankB) return rankA - rankB;
+                return allGameStats[b][name].games - allGameStats[a][name].games;
+            });
 
             sortedGames.forEach(game => {
                 const playerStats = allGameStats[game][name];
@@ -8225,7 +8313,9 @@
                     badges += `<span style="background:#ff9800;color:white;padding:3px 8px;border-radius:12px;font-size:0.75em;font-weight:600;margin-left:5px">👑 Organisateur</span>`;
                 }
 
-                gamesHtml += `<div class="game-item" style="background:${bg};border-left:4px solid ${color}"><div style="min-width:150px"><span class="game-name-text" style="font-weight:600;font-size:0.95em;color:${textColor};cursor:pointer;text-decoration:underline dotted" onclick="closeModal();showGameRanking('${d.game.replace(/'/g, "\\'")}')">${getGameWithSymbol(d.game)}</span></div><div style="display:flex;align-items:center;gap:8px">${icon?`<span style="font-size:1.2em">${icon}</span>`:'<span style="width:1.2em"></span>'}<span style="font-weight:bold;color:${color};border:2px solid ${color};padding:3px 8px;border-radius:6px;background:white;font-size:0.85em">TOP ${d.pos}</span><span class="game-total-text" style="color:#666;font-size:0.85em">/ ${d.total}</span></div><div style="display:flex;align-items:center;gap:10px"><span class="game-date-text" style="color:#999;font-size:0.85em">${date}</span><span style="background:${seasonBadgeBg};color:${seasonBadgeColor};padding:3px 8px;border-radius:12px;font-size:0.75em;font-weight:600">${d.isSpecial ? '#' : 'n°'}${seasonNumber}</span>${badges}<span class="game-pts-text" style="font-weight:bold;color:#4a7c28">+${d.pts} pts</span></div></div>`;
+                const escapedSeasonName = d.game.replace(/'/g, "\\'");
+                const ptsHtml = d.isSpecial ? '' : `<span class="game-pts-text" style="font-weight:bold;color:#4a7c28">+${d.pts} pts</span>`;
+                gamesHtml += `<div class="game-item" style="background:${bg};border-left:4px solid ${color}"><div style="min-width:150px"><span class="game-name-text" style="font-weight:600;font-size:0.95em;color:${textColor};cursor:pointer;text-decoration:underline dotted" onclick="closeModal();showSeasonDetail('${escapedSeasonName}')">${getGameWithSymbol(d.game)}</span></div><div style="display:flex;align-items:center;gap:8px">${icon?`<span style="font-size:1.2em">${icon}</span>`:'<span style="width:1.2em"></span>'}<span style="font-weight:bold;color:${color};border:2px solid ${color};padding:3px 8px;border-radius:6px;background:white;font-size:0.85em">TOP ${d.pos}</span><span class="game-total-text" style="color:#666;font-size:0.85em">/ ${d.total}</span></div><div style="display:flex;align-items:center;gap:10px"><span class="game-date-text" style="color:#999;font-size:0.85em">${date}</span><span style="background:${seasonBadgeBg};color:${seasonBadgeColor};padding:3px 8px;border-radius:12px;font-size:0.75em;font-weight:600;cursor:pointer" onclick="closeModal();showSeasonDetail('${escapedSeasonName}')">${d.isSpecial ? '#' : 'n°'}${seasonNumber}</span>${badges}${ptsHtml}</div></div>`;
             });
 
             const legendHTML = `
@@ -8749,6 +8839,16 @@
                 var year = parseInt(hash.substring(6));
                 if (!isNaN(year)) {
                     selectYearFromDropdown(year);
+                }
+                _skipHashUpdate = false;
+                return;
+            }
+
+            // Season detail: #season/SeasonName
+            if (hash.startsWith('season/')) {
+                var seasonName = decodeURIComponent(hash.substring(7));
+                if (seasons && seasons.find(function(s) { return s.name === seasonName; })) {
+                    showSeasonDetail(seasonName);
                 }
                 _skipHashUpdate = false;
                 return;

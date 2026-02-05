@@ -8,6 +8,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        @keyframes loading {
+            0% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
+            100% { transform: translateX(300%); }
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -1189,6 +1195,14 @@
         <div id="home" class="content active">
             <!-- Données Supabase -->
             <div id="supabase-items" style="margin-bottom:20px"></div>
+            <!-- Loading indicator -->
+            <div id="loadingIndicator" style="text-align:center;padding:60px 20px">
+                <div style="font-size:3em;margin-bottom:20px">🎮</div>
+                <div style="font-size:1.2em;color:var(--text-secondary);margin-bottom:10px">Chargement des données...</div>
+                <div style="width:200px;height:4px;background:#e0e0e0;border-radius:2px;margin:0 auto;overflow:hidden">
+                    <div style="width:30%;height:100%;background:linear-gradient(90deg,#4a7c28,#7bed9f);border-radius:2px;animation:loading 1.5s ease-in-out infinite"></div>
+                </div>
+            </div>
             <!-- Content loaded by updateHome() -->
         </div>
 
@@ -1565,7 +1579,147 @@
                     gameSelector.value = gameName;
                     updateGames();
                 }
+                // Update URL hash
+                if (!_skipHashUpdate) {
+                    history.pushState(null, '', '#game/' + encodeURIComponent(gameName));
+                }
             }, 100);
+        }
+
+        function showGamePalmares(gameName) {
+            // Aller à l'onglet Jeux
+            showTab('games', null);
+
+            // Fermer le dropdown
+            const dropdown = document.getElementById('gamesDropdown');
+            if (dropdown) dropdown.classList.remove('show');
+
+            // Récupérer toutes les saisons du jeu (hors saisons spéciales)
+            const gameSeasons = seasons.filter(s => !s.isSpecial && (s.game === gameName || detectGameType(s.name) === gameName));
+            const sortedSeasons = gameSeasons.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            // Calculer les stats par joueur
+            const playerStats = {};
+            gameSeasons.forEach(s => {
+                s.players.forEach((player, idx) => {
+                    const position = idx + 1;
+                    if (!playerStats[player]) {
+                        playerStats[player] = { player: player, wins: 0, top3: 0, top5: 0, top10: 0, games: 0 };
+                    }
+                    playerStats[player].games++;
+                    if (position === 1) playerStats[player].wins++;
+                    if (position <= 3) playerStats[player].top3++;
+                    if (position <= 5) playerStats[player].top5++;
+                    if (position <= 10) playerStats[player].top10++;
+                });
+            });
+
+            // Vérifier si au moins un joueur a 10+ parties (pour afficher les taux)
+            const hasQualifiedPlayers = Object.values(playerStats).some(p => p.games >= 10);
+
+            // Générer le HTML
+            const contentEl = document.getElementById('gameContent');
+            let html = '<div class="section">';
+            html += `<h2 style="color:var(--text-accent);margin-bottom:10px">${getGameWithSymbol(gameName)} - Palmarès</h2>`;
+            html += `<p style="color:var(--text-secondary);margin-bottom:20px;font-size:1.1em">${sortedSeasons.length} saison${sortedSeasons.length > 1 ? 's' : ''} jouée${sortedSeasons.length > 1 ? 's' : ''}</p>`;
+
+            // Liste des vainqueurs (antéchronologique)
+            html += '<div style="background:#f8fdf9;padding:20px;border-radius:10px;border:2px solid #c8e6c9;margin-bottom:25px">';
+            html += '<h3 style="color:#2d5016;margin-bottom:15px">🏆 Vainqueurs</h3>';
+            html += '<div style="display:grid;gap:10px">';
+
+            sortedSeasons.forEach((s, idx) => {
+                const winner = s.players[0];
+                const date = new Date(s.date).toLocaleDateString('fr-FR', {day:'numeric', month:'short', year:'numeric'});
+                const seasonNum = sortedSeasons.length - idx;
+                html += `<div style="background:white;padding:12px 15px;border-radius:8px;border-left:4px solid #FFD700;display:flex;justify-content:space-between;align-items:center">`;
+                html += `<div>`;
+                html += `<div style="font-weight:bold;color:#2d5016;margin-bottom:4px;cursor:pointer;text-decoration:underline dotted" onclick="showSeasonDetail('${s.name.replace(/'/g, "\\'")}')">${s.name}</div>`;
+                html += `<div style="font-size:0.85em;color:#666">${date}</div>`;
+                html += `</div>`;
+                html += `<div style="text-align:right">`;
+                html += `<div style="font-weight:bold;color:#2d5016;cursor:pointer" onclick="openPlayer('${winner.replace(/'/g, "\\'")}')">${winner}${getPlayerApples(winner)}</div>`;
+                html += `<div style="font-size:0.85em;color:#FFD700">🏆 1er/${s.players.length}</div>`;
+                html += `</div>`;
+                html += `</div>`;
+            });
+
+            html += '</div></div>';
+
+            // Statistiques par joueur
+            html += '<div style="background:#f8fdf9;padding:20px;border-radius:10px;border:2px solid #c8e6c9">';
+            html += '<h3 style="color:#2d5016;margin-bottom:15px">📊 Statistiques des joueurs</h3>';
+
+            // Trier par nombre de victoires, puis top3, puis participations
+            const sortedPlayers = Object.values(playerStats).sort((a, b) => {
+                if (b.wins !== a.wins) return b.wins - a.wins;
+                if (b.top3 !== a.top3) return b.top3 - a.top3;
+                return b.games - a.games;
+            });
+
+            html += '<table style="width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden">';
+            html += '<thead>';
+            html += '<tr style="background:linear-gradient(135deg,#4a7c28,#5d9c35);color:white">';
+            html += '<th style="padding:12px;text-align:left">Joueur</th>';
+            html += '<th style="padding:12px;text-align:center;width:60px">🏆</th>';
+            html += '<th style="padding:12px;text-align:center;width:60px">🏅 Top 3</th>';
+            html += '<th style="padding:12px;text-align:center;width:60px">⭐ Top 5</th>';
+            html += '<th style="padding:12px;text-align:center;width:70px">🌟 Top 10</th>';
+            html += '<th style="padding:12px;text-align:center;width:70px">Parties</th>';
+            if (hasQualifiedPlayers) {
+                html += '<th style="padding:12px;text-align:center;width:70px">% Victoire</th>';
+                html += '<th style="padding:12px;text-align:center;width:70px">% Top 3</th>';
+                html += '<th style="padding:12px;text-align:center;width:70px">% Top 5</th>';
+                html += '<th style="padding:12px;text-align:center;width:70px">% Top 10</th>';
+            }
+            html += '</tr>';
+            html += '</thead>';
+            html += '<tbody>';
+
+            sortedPlayers.forEach((p, idx) => {
+                const bgColor = idx % 2 === 0 ? 'var(--section-bg)' : 'var(--card-bg)';
+                const isQualified = p.games >= 10;
+                const winRate = Math.round((p.wins / p.games) * 100);
+                const top3Rate = Math.round((p.top3 / p.games) * 100);
+                const top5Rate = Math.round((p.top5 / p.games) * 100);
+                const top10Rate = Math.round((p.top10 / p.games) * 100);
+
+                html += `<tr style="background:${bgColor};border-bottom:1px solid var(--border-color)">`;
+                html += `<td style="padding:12px;font-weight:600;color:#2d5016;cursor:pointer" onclick="openPlayer('${p.player.replace(/'/g, "\\'")}')">${p.player}${getPlayerApples(p.player)}</td>`;
+                html += `<td style="padding:12px;text-align:center;font-weight:bold;color:#FFD700">${p.wins}</td>`;
+                html += `<td style="padding:12px;text-align:center;color:#CD7F32">${p.top3}</td>`;
+                html += `<td style="padding:12px;text-align:center;color:#8B0000">${p.top5}</td>`;
+                html += `<td style="padding:12px;text-align:center;color:#CD5C5C">${p.top10}</td>`;
+                html += `<td style="padding:12px;text-align:center">${p.games}</td>`;
+                if (hasQualifiedPlayers) {
+                    if (isQualified) {
+                        html += `<td style="padding:12px;text-align:center;color:#4a7c28;font-weight:600">${winRate}%</td>`;
+                        html += `<td style="padding:12px;text-align:center;color:#CD7F32">${top3Rate}%</td>`;
+                        html += `<td style="padding:12px;text-align:center;color:#8B0000">${top5Rate}%</td>`;
+                        html += `<td style="padding:12px;text-align:center;color:#CD5C5C">${top10Rate}%</td>`;
+                    } else {
+                        html += `<td style="padding:12px;text-align:center;color:#999">-</td>`;
+                        html += `<td style="padding:12px;text-align:center;color:#999">-</td>`;
+                        html += `<td style="padding:12px;text-align:center;color:#999">-</td>`;
+                        html += `<td style="padding:12px;text-align:center;color:#999">-</td>`;
+                    }
+                }
+                html += `</tr>`;
+            });
+
+            html += '</tbody></table>';
+            if (hasQualifiedPlayers) {
+                html += '<p style="color:#666;font-size:0.85em;margin-top:10px;text-align:center"><em>Les taux ne sont affichés que pour les joueurs ayant 10 parties ou plus</em></p>';
+            }
+            html += '</div>';
+            html += '</div>';
+
+            contentEl.innerHTML = html;
+
+            // Update URL hash
+            if (!_skipHashUpdate) {
+                history.pushState(null, '', '#game-palmares/' + encodeURIComponent(gameName));
+            }
         }
 
         function getSeasonNumber(season) {
@@ -2089,18 +2243,33 @@
             });
             window._specialOnlyPlayers = Array.from(specialOnlyPlayersSet).sort();
 
-            var updateFns = [
-                updateHome, updateGeneral, updateRecentRanking, updateStats,
-                updateLeaders, updateLeadersRecentForm, updateWinners,
-                updateYearsPalmares, updateYearsStats, updateGames,
-                updateYearRanking, updateSpecialWinners, updateSpecialOrganizers,
-                updateSpecialPalmares
-            ];
-            updateFns.forEach(function(fn) {
+            // Hide loading indicator
+            var loadingEl = document.getElementById('loadingIndicator');
+            if (loadingEl) loadingEl.style.display = 'none';
+
+            // Critical updates first (home tab visible immediately)
+            var criticalFns = [updateHome, updateGeneral];
+            criticalFns.forEach(function(fn) {
                 try { fn(); } catch (e) {
                     console.error('[GAMMOP] ' + fn.name + '() crashed:', e.message);
                 }
             });
+
+            // Defer non-critical updates to allow browser to paint
+            setTimeout(function() {
+                var deferredFns = [
+                    updateRecentRanking, updateStats,
+                    updateLeaders, updateLeadersRecentForm, updateWinners,
+                    updateYearsPalmares, updateYearsStats, updateGames,
+                    updateYearRanking, updateSpecialWinners, updateSpecialOrganizers,
+                    updateSpecialPalmares
+                ];
+                deferredFns.forEach(function(fn) {
+                    try { fn(); } catch (e) {
+                        console.error('[GAMMOP] ' + fn.name + '() crashed:', e.message);
+                    }
+                });
+            }, 50);
         }
 
         function getDivisionInfo(rank) {
@@ -6369,6 +6538,7 @@
                 html += `${getGameWithSymbol(game)} <span style="float:right">►</span>`;
                 html += `<div class="games-dropdown-submenu" id="submenu-${game.replace(/[^a-zA-Z0-9]/g, '-')}">`;
                 html += `<div class="games-dropdown-item" style="font-weight:bold;border-bottom:1px solid var(--border-color)" onclick="showGameRanking('${game.replace(/'/g, "\\'")}'); event.stopPropagation();">📊 Voir le classement</div>`;
+                html += `<div class="games-dropdown-item" style="font-weight:bold;border-bottom:1px solid var(--border-color)" onclick="showGamePalmares('${game.replace(/'/g, "\\'")}'); event.stopPropagation();">🏆 Palmarès</div>`;
                 seasonsList.forEach(s => {
                     const date = new Date(s.date).toLocaleDateString('fr-FR', {day:'numeric', month:'short', year:'numeric'});
                     html += `<div class="games-dropdown-item" onclick="showSeasonDetail('${s.name.replace(/'/g, "\\'")}'); event.stopPropagation();">${s.name.replace(game + ' ', '')} <span style="font-size:0.8em;color:var(--text-secondary);margin-left:8px">${date}</span></div>`;
@@ -8925,6 +9095,22 @@
                 if (seasons && seasons.find(function(s) { return s.name === seasonName; })) {
                     showSeasonDetail(seasonName);
                 }
+                _skipHashUpdate = false;
+                return;
+            }
+
+            // Game ranking: #game/GameName
+            if (hash.startsWith('game/')) {
+                var gameName = decodeURIComponent(hash.substring(5));
+                showGameRanking(gameName);
+                _skipHashUpdate = false;
+                return;
+            }
+
+            // Game palmares: #game-palmares/GameName
+            if (hash.startsWith('game-palmares/')) {
+                var gameName = decodeURIComponent(hash.substring(14));
+                showGamePalmares(gameName);
                 _skipHashUpdate = false;
                 return;
             }

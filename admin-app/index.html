@@ -1974,7 +1974,11 @@ function ptibakRenderPlayers() {
 
         html += '<div style="border:2px solid ' + borderColor + ';border-radius:10px;padding:10px;background:' + bgColor + ';text-align:center">';
         html += '<div style="font-weight:bold;font-size:0.95em;margin-bottom:4px;color:var(--text-primary)">' + player.name + (isQualified ? ' ✅' : '') + '</div>';
-        html += '<div style="font-size:1.3em;font-weight:bold;color:var(--text-accent);margin-bottom:8px">' + player.points + ' pt' + (player.points > 1 ? 's' : '') + '</div>';
+        html += '<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:8px">';
+        html += '<button onclick="ptibakAdjustPts(\'' + player.name.replace(/'/g, "\\'") + '\', -1)" style="background:#e74c3c;color:white;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-weight:bold;font-size:0.85em;line-height:22px;padding:0">−</button>';
+        html += '<span style="font-size:1.3em;font-weight:bold;color:var(--text-accent)">' + player.points + ' pt' + (player.points > 1 ? 's' : '') + '</span>';
+        html += '<button onclick="ptibakAdjustPts(\'' + player.name.replace(/'/g, "\\'") + '\', 1)" style="background:#4a7c28;color:white;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-weight:bold;font-size:0.85em;line-height:22px;padding:0">+</button>';
+        html += '</div>';
         html += '<div style="display:flex;gap:4px;justify-content:center">';
         html += '<button onclick="ptibakSetRoundPts(\'' + player.name.replace(/'/g, "\\'") + '\', 0)" style="' + btnStyle0 + ';border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-weight:bold;font-size:0.85em">0</button>';
         html += '<button onclick="ptibakSetRoundPts(\'' + player.name.replace(/'/g, "\\'") + '\', 1)" style="' + btnStyle1 + ';border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-weight:bold;font-size:0.85em">1</button>';
@@ -1984,6 +1988,16 @@ function ptibakRenderPlayers() {
     });
 
     container.innerHTML = html;
+}
+
+function ptibakAdjustPts(playerName, delta) {
+    if (!ptibakState) return;
+    var player = ptibakState.players.find(function(p) { return p.name === playerName; });
+    if (!player) return;
+    player.points += delta;
+    if (player.points < 0) player.points = 0;
+    ptibakRenderPlayers();
+    ptibakUpdateInfo();
 }
 
 function ptibakSetRoundPts(playerName, pts) {
@@ -2099,7 +2113,6 @@ function ptibakGenerateMessage() {
     });
 
     // Build ranking lines
-    lines.push('Classement :');
     groups.forEach(function(group) {
         var names = group.players.map(function(p) { return p.name; });
         var ptLabel = group.points > 1 ? ' pts' : ' pt';

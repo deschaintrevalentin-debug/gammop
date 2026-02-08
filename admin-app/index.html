@@ -311,6 +311,7 @@
             <button class="tab-btn" onclick="showAdminTab('add', this)">Ajouter</button>
             <button class="tab-btn" onclick="showAdminTab('pseudos', this)">Pseudos</button>
             <button class="tab-btn" onclick="showAdminTab('backup', this)">Backup</button>
+            <button class="tab-btn" onclick="showAdminTab('ptibak', this)">🎲 Ptibak</button>
         </div>
 
         <!-- TAB: SAISONS -->
@@ -498,6 +499,60 @@
                 <p style="color:var(--text-secondary);margin-bottom:10px">Insere 1 saison de test via la Edge Function (service_role, bypass RLS).</p>
                 <button class="btn btn-secondary" onclick="testInsertOneSeason()">Test insert 1 saison</button>
                 <div id="testResult" style="margin-top:10px"></div>
+            </div>
+        </div>
+
+        <!-- TAB: PTIBAK -->
+        <div id="ptibak" class="content">
+            <div class="section">
+                <h3>🎲 Ptibak - Assistant de Poule</h3>
+                <p style="color:var(--text-secondary);margin-bottom:20px">Outil pour gérer les poules du Ptibak sur Discord.</p>
+
+                <!-- SETUP PHASE -->
+                <div id="ptibakSetup">
+                    <div class="form-group">
+                        <label>Nombre de joueurs dans la poule (2-30)</label>
+                        <input type="number" id="ptibakPlayerCount" min="2" max="30" value="6" style="width:100px;padding:8px;border:2px solid var(--border-color);border-radius:8px;font-size:1em;background:var(--bg-primary);color:var(--text-primary)">
+                    </div>
+                    <div class="form-group">
+                        <label>Noms des joueurs (un par ligne)</label>
+                        <textarea id="ptibakPlayerNames" placeholder="Joueur1&#10;Joueur2&#10;Joueur3&#10;..." style="min-height:150px"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Points nécessaires pour se qualifier</label>
+                        <input type="number" id="ptibakQualifPoints" min="1" value="7" style="width:100px;padding:8px;border:2px solid var(--border-color);border-radius:8px;font-size:1em;background:var(--bg-primary);color:var(--text-primary)">
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre de places qualificatives</label>
+                        <input type="number" id="ptibakQualifSlots" min="1" value="3" style="width:100px;padding:8px;border:2px solid var(--border-color);border-radius:8px;font-size:1em;background:var(--bg-primary);color:var(--text-primary)">
+                    </div>
+                    <button class="btn btn-primary" onclick="ptibakStart()">Démarrer la Poule</button>
+                </div>
+
+                <!-- GAME PHASE (hidden initially) -->
+                <div id="ptibakGame" style="display:none">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
+                        <h4 style="color:var(--text-accent)">Tour en cours</h4>
+                        <button class="btn btn-danger" onclick="ptibakReset()" style="font-size:0.85em;padding:6px 14px">Réinitialiser</button>
+                    </div>
+
+                    <div id="ptibakInfo" style="background:var(--section-bg);padding:12px;border-radius:8px;border:1px solid var(--section-border);margin-bottom:15px;font-size:0.9em;color:var(--text-secondary)"></div>
+
+                    <!-- Player buttons grid -->
+                    <div id="ptibakPlayers" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:20px"></div>
+
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+                        <button class="btn btn-primary" onclick="ptibakValidateRound()">✅ Valider le tour</button>
+                        <button class="btn btn-secondary" onclick="ptibakUndoRound()" id="ptibakUndoBtn" style="display:none">↩️ Annuler dernier tour</button>
+                    </div>
+
+                    <!-- Discord message output -->
+                    <div id="ptibakOutput" style="display:none">
+                        <h4 style="color:var(--text-accent);margin-bottom:10px">Message Discord</h4>
+                        <div id="ptibakMessage" style="background:#36393f;color:#dcddde;padding:15px;border-radius:8px;font-family:'Segoe UI',sans-serif;font-size:0.95em;white-space:pre-wrap;line-height:1.6;cursor:pointer;border:2px solid #4a7c28" onclick="ptibakCopyMessage()" title="Cliquer pour copier"></div>
+                        <p style="color:var(--text-secondary);font-size:0.85em;margin-top:8px">Cliquez sur le message pour le copier</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1845,6 +1900,287 @@ function showBackupMsg(text, type) {
     var s = document.getElementById('backupSuccess'), e = document.getElementById('backupError');
     if (type === 'success') { s.textContent = text; s.style.display = 'block'; e.style.display = 'none'; }
     else { e.textContent = text; e.style.display = 'block'; s.style.display = 'none'; }
+}
+
+// ==================== PTIBAK ====================
+var ptibakState = null;
+
+function ptibakStart() {
+    var countInput = document.getElementById('ptibakPlayerCount');
+    var namesInput = document.getElementById('ptibakPlayerNames');
+    var qualifPtsInput = document.getElementById('ptibakQualifPoints');
+    var qualifSlotsInput = document.getElementById('ptibakQualifSlots');
+
+    var count = parseInt(countInput.value) || 6;
+    var qualifPts = parseInt(qualifPtsInput.value) || 7;
+    var qualifSlots = parseInt(qualifSlotsInput.value) || 3;
+
+    var names = namesInput.value.trim().split('\n').map(function(n) { return n.trim(); }).filter(function(n) { return n.length > 0; });
+
+    if (names.length < 2) {
+        alert('Il faut au moins 2 joueurs !');
+        return;
+    }
+    if (names.length > 30) {
+        alert('Maximum 30 joueurs !');
+        return;
+    }
+
+    // Check for duplicates
+    var seen = {};
+    for (var i = 0; i < names.length; i++) {
+        var lower = names[i].toLowerCase();
+        if (seen[lower]) {
+            alert('Nom en double : ' + names[i]);
+            return;
+        }
+        seen[lower] = true;
+    }
+
+    ptibakState = {
+        players: names.map(function(name) { return { name: name, points: 0 }; }),
+        qualifPoints: qualifPts,
+        qualifSlots: qualifSlots,
+        roundNumber: 0,
+        history: [],       // array of arrays: each entry is the round points awarded
+        currentRound: {}   // player name -> points for current round (before validate)
+    };
+
+    // Initialize current round
+    names.forEach(function(name) { ptibakState.currentRound[name] = 0; });
+
+    document.getElementById('ptibakSetup').style.display = 'none';
+    document.getElementById('ptibakGame').style.display = 'block';
+
+    ptibakRenderPlayers();
+    ptibakUpdateInfo();
+}
+
+function ptibakRenderPlayers() {
+    var container = document.getElementById('ptibakPlayers');
+    var html = '';
+
+    ptibakState.players.forEach(function(player) {
+        var currentPts = ptibakState.currentRound[player.name] || 0;
+        var isQualified = player.points >= ptibakState.qualifPoints;
+
+        var borderColor = isQualified ? '#4a7c28' : 'var(--border-color)';
+        var bgColor = isQualified ? 'rgba(74,124,40,0.1)' : 'var(--bg-primary)';
+
+        // Button color based on current round selection
+        var btnStyle0 = currentPts === 0 ? 'background:#666;color:white' : 'background:var(--bg-secondary);color:var(--text-secondary)';
+        var btnStyle1 = currentPts === 1 ? 'background:#2196F3;color:white' : 'background:var(--bg-secondary);color:var(--text-secondary)';
+        var btnStyle2 = currentPts === 2 ? 'background:#ff9800;color:white' : 'background:var(--bg-secondary);color:var(--text-secondary)';
+
+        html += '<div style="border:2px solid ' + borderColor + ';border-radius:10px;padding:10px;background:' + bgColor + ';text-align:center">';
+        html += '<div style="font-weight:bold;font-size:0.95em;margin-bottom:4px;color:var(--text-primary)">' + player.name + (isQualified ? ' ✅' : '') + '</div>';
+        html += '<div style="font-size:1.3em;font-weight:bold;color:var(--text-accent);margin-bottom:8px">' + player.points + ' pt' + (player.points > 1 ? 's' : '') + '</div>';
+        html += '<div style="display:flex;gap:4px;justify-content:center">';
+        html += '<button onclick="ptibakSetRoundPts(\'' + player.name.replace(/'/g, "\\'") + '\', 0)" style="' + btnStyle0 + ';border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-weight:bold;font-size:0.85em">0</button>';
+        html += '<button onclick="ptibakSetRoundPts(\'' + player.name.replace(/'/g, "\\'") + '\', 1)" style="' + btnStyle1 + ';border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-weight:bold;font-size:0.85em">1</button>';
+        html += '<button onclick="ptibakSetRoundPts(\'' + player.name.replace(/'/g, "\\'") + '\', 2)" style="' + btnStyle2 + ';border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-weight:bold;font-size:0.85em">2</button>';
+        html += '</div>';
+        html += '</div>';
+    });
+
+    container.innerHTML = html;
+}
+
+function ptibakSetRoundPts(playerName, pts) {
+    if (!ptibakState) return;
+    var player = ptibakState.players.find(function(p) { return p.name === playerName; });
+    if (!player) return;
+
+    // If player is already qualified, don't allow points
+    if (player.points >= ptibakState.qualifPoints) return;
+
+    ptibakState.currentRound[playerName] = pts;
+    ptibakRenderPlayers();
+}
+
+function ptibakUpdateInfo() {
+    var info = document.getElementById('ptibakInfo');
+    var qualified = ptibakState.players.filter(function(p) { return p.points >= ptibakState.qualifPoints; });
+    var remaining = ptibakState.qualifSlots - qualified.length;
+
+    var text = 'Tour n°' + (ptibakState.roundNumber + 1);
+    text += ' | Qualification : ' + ptibakState.qualifPoints + ' pts';
+    text += ' | Qualifiés : ' + qualified.length + '/' + ptibakState.qualifSlots;
+    if (remaining > 0) {
+        text += ' | Places restantes : ' + remaining;
+    } else {
+        text += ' | ✅ Toutes les places sont prises !';
+    }
+    info.textContent = text;
+}
+
+function ptibakValidateRound() {
+    if (!ptibakState) return;
+
+    // Check if any points were given this round
+    var anyPoints = false;
+    for (var name in ptibakState.currentRound) {
+        if (ptibakState.currentRound[name] > 0) { anyPoints = true; break; }
+    }
+    if (!anyPoints) {
+        alert('Aucun point n\'a été attribué ce tour !');
+        return;
+    }
+
+    // Save round history
+    var roundData = {};
+    for (var name in ptibakState.currentRound) {
+        roundData[name] = ptibakState.currentRound[name];
+    }
+    ptibakState.history.push(roundData);
+
+    // Apply points
+    ptibakState.players.forEach(function(player) {
+        // Only add points if not already qualified
+        if (player.points < ptibakState.qualifPoints) {
+            player.points += (ptibakState.currentRound[player.name] || 0);
+        }
+    });
+
+    ptibakState.roundNumber++;
+
+    // Reset current round
+    ptibakState.players.forEach(function(player) {
+        ptibakState.currentRound[player.name] = 0;
+    });
+
+    // Show undo button
+    document.getElementById('ptibakUndoBtn').style.display = 'inline-block';
+
+    // Generate Discord message
+    ptibakGenerateMessage();
+
+    ptibakRenderPlayers();
+    ptibakUpdateInfo();
+}
+
+function ptibakGenerateMessage() {
+    var state = ptibakState;
+    var qualifPts = state.qualifPoints;
+    var qualifSlots = state.qualifSlots;
+
+    // Sort players by points descending
+    var sorted = state.players.slice().sort(function(a, b) {
+        if (b.points !== a.points) return b.points - a.points;
+        return a.name.localeCompare(b.name);
+    });
+
+    var qualified = sorted.filter(function(p) { return p.points >= qualifPts; });
+    var remaining = qualifSlots - qualified.length;
+
+    var lines = [];
+
+    // First two lines only if at least one player is qualified
+    if (qualified.length > 0) {
+        lines.push('*Points nécessaires pour se qualifier : ' + qualifPts + '*');
+        lines.push('*Joueurs déjà qualifiés : ' + qualified.map(function(p) { return p.name; }).join(', ') + ' (' + qualified.length + ' qualifié' + (qualified.length > 1 ? 's' : '') + '/' + qualifSlots + ')*');
+        lines.push('');
+    }
+
+    // Group players by points
+    var groups = [];
+    var currentGroup = null;
+    sorted.forEach(function(player) {
+        if (!currentGroup || currentGroup.points !== player.points) {
+            currentGroup = { points: player.points, players: [] };
+            groups.push(currentGroup);
+        }
+        currentGroup.players.push(player);
+    });
+
+    // Build ranking lines
+    lines.push('Classement :');
+    groups.forEach(function(group) {
+        var names = group.players.map(function(p) {
+            var isQualified = p.points >= qualifPts;
+            return isQualified ? '*' + p.name + '*' : p.name;
+        });
+        var ptLabel = group.points > 1 ? ' pts' : ' pt';
+        lines.push(names.join(', ') + ' -> ' + group.points + ptLabel);
+    });
+
+    // Remaining slots line
+    if (remaining > 0) {
+        lines.push('');
+        lines.push('Plus que ' + remaining + ' place' + (remaining > 1 ? 's' : '') + ' pour se qualifier');
+    } else {
+        lines.push('');
+        lines.push('✅ Toutes les places qualificatives sont prises !');
+    }
+
+    var message = lines.join('\n');
+
+    document.getElementById('ptibakMessage').textContent = message;
+    document.getElementById('ptibakOutput').style.display = 'block';
+}
+
+function ptibakUndoRound() {
+    if (!ptibakState || ptibakState.history.length === 0) return;
+
+    var lastRound = ptibakState.history.pop();
+
+    // Subtract points
+    ptibakState.players.forEach(function(player) {
+        player.points -= (lastRound[player.name] || 0);
+        if (player.points < 0) player.points = 0;
+    });
+
+    ptibakState.roundNumber--;
+
+    // Reset current round
+    ptibakState.players.forEach(function(player) {
+        ptibakState.currentRound[player.name] = 0;
+    });
+
+    // Hide undo if no more history
+    if (ptibakState.history.length === 0) {
+        document.getElementById('ptibakUndoBtn').style.display = 'none';
+    }
+
+    // Hide message output
+    document.getElementById('ptibakOutput').style.display = 'none';
+
+    ptibakRenderPlayers();
+    ptibakUpdateInfo();
+}
+
+function ptibakReset() {
+    if (!confirm('Réinitialiser la poule Ptibak ?')) return;
+
+    ptibakState = null;
+    document.getElementById('ptibakSetup').style.display = 'block';
+    document.getElementById('ptibakGame').style.display = 'none';
+    document.getElementById('ptibakOutput').style.display = 'none';
+    document.getElementById('ptibakUndoBtn').style.display = 'none';
+}
+
+function ptibakCopyMessage() {
+    var msg = document.getElementById('ptibakMessage').textContent;
+    navigator.clipboard.writeText(msg).then(function() {
+        var el = document.getElementById('ptibakMessage');
+        var origBorder = el.style.borderColor;
+        el.style.borderColor = '#4a7c28';
+        el.style.boxShadow = '0 0 10px rgba(74,124,40,0.5)';
+        setTimeout(function() {
+            el.style.borderColor = origBorder;
+            el.style.boxShadow = 'none';
+        }, 1000);
+        showMsg('Message copié !', 'success');
+    }).catch(function() {
+        // Fallback
+        var ta = document.createElement('textarea');
+        ta.value = msg;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showMsg('Message copié !', 'success');
+    });
 }
 
 // ==================== INIT ====================

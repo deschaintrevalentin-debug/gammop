@@ -2075,17 +2075,22 @@ function ptibakGenerateMessage() {
 
     var lines = [];
 
-    // First two lines only if at least one player is qualified
-    if (qualified.length > 0) {
-        lines.push('*Points nécessaires pour se qualifier : ' + qualifPts + '*');
-        lines.push('*Joueurs déjà qualifiés : ' + qualified.map(function(p) { return p.name; }).join(', ') + ' (' + qualified.length + ' qualifié' + (qualified.length > 1 ? 's' : '') + '/' + qualifSlots + ')*');
-        lines.push('');
-    }
+    // Always show qualification points line
+    lines.push('*Points nécessaires pour se qualifier : ' + qualifPts + '*');
 
-    // Group players by points
+    // Show qualified players line only if at least one is qualified
+    if (qualified.length > 0) {
+        lines.push('*Joueurs déjà qualifiés : ' + qualified.map(function(p) { return p.name; }).join(', ') + ' (' + qualified.length + ' qualifié' + (qualified.length > 1 ? 's' : '') + '/' + qualifSlots + ')*');
+    }
+    lines.push('');
+
+    // Filter out qualified players from ranking
+    var nonQualified = sorted.filter(function(p) { return p.points < qualifPts; });
+
+    // Group non-qualified players by points
     var groups = [];
     var currentGroup = null;
-    sorted.forEach(function(player) {
+    nonQualified.forEach(function(player) {
         if (!currentGroup || currentGroup.points !== player.points) {
             currentGroup = { points: player.points, players: [] };
             groups.push(currentGroup);
@@ -2096,10 +2101,7 @@ function ptibakGenerateMessage() {
     // Build ranking lines
     lines.push('Classement :');
     groups.forEach(function(group) {
-        var names = group.players.map(function(p) {
-            var isQualified = p.points >= qualifPts;
-            return isQualified ? '*' + p.name + '*' : p.name;
-        });
+        var names = group.players.map(function(p) { return p.name; });
         var ptLabel = group.points > 1 ? ' pts' : ' pt';
         lines.push(names.join(', ') + ' -> ' + group.points + ptLabel);
     });

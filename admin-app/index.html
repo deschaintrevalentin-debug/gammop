@@ -311,6 +311,7 @@
             <button class="tab-btn" onclick="showAdminTab('add', this)">Ajouter</button>
             <button class="tab-btn" onclick="showAdminTab('pseudos', this)">Pseudos</button>
             <button class="tab-btn" onclick="showAdminTab('backup', this)">Backup</button>
+            <button class="tab-btn" onclick="showAdminTab('mouvements', this)">📊 Mouvements</button>
             <button class="tab-btn" onclick="showAdminTab('ptibak', this)">🎲 Ptibak</button>
         </div>
 
@@ -499,6 +500,17 @@
                 <p style="color:var(--text-secondary);margin-bottom:10px">Insere 1 saison de test via la Edge Function (service_role, bypass RLS).</p>
                 <button class="btn btn-secondary" onclick="testInsertOneSeason()">Test insert 1 saison</button>
                 <div id="testResult" style="margin-top:10px"></div>
+            </div>
+        </div>
+
+        <!-- TAB: MOUVEMENTS -->
+        <div id="mouvements" class="content">
+            <div class="section">
+                <h3>📊 Mouvements après ajout de saison</h3>
+                <p style="color:var(--text-secondary);margin-bottom:20px">Les changements de classement s'affichent automatiquement après l'ajout d'une saison officielle.</p>
+                <div id="mouvementsContent">
+                    <p style="color:var(--text-secondary);text-align:center;padding:40px">Ajoutez une saison officielle pour voir les mouvements.</p>
+                </div>
             </div>
         </div>
 
@@ -1221,6 +1233,9 @@ async function addSeason() {
         }
     }
 
+    // Snapshot before adding for mouvements
+    var oldSeasonsSnapshot = isSpecial ? null : seasons.slice();
+
     // 2. Write via REST API
     try {
         if (editingSeasonId) {
@@ -1243,9 +1258,23 @@ async function addSeason() {
     renderSeasonsList();
     updatePseudosList();
 
+    // 4. Compute mouvements for non-special seasons
+    if (oldSeasonsSnapshot && !isSpecial) {
+        try {
+            var changes = mouvComputeChanges(oldSeasonsSnapshot, seasons, date);
+            mouvRenderChanges(changes, name);
+        } catch (e) {
+            console.error('[MOUV] Erreur:', e);
+        }
+    }
+
     const typeMsg = isSpecial ? 'speciale ' : '';
     showMsg(`Saison ${typeMsg}"${name}" enregistree (${players.length} joueurs). Total en base: ${seasons.length} saisons.`, 'success');
-    setTimeout(() => showAdminTab('seasons', document.querySelectorAll('.tab-btn')[0]), 2000);
+    if (!isSpecial) {
+        setTimeout(() => showAdminTab('mouvements', document.querySelectorAll('.tab-btn')[4]), 2000);
+    } else {
+        setTimeout(() => showAdminTab('seasons', document.querySelectorAll('.tab-btn')[0]), 2000);
+    }
 }
 
 // ==================== TAB 3: PSEUDOS ====================
@@ -1900,6 +1929,362 @@ function showBackupMsg(text, type) {
     var s = document.getElementById('backupSuccess'), e = document.getElementById('backupError');
     if (type === 'success') { s.textContent = text; s.style.display = 'block'; e.style.display = 'none'; }
     else { e.textContent = text; e.style.display = 'block'; s.style.display = 'none'; }
+}
+
+// ==================== MOUVEMENTS ====================
+function mouvGetDivision(rank) {
+    if (rank <= 3) return 'Podium';
+    if (rank <= 5) return 'Mythes';
+    if (rank <= 10) return 'Légendes';
+    if (rank <= 20) return 'Division 1';
+    if (rank <= 30) return 'Division 2';
+    if (rank <= 40) return 'Division 3';
+    if (rank <= 50) return 'Division 4';
+    if (rank <= 60) return 'Division 5';
+    if (rank <= 80) return 'Division 6';
+    if (rank <= 100) return 'Division 7';
+    if (rank <= 120) return 'Division 8';
+    if (rank <= 140) return 'Division 9';
+    if (rank <= 160) return 'Division 10';
+    return 'Non classé';
+}
+
+function mouvComputeRanking(seasonsList) {
+    var normalSeasons = seasonsList.filter(function(s) { return !s.isSpecial; });
+    var playerData = {};
+
+    normalSeasons.forEach(function(season) {
+        var totalPlayers = season.players.length;
+        season.players.forEach(function(player, index) {
+            var position = index + 1;
+            var points = (totalPlayers - position) + 1;
+            points += Math.floor(((totalPlayers - position) + 1) / position);
+            if (position <= 10) points += (11 - position);
+            if (position <= 5) points += (6 - position);
+            if (position <= 3) points += (4 - position);
+            if (position === 1) points += 1;
+
+            if (!playerData[player]) {
+                playerData[player] = { player: player, pts: 0, games: 0, lastDate: season.date };
+            }
+            playerData[player].pts += points;
+            playerData[player].games++;
+            if (new Date(season.date) > new Date(playerData[player].lastDate)) {
+                playerData[player].lastDate = season.date;
+            }
+        });
+    });
+
+    var ranking = Object.values(playerData).sort(function(a, b) {
+        if (b.pts !== a.pts) return b.pts - a.pts;
+        var dA = new Date(a.lastDate), dB = new Date(b.lastDate);
+        if (dB - dA !== 0) return dB - dA;
+        return a.player.localeCompare(b.player);
+    });
+
+    return ranking;
+}
+
+function mouvComputeYearlyRanking(seasonsList, year) {
+    var normalSeasons = seasonsList.filter(function(s) {
+        return !s.isSpecial && s.date && s.date.startsWith(String(year));
+    });
+    var playerData = {};
+
+    normalSeasons.forEach(function(season) {
+        var totalPlayers = season.players.length;
+        season.players.forEach(function(player, index) {
+            var position = index + 1;
+            var points = (totalPlayers - position) + 1;
+            points += Math.floor(((totalPlayers - position) + 1) / position);
+            if (position <= 10) points += (11 - position);
+            if (position <= 5) points += (6 - position);
+            if (position <= 3) points += (4 - position);
+            if (position === 1) points += 1;
+
+            if (!playerData[player]) {
+                playerData[player] = { player: player, pts: 0, games: 0, lastDate: season.date };
+            }
+            playerData[player].pts += points;
+            playerData[player].games++;
+            if (new Date(season.date) > new Date(playerData[player].lastDate)) {
+                playerData[player].lastDate = season.date;
+            }
+        });
+    });
+
+    return Object.values(playerData).sort(function(a, b) {
+        if (b.pts !== a.pts) return b.pts - a.pts;
+        var dA = new Date(a.lastDate), dB = new Date(b.lastDate);
+        if (dB - dA !== 0) return dB - dA;
+        return a.player.localeCompare(b.player);
+    });
+}
+
+function mouvComputeChanges(oldSeasons, newSeasons, addedSeasonDate) {
+    var oldRanking = mouvComputeRanking(oldSeasons);
+    var newRanking = mouvComputeRanking(newSeasons);
+
+    // Build rank maps
+    var oldRankMap = {};
+    oldRanking.forEach(function(p, i) { oldRankMap[p.player] = i + 1; });
+    var newRankMap = {};
+    newRanking.forEach(function(p, i) { newRankMap[p.player] = i + 1; });
+
+    // 1. Division changes
+    var divChanges = [];
+    newRanking.forEach(function(p, i) {
+        var newRank = i + 1;
+        var oldRank = oldRankMap[p.player];
+        if (oldRank) {
+            var oldDiv = mouvGetDivision(oldRank);
+            var newDiv = mouvGetDivision(newRank);
+            if (oldDiv !== newDiv) {
+                divChanges.push({
+                    player: p.player,
+                    oldRank: oldRank, newRank: newRank,
+                    oldDiv: oldDiv, newDiv: newDiv,
+                    up: newRank < oldRank
+                });
+            }
+        }
+    });
+
+    // 2. Top 10 changes
+    var top10Changes = [];
+    for (var i = 0; i < Math.min(10, newRanking.length); i++) {
+        var p = newRanking[i];
+        var newRank = i + 1;
+        var oldRank = oldRankMap[p.player];
+        if (!oldRank || oldRank !== newRank) {
+            top10Changes.push({
+                player: p.player,
+                oldRank: oldRank || null,
+                newRank: newRank,
+                isNew: !oldRank || oldRank > 10
+            });
+        }
+    }
+    // Players who left top 10
+    oldRanking.slice(0, 10).forEach(function(p) {
+        var newRank = newRankMap[p.player];
+        if (!newRank || newRank > 10) {
+            top10Changes.push({
+                player: p.player,
+                oldRank: oldRankMap[p.player],
+                newRank: newRank || null,
+                left: true
+            });
+        }
+    });
+
+    // 3. Entries/exits in general ranking
+    var oldPlayers = new Set(oldRanking.map(function(p) { return p.player; }));
+    var newPlayers = new Set(newRanking.map(function(p) { return p.player; }));
+    var newEntries = [];
+    var exits = [];
+    newPlayers.forEach(function(player) {
+        if (!oldPlayers.has(player)) {
+            newEntries.push({ player: player, rank: newRankMap[player] });
+        }
+    });
+    oldPlayers.forEach(function(player) {
+        if (!newPlayers.has(player)) {
+            exits.push({ player: player, oldRank: oldRankMap[player] });
+        }
+    });
+
+    // 4. Yearly ranking changes
+    var year = addedSeasonDate ? addedSeasonDate.substring(0, 4) : String(new Date().getFullYear());
+    var oldYearly = mouvComputeYearlyRanking(oldSeasons, year);
+    var newYearly = mouvComputeYearlyRanking(newSeasons, year);
+
+    var oldYearlyMap = {};
+    oldYearly.forEach(function(p, i) { oldYearlyMap[p.player] = i + 1; });
+    var newYearlyMap = {};
+    newYearly.forEach(function(p, i) { newYearlyMap[p.player] = i + 1; });
+
+    var oldYearlyPlayers = new Set(oldYearly.map(function(p) { return p.player; }));
+    var newYearlyPlayers = new Set(newYearly.map(function(p) { return p.player; }));
+    var yearlyNewEntries = [];
+    var yearlyExits = [];
+    newYearlyPlayers.forEach(function(player) {
+        if (!oldYearlyPlayers.has(player)) {
+            yearlyNewEntries.push({ player: player, rank: newYearlyMap[player] });
+        }
+    });
+    oldYearlyPlayers.forEach(function(player) {
+        if (!newYearlyPlayers.has(player)) {
+            yearlyExits.push({ player: player, oldRank: oldYearlyMap[player] });
+        }
+    });
+
+    // Yearly top 10 rank changes
+    var yearlyTop10Changes = [];
+    for (var j = 0; j < Math.min(10, newYearly.length); j++) {
+        var py = newYearly[j];
+        var nyRank = j + 1;
+        var oyRank = oldYearlyMap[py.player];
+        if (!oyRank || oyRank !== nyRank) {
+            yearlyTop10Changes.push({
+                player: py.player,
+                oldRank: oyRank || null,
+                newRank: nyRank,
+                isNew: !oyRank || oyRank > 10
+            });
+        }
+    }
+    oldYearly.slice(0, 10).forEach(function(py) {
+        var nyRank = newYearlyMap[py.player];
+        if (!nyRank || nyRank > 10) {
+            yearlyTop10Changes.push({
+                player: py.player,
+                oldRank: oldYearlyMap[py.player],
+                newRank: nyRank || null,
+                left: true
+            });
+        }
+    });
+
+    return {
+        divChanges: divChanges,
+        top10Changes: top10Changes,
+        generalNewEntries: newEntries,
+        generalExits: exits,
+        year: year,
+        yearlyNewEntries: yearlyNewEntries,
+        yearlyExits: yearlyExits,
+        yearlyTop10Changes: yearlyTop10Changes
+    };
+}
+
+function mouvRenderChanges(changes, seasonName) {
+    var html = '';
+
+    html += '<h4 style="color:var(--text-accent);margin-bottom:15px">Saison ajoutée : <strong>' + seasonName + '</strong></h4>';
+
+    // Division changes
+    html += '<div style="background:var(--section-bg);border:1px solid var(--section-border);border-radius:10px;padding:15px;margin-bottom:15px">';
+    html += '<h4 style="margin-bottom:10px">🔄 Changements de division</h4>';
+    if (changes.divChanges.length === 0) {
+        html += '<p style="color:var(--text-secondary);font-size:0.9em">Aucun changement de division.</p>';
+    } else {
+        changes.divChanges.forEach(function(c) {
+            var arrow = c.up ? '⬆️' : '⬇️';
+            var color = c.up ? '#4a7c28' : '#e74c3c';
+            html += '<div style="padding:6px 0;border-bottom:1px solid var(--border-color);display:flex;align-items:center;gap:8px">';
+            html += '<span style="font-size:1.2em">' + arrow + '</span>';
+            html += '<strong>' + c.player + '</strong>';
+            html += '<span style="color:var(--text-secondary);font-size:0.9em">' + c.oldDiv + ' (rang ' + c.oldRank + ') → ' + c.newDiv + ' (rang ' + c.newRank + ')</span>';
+            html += '</div>';
+        });
+    }
+    html += '</div>';
+
+    // Top 10 general changes
+    html += '<div style="background:var(--section-bg);border:1px solid var(--section-border);border-radius:10px;padding:15px;margin-bottom:15px">';
+    html += '<h4 style="margin-bottom:10px">🏆 Mouvements dans le Top 10 général</h4>';
+    if (changes.top10Changes.length === 0) {
+        html += '<p style="color:var(--text-secondary);font-size:0.9em">Aucun mouvement dans le Top 10.</p>';
+    } else {
+        changes.top10Changes.forEach(function(c) {
+            html += '<div style="padding:6px 0;border-bottom:1px solid var(--border-color);display:flex;align-items:center;gap:8px">';
+            if (c.left) {
+                html += '<span style="font-size:1.2em">🔻</span>';
+                html += '<strong>' + c.player + '</strong>';
+                html += '<span style="color:#e74c3c;font-size:0.9em">sort du Top 10 (rang ' + c.oldRank + ' → ' + (c.newRank || 'sorti') + ')</span>';
+            } else if (c.isNew) {
+                html += '<span style="font-size:1.2em">🆕</span>';
+                html += '<strong>' + c.player + '</strong>';
+                html += '<span style="color:#4a7c28;font-size:0.9em">entre dans le Top 10 (rang ' + c.newRank + ')' + (c.oldRank ? ' (avant : rang ' + c.oldRank + ')' : '') + '</span>';
+            } else {
+                var diff = c.oldRank - c.newRank;
+                var arrow = diff > 0 ? '⬆️' : '⬇️';
+                html += '<span style="font-size:1.2em">' + arrow + '</span>';
+                html += '<strong>' + c.player + '</strong>';
+                html += '<span style="color:var(--text-secondary);font-size:0.9em">rang ' + c.oldRank + ' → rang ' + c.newRank + '</span>';
+            }
+            html += '</div>';
+        });
+    }
+    html += '</div>';
+
+    // General ranking entries/exits
+    html += '<div style="background:var(--section-bg);border:1px solid var(--section-border);border-radius:10px;padding:15px;margin-bottom:15px">';
+    html += '<h4 style="margin-bottom:10px">📋 Entrées / Sorties classement général</h4>';
+    if (changes.generalNewEntries.length === 0 && changes.generalExits.length === 0) {
+        html += '<p style="color:var(--text-secondary);font-size:0.9em">Aucune entrée ni sortie.</p>';
+    } else {
+        changes.generalNewEntries.forEach(function(c) {
+            html += '<div style="padding:6px 0;border-bottom:1px solid var(--border-color);display:flex;align-items:center;gap:8px">';
+            html += '<span style="font-size:1.2em">➡️</span>';
+            html += '<strong style="color:#4a7c28">' + c.player + '</strong>';
+            html += '<span style="color:var(--text-secondary);font-size:0.9em">entre au classement (rang ' + c.rank + ')</span>';
+            html += '</div>';
+        });
+        changes.generalExits.forEach(function(c) {
+            html += '<div style="padding:6px 0;border-bottom:1px solid var(--border-color);display:flex;align-items:center;gap:8px">';
+            html += '<span style="font-size:1.2em">⬅️</span>';
+            html += '<strong style="color:#e74c3c">' + c.player + '</strong>';
+            html += '<span style="color:var(--text-secondary);font-size:0.9em">sort du classement (était rang ' + c.oldRank + ')</span>';
+            html += '</div>';
+        });
+    }
+    html += '</div>';
+
+    // Yearly ranking
+    html += '<div style="background:var(--section-bg);border:1px solid var(--section-border);border-radius:10px;padding:15px;margin-bottom:15px">';
+    html += '<h4 style="margin-bottom:10px">📅 Classement annuel ' + changes.year + '</h4>';
+
+    // Yearly top 10
+    html += '<h5 style="margin:10px 0 8px;color:var(--text-secondary)">Mouvements Top 10 annuel</h5>';
+    if (changes.yearlyTop10Changes.length === 0) {
+        html += '<p style="color:var(--text-secondary);font-size:0.9em">Aucun mouvement dans le Top 10 annuel.</p>';
+    } else {
+        changes.yearlyTop10Changes.forEach(function(c) {
+            html += '<div style="padding:6px 0;border-bottom:1px solid var(--border-color);display:flex;align-items:center;gap:8px">';
+            if (c.left) {
+                html += '<span style="font-size:1.2em">🔻</span>';
+                html += '<strong>' + c.player + '</strong>';
+                html += '<span style="color:#e74c3c;font-size:0.9em">sort du Top 10 annuel (rang ' + c.oldRank + ' → ' + (c.newRank || 'sorti') + ')</span>';
+            } else if (c.isNew) {
+                html += '<span style="font-size:1.2em">🆕</span>';
+                html += '<strong>' + c.player + '</strong>';
+                html += '<span style="color:#4a7c28;font-size:0.9em">entre dans le Top 10 annuel (rang ' + c.newRank + ')' + (c.oldRank ? ' (avant : rang ' + c.oldRank + ')' : '') + '</span>';
+            } else {
+                var diff = c.oldRank - c.newRank;
+                var arrow = diff > 0 ? '⬆️' : '⬇️';
+                html += '<span style="font-size:1.2em">' + arrow + '</span>';
+                html += '<strong>' + c.player + '</strong>';
+                html += '<span style="color:var(--text-secondary);font-size:0.9em">rang ' + c.oldRank + ' → rang ' + c.newRank + '</span>';
+            }
+            html += '</div>';
+        });
+    }
+
+    // Yearly entries/exits
+    html += '<h5 style="margin:15px 0 8px;color:var(--text-secondary)">Entrées / Sorties classement annuel</h5>';
+    if (changes.yearlyNewEntries.length === 0 && changes.yearlyExits.length === 0) {
+        html += '<p style="color:var(--text-secondary);font-size:0.9em">Aucune entrée ni sortie.</p>';
+    } else {
+        changes.yearlyNewEntries.forEach(function(c) {
+            html += '<div style="padding:6px 0;border-bottom:1px solid var(--border-color);display:flex;align-items:center;gap:8px">';
+            html += '<span style="font-size:1.2em">➡️</span>';
+            html += '<strong style="color:#4a7c28">' + c.player + '</strong>';
+            html += '<span style="color:var(--text-secondary);font-size:0.9em">entre au classement annuel (rang ' + c.rank + ')</span>';
+            html += '</div>';
+        });
+        changes.yearlyExits.forEach(function(c) {
+            html += '<div style="padding:6px 0;border-bottom:1px solid var(--border-color);display:flex;align-items:center;gap:8px">';
+            html += '<span style="font-size:1.2em">⬅️</span>';
+            html += '<strong style="color:#e74c3c">' + c.player + '</strong>';
+            html += '<span style="color:var(--text-secondary);font-size:0.9em">sort du classement annuel (était rang ' + c.oldRank + ')</span>';
+            html += '</div>';
+        });
+    }
+    html += '</div>';
+
+    document.getElementById('mouvementsContent').innerHTML = html;
 }
 
 // ==================== PTIBAK ====================

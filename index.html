@@ -6147,7 +6147,7 @@
             }
         }
 
-        function updateYearRanking() {
+        function updateYearRanking(overrideYear) {
             const selector = document.getElementById('yearSelector');
             const contentEl = document.getElementById('yearContent');
 
@@ -6174,8 +6174,10 @@
                 selector.appendChild(option);
             });
 
-            // Si aucune sélection, sélectionner l'année du dernier jeu par défaut
-            if (!currentSelection && years.length > 0) {
+            // Appliquer l'année : override > sélection courante > année la plus récente
+            if (overrideYear && years.includes(overrideYear)) {
+                selector.value = overrideYear;
+            } else if (!currentSelection && years.length > 0) {
                 const latestYear = years[0]; // L'année la plus récente
                 selector.value = latestYear;
             } else if (currentSelection && years.includes(parseInt(currentSelection))) {
@@ -6729,12 +6731,8 @@
             _skipHashUpdate = true;
             showTab('years', event);
 
-            // Sélectionner l'année dans le dropdown
-            const selector = document.getElementById('yearSelector');
-            selector.value = year;
-
-            // Mettre à jour l'affichage sans pushing hash
-            updateYearRanking();
+            // Mettre à jour l'affichage avec l'année demandée
+            updateYearRanking(year);
             _skipHashUpdate = wasSkipping;
 
             // Push year-specific hash (seulement si pas appelé depuis navigateToHash)

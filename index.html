@@ -1314,7 +1314,7 @@
             <div class="section">
                 <h3>Classements par Année</h3>
                 <div class="form-group">
-                    <select id="yearSelector" onchange="updateYearRanking()">
+                    <select id="yearSelector" onchange="onYearSelectorChange()">
                         <option value="">-- Choisir une année --</option>
                     </select>
                 </div>
@@ -1793,15 +1793,15 @@
                             if (position === 1) pts += 1;
 
                             if (!playerYearData[player]) {
-                                playerYearData[player] = { player: player, pts: 0, w: 0, t2: 0, t3: 0, games: 0, lastDate: season.date };
+                                playerYearData[player] = { player: player, pts: 0, w: 0, t2: 0, t3: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
                             }
 
                             playerYearData[player].pts += pts;
                             playerYearData[player].games++;
 
-                            // Mettre à jour la date de dernière participation si plus récente
-                            if (new Date(season.date) > new Date(playerYearData[player].lastDate)) {
-                                playerYearData[player].lastDate = season.date;
+                            if (pts > playerYearData[player].maxSeasonPts || (pts === playerYearData[player].maxSeasonPts && new Date(season.date) > new Date(playerYearData[player].maxSeasonDate))) {
+                                playerYearData[player].maxSeasonPts = pts;
+                                playerYearData[player].maxSeasonDate = season.date;
                             }
 
                             if (position === 1) playerYearData[player].w++;
@@ -1810,15 +1810,7 @@
                         });
                     });
 
-                    const yearRanking = Object.values(playerYearData).sort((a, b) => {
-                        if (b.pts !== a.pts) return b.pts - a.pts;
-                        // En cas d'égalité, le joueur qui a participé le plus récemment est prioritaire
-                        const dateA = new Date(a.lastDate);
-                        const dateB = new Date(b.lastDate);
-                        if (dateB - dateA !== 0) return dateB - dateA;
-                        // Si égalité persiste, ordre alphabétique
-                        return a.player.localeCompare(b.player);
-                    });
+                    const yearRanking = Object.values(playerYearData).sort(gammopSort);
 
                     // Vérifier si le joueur est premier cette année
                     if (yearRanking.length > 0 && yearRanking[0].player === playerName) {
@@ -2192,12 +2184,20 @@
                             t5: 0,
                             t10: 0,
                             details: [],
-                            lastDate: season.date
+                            lastDate: season.date,
+                            maxSeasonPts: 0,
+                            maxSeasonDate: season.date
                         };
                     }
 
                     playerData[player].pts += points;
                     playerData[player].games++;
+
+                    // Mettre à jour le meilleur score sur une saison
+                    if (points > playerData[player].maxSeasonPts || (points === playerData[player].maxSeasonPts && new Date(season.date) > new Date(playerData[player].maxSeasonDate))) {
+                        playerData[player].maxSeasonPts = points;
+                        playerData[player].maxSeasonDate = season.date;
+                    }
 
                     // Mettre à jour la date de dernière participation si plus récente
                     if (new Date(season.date) > new Date(playerData[player].lastDate)) {
@@ -2223,15 +2223,7 @@
             rankingData = Object.values(playerData).map(p => ({
                 ...p,
                 avg: p.games > 0 ? (p.pts / p.games).toFixed(1) : '0.0'
-            })).sort((a, b) => {
-                if (b.pts !== a.pts) return b.pts - a.pts;
-                // En cas d'égalité, le joueur qui a participé le plus récemment est prioritaire
-                const dateA = new Date(a.lastDate);
-                const dateB = new Date(b.lastDate);
-                if (dateB - dateA !== 0) return dateB - dateA;
-                // Si égalité persiste, ordre alphabétique
-                return a.player.localeCompare(b.player);
-            });
+            })).sort(gammopSort);
 
             // Build list of players who only appear in special seasons
             const normalPlayerNames = new Set(rankingData.map(p => p.player));
@@ -2270,6 +2262,21 @@
                     }
                 });
             }, 50);
+        }
+
+        // Tie-breaker universel GAMMOP :
+        // 1. Plus de points totaux
+        // 2. Meilleur score sur une seule saison (dans le périmètre du classement)
+        // 3. Ce meilleur score obtenu le plus récemment
+        // 4. Ordre alphabétique
+        function gammopSort(a, b) {
+            if (b.pts !== a.pts) return b.pts - a.pts;
+            if ((b.maxSeasonPts || 0) !== (a.maxSeasonPts || 0)) return (b.maxSeasonPts || 0) - (a.maxSeasonPts || 0);
+            if (a.maxSeasonDate && b.maxSeasonDate) {
+                var dA = new Date(a.maxSeasonDate), dB = new Date(b.maxSeasonDate);
+                if (dB - dA !== 0) return dB - dA;
+            }
+            return (a.player || '').localeCompare(b.player || '');
         }
 
         function getDivisionInfo(rank) {
@@ -2431,17 +2438,17 @@
                         if (position === 1) pts += 1;
 
                         if (!playerDataRecent[player]) {
-                            playerDataRecent[player] = { player: player, pts: 0, games: 0 };
+                            playerDataRecent[player] = { player: player, pts: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
                         }
                         playerDataRecent[player].pts += pts;
                         playerDataRecent[player].games++;
+                        if (pts > playerDataRecent[player].maxSeasonPts || (pts === playerDataRecent[player].maxSeasonPts && new Date(season.date) > new Date(playerDataRecent[player].maxSeasonDate))) {
+                            playerDataRecent[player].maxSeasonPts = pts;
+                            playerDataRecent[player].maxSeasonDate = season.date;
+                        }
                     });
                 });
-                const recentRanking = Object.values(playerDataRecent).sort((a, b) => {
-                    if (b.pts !== a.pts) return b.pts - a.pts;
-                    if (b.games !== a.games) return b.games - a.games;
-                    return a.player.localeCompare(b.player);
-                });
+                const recentRanking = Object.values(playerDataRecent).sort(gammopSort);
                 recentTopPlayer = recentRanking.length > 0 ? recentRanking[0].player : '';
             }
 
@@ -2467,17 +2474,17 @@
                         if (position === 1) pts += 1;
 
                         if (!playerYearData[player]) {
-                            playerYearData[player] = { player: player, pts: 0, games: 0 };
+                            playerYearData[player] = { player: player, pts: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
                         }
                         playerYearData[player].pts += pts;
                         playerYearData[player].games++;
+                        if (pts > playerYearData[player].maxSeasonPts || (pts === playerYearData[player].maxSeasonPts && new Date(season.date) > new Date(playerYearData[player].maxSeasonDate))) {
+                            playerYearData[player].maxSeasonPts = pts;
+                            playerYearData[player].maxSeasonDate = season.date;
+                        }
                     });
                 });
-                const yearRanking = Object.values(playerYearData).sort((a, b) => {
-                    if (b.pts !== a.pts) return b.pts - a.pts;
-                    if (b.games !== a.games) return b.games - a.games;
-                    return a.player.localeCompare(b.player);
-                });
+                const yearRanking = Object.values(playerYearData).sort(gammopSort);
                 yearTopPlayer = yearRanking.length > 0 ? yearRanking[0].player : '';
             }
 
@@ -2573,19 +2580,19 @@
                         if (position === 1) pts += 1;
 
                         if (!playerData[player]) {
-                            playerData[player] = { player: player, pts: 0, games: 0 };
+                            playerData[player] = { player: player, pts: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
                         }
                         playerData[player].pts += pts;
                         playerData[player].games++;
+                        if (pts > playerData[player].maxSeasonPts || (pts === playerData[player].maxSeasonPts && new Date(season.date) > new Date(playerData[player].maxSeasonDate))) {
+                            playerData[player].maxSeasonPts = pts;
+                            playerData[player].maxSeasonDate = season.date;
+                        }
                     });
                 });
 
                 // Trouver le meilleur joueur
-                const ranking = Object.values(playerData).sort((a, b) => {
-                    if (b.pts !== a.pts) return b.pts - a.pts;
-                    if (b.games !== a.games) return b.games - a.games;
-                    return a.player.localeCompare(b.player);
-                });
+                const ranking = Object.values(playerData).sort(gammopSort);
 
                 gamesData[game].topPlayer = ranking.length > 0 ? ranking[0].player : '';
             });
@@ -2652,14 +2659,20 @@
                                 player: player,
                                 pts: 0,
                                 games: 0,
-                                lastDate: season.date
+                                lastDate: season.date,
+                                maxSeasonPts: 0,
+                                maxSeasonDate: season.date
                             };
                         }
 
                         playerData[player].pts += pts;
                         playerData[player].games++;
 
-                        // Mettre à jour la date de dernière participation si plus récente
+                        if (pts > playerData[player].maxSeasonPts || (pts === playerData[player].maxSeasonPts && new Date(season.date) > new Date(playerData[player].maxSeasonDate))) {
+                            playerData[player].maxSeasonPts = pts;
+                            playerData[player].maxSeasonDate = season.date;
+                        }
+
                         if (new Date(season.date) > new Date(playerData[player].lastDate)) {
                             playerData[player].lastDate = season.date;
                         }
@@ -2667,15 +2680,7 @@
                 });
 
                 // Créer le classement général à ce moment
-                const ranking = Object.values(playerData).sort((a, b) => {
-                    if (b.pts !== a.pts) return b.pts - a.pts;
-                    // En cas d'égalité, le joueur qui a participé le plus récemment est prioritaire
-                    const dateA = new Date(a.lastDate);
-                    const dateB = new Date(b.lastDate);
-                    if (dateB - dateA !== 0) return dateB - dateA;
-                    // Si égalité persiste, ordre alphabétique
-                    return a.player.localeCompare(b.player);
-                });
+                const ranking = Object.values(playerData).sort(gammopSort);
 
                 const top10 = ranking.slice(0, 10);
                 const leader = ranking[0];
@@ -2881,14 +2886,20 @@
                                 player: player,
                                 pts: 0,
                                 games: 0,
-                                lastDate: season.date
+                                lastDate: season.date,
+                                maxSeasonPts: 0,
+                                maxSeasonDate: season.date
                             };
                         }
 
                         playerData[player].pts += pts;
                         playerData[player].games++;
 
-                        // Mettre à jour la date de dernière participation si plus récente
+                        if (pts > playerData[player].maxSeasonPts || (pts === playerData[player].maxSeasonPts && new Date(season.date) > new Date(playerData[player].maxSeasonDate))) {
+                            playerData[player].maxSeasonPts = pts;
+                            playerData[player].maxSeasonDate = season.date;
+                        }
+
                         if (new Date(season.date) > new Date(playerData[player].lastDate)) {
                             playerData[player].lastDate = season.date;
                         }
@@ -2896,15 +2907,7 @@
                 });
 
                 // Créer le classement de forme récente à ce moment
-                const ranking = Object.values(playerData).sort((a, b) => {
-                    if (b.pts !== a.pts) return b.pts - a.pts;
-                    // En cas d'égalité, le joueur qui a participé le plus récemment est prioritaire
-                    const dateA = new Date(a.lastDate);
-                    const dateB = new Date(b.lastDate);
-                    if (dateB - dateA !== 0) return dateB - dateA;
-                    // Si égalité persiste, ordre alphabétique
-                    return a.player.localeCompare(b.player);
-                });
+                const ranking = Object.values(playerData).sort(gammopSort);
 
                 const top10 = ranking.slice(0, 10);
                 const leader = ranking[0];
@@ -3189,18 +3192,18 @@
                         if (position === 1) pts += 1;
 
                         if (!playerYearData[player]) {
-                            playerYearData[player] = { player: player, pts: 0, games: 0 };
+                            playerYearData[player] = { player: player, pts: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
                         }
                         playerYearData[player].pts += pts;
                         playerYearData[player].games++;
+                        if (pts > playerYearData[player].maxSeasonPts || (pts === playerYearData[player].maxSeasonPts && new Date(season.date) > new Date(playerYearData[player].maxSeasonDate))) {
+                            playerYearData[player].maxSeasonPts = pts;
+                            playerYearData[player].maxSeasonDate = season.date;
+                        }
                     });
                 });
 
-                const yearRanking = Object.values(playerYearData).sort((a, b) => {
-                    if (b.pts !== a.pts) return b.pts - a.pts;
-                    if (b.games !== a.games) return b.games - a.games;
-                    return a.player.localeCompare(b.player);
-                });
+                const yearRanking = Object.values(playerYearData).sort(gammopSort);
 
                 yearRanking.forEach((p, idx) => {
                     if (!yearlyRankAverages[p.player]) {
@@ -3451,23 +3454,21 @@
                             if (position === 1) pts += 1;
 
                             if (!playerData[player]) {
-                                playerData[player] = { player: player, pts: 0, games: 0, lastDate: season.date };
+                                playerData[player] = { player: player, pts: 0, games: 0, lastDate: season.date, maxSeasonPts: 0, maxSeasonDate: season.date };
                             }
                             playerData[player].pts += pts;
                             playerData[player].games++;
+                            if (pts > playerData[player].maxSeasonPts || (pts === playerData[player].maxSeasonPts && new Date(season.date) > new Date(playerData[player].maxSeasonDate))) {
+                                playerData[player].maxSeasonPts = pts;
+                                playerData[player].maxSeasonDate = season.date;
+                            }
                             if (new Date(season.date) > new Date(playerData[player].lastDate)) {
                                 playerData[player].lastDate = season.date;
                             }
                         });
                     });
 
-                    const ranking = Object.values(playerData).sort((a, b) => {
-                        if (b.pts !== a.pts) return b.pts - a.pts;
-                        const dateA = new Date(a.lastDate);
-                        const dateB = new Date(b.lastDate);
-                        if (dateB - dateA !== 0) return dateB - dateA;
-                        return a.player.localeCompare(b.player);
-                    });
+                    const ranking = Object.values(playerData).sort(gammopSort);
 
                     recentRankingsHistory.push({
                         seasonIndex: seasonIndex,
@@ -4232,23 +4233,21 @@
                             if (position === 1) pts += 1;
 
                             if (!playerData[player]) {
-                                playerData[player] = { player: player, pts: 0, games: 0, lastDate: season.date };
+                                playerData[player] = { player: player, pts: 0, games: 0, lastDate: season.date, maxSeasonPts: 0, maxSeasonDate: season.date };
                             }
                             playerData[player].pts += pts;
                             playerData[player].games++;
+                            if (pts > playerData[player].maxSeasonPts || (pts === playerData[player].maxSeasonPts && new Date(season.date) > new Date(playerData[player].maxSeasonDate))) {
+                                playerData[player].maxSeasonPts = pts;
+                                playerData[player].maxSeasonDate = season.date;
+                            }
                             if (new Date(season.date) > new Date(playerData[player].lastDate)) {
                                 playerData[player].lastDate = season.date;
                             }
                         });
                     });
 
-                    const ranking = Object.values(playerData).sort((a, b) => {
-                        if (b.pts !== a.pts) return b.pts - a.pts;
-                        const dateA = new Date(a.lastDate);
-                        const dateB = new Date(b.lastDate);
-                        if (dateB - dateA !== 0) return dateB - dateA;
-                        return a.player.localeCompare(b.player);
-                    });
+                    const ranking = Object.values(playerData).sort(gammopSort);
 
                     recentRankingsHistory.push({
                         seasonIndex: seasonIndex,
@@ -4489,18 +4488,18 @@
                         if (position === 1) pts += 1;
 
                         if (!playerYearData[player]) {
-                            playerYearData[player] = { player: player, pts: 0, games: 0 };
+                            playerYearData[player] = { player: player, pts: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
                         }
                         playerYearData[player].pts += pts;
                         playerYearData[player].games++;
+                        if (pts > playerYearData[player].maxSeasonPts || (pts === playerYearData[player].maxSeasonPts && new Date(season.date) > new Date(playerYearData[player].maxSeasonDate))) {
+                            playerYearData[player].maxSeasonPts = pts;
+                            playerYearData[player].maxSeasonDate = season.date;
+                        }
                     });
                 });
 
-                const yearRanking = Object.values(playerYearData).sort((a, b) => {
-                    if (b.pts !== a.pts) return b.pts - a.pts;
-                    if (b.games !== a.games) return b.games - a.games;
-                    return a.player.localeCompare(b.player);
-                });
+                const yearRanking = Object.values(playerYearData).sort(gammopSort);
 
                 // Assign rank (1-based)
                 yearRanking.forEach((p, idx) => {
@@ -4995,7 +4994,9 @@
                             w: 0,
                             t2: 0,
                             t3: 0,
-                            lastDate: season.date
+                            lastDate: season.date,
+                            maxSeasonPts: 0,
+                            maxSeasonDate: season.date
                         };
                     }
 
@@ -5010,7 +5011,11 @@
                     playerData[player].pts += points;
                     playerData[player].games++;
 
-                    // Mettre à jour la date de dernière participation si plus récente
+                    if (points > playerData[player].maxSeasonPts || (points === playerData[player].maxSeasonPts && new Date(season.date) > new Date(playerData[player].maxSeasonDate))) {
+                        playerData[player].maxSeasonPts = points;
+                        playerData[player].maxSeasonDate = season.date;
+                    }
+
                     if (new Date(season.date) > new Date(playerData[player].lastDate)) {
                         playerData[player].lastDate = season.date;
                     }
@@ -5022,15 +5027,7 @@
             });
 
             // Créer le classement
-            const rankingData = Object.values(playerData).sort((a, b) => {
-                if (b.pts !== a.pts) return b.pts - a.pts;
-                // En cas d'égalité, le joueur qui a participé le plus récemment est prioritaire
-                const dateA = new Date(a.lastDate);
-                const dateB = new Date(b.lastDate);
-                if (dateB - dateA !== 0) return dateB - dateA;
-                // Si égalité persiste, ordre alphabétique
-                return a.player.localeCompare(b.player);
-            });
+            const rankingData = Object.values(playerData).sort(gammopSort);
 
             let html = `<div class="section" id="recentSection">`;
             html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">';
@@ -5280,13 +5277,16 @@
                         if (position === 1) pts += 1;
 
                         if (!playerStats[p]) {
-                            playerStats[p] = { player: p, pts: 0, w: 0, t2: 0, t3: 0, t5: 0, t10: 0, games: 0, lastDate: s.date };
+                            playerStats[p] = { player: p, pts: 0, w: 0, t2: 0, t3: 0, t5: 0, t10: 0, games: 0, lastDate: s.date, maxSeasonPts: 0, maxSeasonDate: s.date };
                         }
 
                         playerStats[p].pts += pts;
                         playerStats[p].games++;
 
-                        // Mettre à jour la date de dernière participation si plus récente
+                        if (pts > playerStats[p].maxSeasonPts || (pts === playerStats[p].maxSeasonPts && new Date(s.date) > new Date(playerStats[p].maxSeasonDate))) {
+                            playerStats[p].maxSeasonPts = pts;
+                            playerStats[p].maxSeasonDate = s.date;
+                        }
                         if (new Date(s.date) > new Date(playerStats[p].lastDate)) {
                             playerStats[p].lastDate = s.date;
                         }
@@ -5299,15 +5299,7 @@
                     });
                 });
 
-                const ranking = Object.values(playerStats).sort((a, b) => {
-                    if (b.pts !== a.pts) return b.pts - a.pts;
-                    // En cas d'égalité, le joueur qui a participé le plus récemment est prioritaire
-                    const dateA = new Date(a.lastDate);
-                    const dateB = new Date(b.lastDate);
-                    if (dateB - dateA !== 0) return dateB - dateA;
-                    // Si égalité persiste, ordre alphabétique
-                    return a.player.localeCompare(b.player);
-                });
+                const ranking = Object.values(playerStats).sort(gammopSort);
 
                 yearRankings[year] = ranking;
             });
@@ -5796,22 +5788,20 @@
                         if (position === 1) pts += 1;
 
                         if (!playerStats[p]) {
-                            playerStats[p] = { player: p, pts: 0, lastDate: s.date };
+                            playerStats[p] = { player: p, pts: 0, lastDate: s.date, maxSeasonPts: 0, maxSeasonDate: s.date };
                         }
                         playerStats[p].pts += pts;
+                        if (pts > playerStats[p].maxSeasonPts || (pts === playerStats[p].maxSeasonPts && new Date(s.date) > new Date(playerStats[p].maxSeasonDate))) {
+                            playerStats[p].maxSeasonPts = pts;
+                            playerStats[p].maxSeasonDate = s.date;
+                        }
                         if (new Date(s.date) > new Date(playerStats[p].lastDate)) {
                             playerStats[p].lastDate = s.date;
                         }
                     });
                 });
 
-                const ranking = Object.values(playerStats).sort((a, b) => {
-                    if (b.pts !== a.pts) return b.pts - a.pts;
-                    const dateA = new Date(a.lastDate);
-                    const dateB = new Date(b.lastDate);
-                    if (dateB - dateA !== 0) return dateB - dateA;
-                    return a.player.localeCompare(b.player);
-                });
+                const ranking = Object.values(playerStats).sort(gammopSort);
 
                 yearRankings[year] = ranking;
             });
@@ -6026,12 +6016,18 @@
                             games: 0,
                             w: 0,
                             t2: 0,
-                            t3: 0
+                            t3: 0,
+                            maxSeasonPts: 0,
+                            maxSeasonDate: season.date
                         };
                     }
 
                     playerData[player].pts += pts;
                     playerData[player].games++;
+                    if (pts > playerData[player].maxSeasonPts || (pts === playerData[player].maxSeasonPts && new Date(season.date) > new Date(playerData[player].maxSeasonDate))) {
+                        playerData[player].maxSeasonPts = pts;
+                        playerData[player].maxSeasonDate = season.date;
+                    }
                     if (position === 1) playerData[player].w++;
                     if (position === 2) playerData[player].t2++;
                     if (position === 3) playerData[player].t3++;
@@ -6042,11 +6038,7 @@
             const ranking = Object.values(playerData).map(p => ({
                 ...p,
                 avg: (p.pts / p.games).toFixed(1)
-            })).sort((a, b) => {
-                if (b.pts !== a.pts) return b.pts - a.pts;
-                if (b.games !== a.games) return b.games - a.games;
-                return a.player.localeCompare(b.player);
-            });
+            })).sort(gammopSort);
 
             // Affichage
             const gameSafeId = selectedGame.replace(/[^a-zA-Z0-9]/g, '');
@@ -6147,6 +6139,14 @@
             contentEl.innerHTML = html;
         }
 
+        function onYearSelectorChange() {
+            updateYearRanking();
+            var yearVal = document.getElementById('yearSelector').value;
+            if (!_skipHashUpdate && yearVal) {
+                history.pushState(null, '', '#years/' + yearVal);
+            }
+        }
+
         function updateYearRanking() {
             const selector = document.getElementById('yearSelector');
             const contentEl = document.getElementById('yearContent');
@@ -6223,14 +6223,19 @@
                             w: 0,
                             t2: 0,
                             t3: 0,
-                            lastDate: season.date
+                            lastDate: season.date,
+                            maxSeasonPts: 0,
+                            maxSeasonDate: season.date
                         };
                     }
 
                     playerData[player].pts += pts;
                     playerData[player].games++;
 
-                    // Mettre à jour la date de dernière participation si plus récente
+                    if (pts > playerData[player].maxSeasonPts || (pts === playerData[player].maxSeasonPts && new Date(season.date) > new Date(playerData[player].maxSeasonDate))) {
+                        playerData[player].maxSeasonPts = pts;
+                        playerData[player].maxSeasonDate = season.date;
+                    }
                     if (new Date(season.date) > new Date(playerData[player].lastDate)) {
                         playerData[player].lastDate = season.date;
                     }
@@ -6245,15 +6250,7 @@
             const ranking = Object.values(playerData).map(p => ({
                 ...p,
                 avg: (p.pts / p.games).toFixed(1)
-            })).sort((a, b) => {
-                if (b.pts !== a.pts) return b.pts - a.pts;
-                // En cas d'égalité, le joueur qui a participé le plus récemment est prioritaire
-                const dateA = new Date(a.lastDate);
-                const dateB = new Date(b.lastDate);
-                if (dateB - dateA !== 0) return dateB - dateA;
-                // Si égalité persiste, ordre alphabétique
-                return a.player.localeCompare(b.player);
-            });
+            })).sort(gammopSort);
 
             // Affichage
             let html = `<div class="section" id="yearSection${selectedYear}">`;
@@ -6726,20 +6723,24 @@
         }
 
         function selectYearFromDropdown(year) {
-            // Aller à l'onglet Classements annuels
-            showTab('years', event);
+            var wasSkipping = _skipHashUpdate;
 
-            // Override hash with year-specific info
-            if (!_skipHashUpdate) {
-                history.replaceState(null, '', '#years/' + year);
-            }
+            // Aller à l'onglet Classements annuels sans pushing hash
+            _skipHashUpdate = true;
+            showTab('years', event);
 
             // Sélectionner l'année dans le dropdown
             const selector = document.getElementById('yearSelector');
             selector.value = year;
 
-            // Mettre à jour l'affichage
+            // Mettre à jour l'affichage sans pushing hash
             updateYearRanking();
+            _skipHashUpdate = wasSkipping;
+
+            // Push year-specific hash (seulement si pas appelé depuis navigateToHash)
+            if (!_skipHashUpdate) {
+                history.pushState(null, '', '#years/' + year);
+            }
 
             // Cacher le dropdown
             const dropdown = document.getElementById('yearsDropdown');
@@ -7030,27 +7031,22 @@
                         if (position === 1) pts += 1;
 
                         if (!playerData[player]) {
-                            playerData[player] = { player: player, pts: 0, games: 0, lastDate: s.date };
+                            playerData[player] = { player: player, pts: 0, games: 0, lastDate: s.date, maxSeasonPts: 0, maxSeasonDate: s.date };
                         }
                         playerData[player].pts += pts;
                         playerData[player].games++;
 
-                        // Mettre à jour la date de dernière participation si plus récente
+                        if (pts > playerData[player].maxSeasonPts || (pts === playerData[player].maxSeasonPts && new Date(s.date) > new Date(playerData[player].maxSeasonDate))) {
+                            playerData[player].maxSeasonPts = pts;
+                            playerData[player].maxSeasonDate = s.date;
+                        }
                         if (new Date(s.date) > new Date(playerData[player].lastDate)) {
                             playerData[player].lastDate = s.date;
                         }
                     });
                 });
 
-                const ranking = Object.values(playerData).sort((a, b) => {
-                    if (b.pts !== a.pts) return b.pts - a.pts;
-                    // En cas d'égalité, le joueur qui a participé le plus récemment est prioritaire
-                    const dateA = new Date(a.lastDate);
-                    const dateB = new Date(b.lastDate);
-                    if (dateB - dateA !== 0) return dateB - dateA;
-                    // Si égalité persiste, ordre alphabétique
-                    return a.player.localeCompare(b.player);
-                });
+                const ranking = Object.values(playerData).sort(gammopSort);
 
                 const playerRank = ranking.findIndex(r => r.player === name) + 1;
                 if (playerRank > 0) {
@@ -7337,18 +7333,18 @@
                         if (position === 1) pts += 1;
 
                         if (!playerYearData[player]) {
-                            playerYearData[player] = { player: player, pts: 0, games: 0 };
+                            playerYearData[player] = { player: player, pts: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
                         }
                         playerYearData[player].pts += pts;
                         playerYearData[player].games++;
+                        if (pts > playerYearData[player].maxSeasonPts || (pts === playerYearData[player].maxSeasonPts && new Date(season.date) > new Date(playerYearData[player].maxSeasonDate))) {
+                            playerYearData[player].maxSeasonPts = pts;
+                            playerYearData[player].maxSeasonDate = season.date;
+                        }
                     });
                 });
 
-                const yearRanking = Object.values(playerYearData).sort((a, b) => {
-                    if (b.pts !== a.pts) return b.pts - a.pts;
-                    if (b.games !== a.games) return b.games - a.games;
-                    return a.player.localeCompare(b.player);
-                });
+                const yearRanking = Object.values(playerYearData).sort(gammopSort);
 
                 const playerYearRank = yearRanking.findIndex(r => r.player === name) + 1;
                 if (playerYearRank > 0) {
@@ -7474,12 +7470,16 @@
                             if (position <= 3) pts += (4 - position);
                             if (position === 1) pts += 1;
                             if (!playerYearData[player]) {
-                                playerYearData[player] = { player: player, pts: 0 };
+                                playerYearData[player] = { player: player, pts: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
                             }
                             playerYearData[player].pts += pts;
+                            if (pts > playerYearData[player].maxSeasonPts || (pts === playerYearData[player].maxSeasonPts && new Date(season.date) > new Date(playerYearData[player].maxSeasonDate))) {
+                                playerYearData[player].maxSeasonPts = pts;
+                                playerYearData[player].maxSeasonDate = season.date;
+                            }
                         });
                     });
-                    const yearRanking = Object.values(playerYearData).sort((a, b) => b.pts - a.pts);
+                    const yearRanking = Object.values(playerYearData).sort(gammopSort);
                     if (yearRanking[0] && yearRanking[0].player === name) {
                         wonYears.push(year);
                     }
@@ -7576,12 +7576,19 @@
                             games: 0,
                             bestRank: 999,
                             bestTotal: 0,
-                            lastDate: season.date
+                            lastDate: season.date,
+                            maxSeasonPts: 0,
+                            maxSeasonDate: season.date
                         };
                     }
 
                     allGameStats[game][player].pts += pts;
                     allGameStats[game][player].games++;
+
+                    if (pts > allGameStats[game][player].maxSeasonPts || (pts === allGameStats[game][player].maxSeasonPts && new Date(season.date) > new Date(allGameStats[game][player].maxSeasonDate))) {
+                        allGameStats[game][player].maxSeasonPts = pts;
+                        allGameStats[game][player].maxSeasonDate = season.date;
+                    }
 
                     if (position < allGameStats[game][player].bestRank ||
                         (position === allGameStats[game][player].bestRank && totalPlayers > allGameStats[game][player].bestTotal)) {
@@ -7598,13 +7605,7 @@
             // Calculer le classement général par jeu
             const gameRankings = {};
             Object.keys(allGameStats).forEach(game => {
-                const ranking = Object.values(allGameStats[game]).sort((a, b) => {
-                    if (b.pts !== a.pts) return b.pts - a.pts;
-                    const dateA = new Date(a.lastDate);
-                    const dateB = new Date(b.lastDate);
-                    if (dateB - dateA !== 0) return dateB - dateA;
-                    return a.player.localeCompare(b.player);
-                });
+                const ranking = Object.values(allGameStats[game]).sort(gammopSort);
                 gameRankings[game] = ranking;
             });
 
@@ -7739,23 +7740,21 @@
                         if (position === 1) pts += 1;
 
                         if (!playerDataRecent[player]) {
-                            playerDataRecent[player] = { player: player, pts: 0, games: 0, lastDate: season.date };
+                            playerDataRecent[player] = { player: player, pts: 0, games: 0, lastDate: season.date, maxSeasonPts: 0, maxSeasonDate: season.date };
                         }
                         playerDataRecent[player].pts += pts;
                         playerDataRecent[player].games++;
+                        if (pts > playerDataRecent[player].maxSeasonPts || (pts === playerDataRecent[player].maxSeasonPts && new Date(season.date) > new Date(playerDataRecent[player].maxSeasonDate))) {
+                            playerDataRecent[player].maxSeasonPts = pts;
+                            playerDataRecent[player].maxSeasonDate = season.date;
+                        }
                         if (new Date(season.date) > new Date(playerDataRecent[player].lastDate)) {
                             playerDataRecent[player].lastDate = season.date;
                         }
                     });
                 });
 
-                const recentRanking = Object.values(playerDataRecent).sort((a, b) => {
-                    if (b.pts !== a.pts) return b.pts - a.pts;
-                    const dateA = new Date(a.lastDate);
-                    const dateB = new Date(b.lastDate);
-                    if (dateB - dateA !== 0) return dateB - dateA;
-                    return a.player.localeCompare(b.player);
-                });
+                const recentRanking = Object.values(playerDataRecent).sort(gammopSort);
 
                 recentRank = recentRanking.findIndex(r => r.player === name) + 1;
                 recentTotal = recentRanking.length;
@@ -7784,18 +7783,18 @@
                         if (position === 1) pts += 1;
 
                         if (!playerYearData[player]) {
-                            playerYearData[player] = { player: player, pts: 0, games: 0 };
+                            playerYearData[player] = { player: player, pts: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
                         }
                         playerYearData[player].pts += pts;
                         playerYearData[player].games++;
+                        if (pts > playerYearData[player].maxSeasonPts || (pts === playerYearData[player].maxSeasonPts && new Date(season.date) > new Date(playerYearData[player].maxSeasonDate))) {
+                            playerYearData[player].maxSeasonPts = pts;
+                            playerYearData[player].maxSeasonDate = season.date;
+                        }
                     });
                 });
 
-                const yearRanking = Object.values(playerYearData).sort((a, b) => {
-                    if (b.pts !== a.pts) return b.pts - a.pts;
-                    if (b.games !== a.games) return b.games - a.games;
-                    return a.player.localeCompare(b.player);
-                });
+                const yearRanking = Object.values(playerYearData).sort(gammopSort);
 
                 yearlyRank = yearRanking.findIndex(r => r.player === name) + 1;
                 yearlyTotal = yearRanking.length;
@@ -7816,11 +7815,15 @@
                         if (pos <= 5) pts += (6 - pos);
                         if (pos <= 3) pts += (4 - pos);
                         if (pos === 1) pts += 1;
-                        if (!pyd[pl]) pyd[pl] = { player: pl, pts: 0 };
+                        if (!pyd[pl]) pyd[pl] = { player: pl, pts: 0, maxSeasonPts: 0, maxSeasonDate: s.date };
                         pyd[pl].pts += pts;
+                        if (pts > pyd[pl].maxSeasonPts || (pts === pyd[pl].maxSeasonPts && new Date(s.date) > new Date(pyd[pl].maxSeasonDate))) {
+                            pyd[pl].maxSeasonPts = pts;
+                            pyd[pl].maxSeasonDate = s.date;
+                        }
                     });
                 });
-                const yrk = Object.values(pyd).sort((a, b) => b.pts - a.pts);
+                const yrk = Object.values(pyd).sort(gammopSort);
                 const plRk = yrk.findIndex(r => r.player === name) + 1;
                 if (plRk > 0) {
                     if (!bestYearlyRank || plRk < bestYearlyRank.rank || (plRk === bestYearlyRank.rank && yrk.length > bestYearlyRank.total)) {
@@ -7845,15 +7848,16 @@
                             if (pos <= 5) pts += (6 - pos);
                             if (pos <= 3) pts += (4 - pos);
                             if (pos === 1) pts += 1;
-                            if (!pd[pl]) pd[pl] = { player: pl, pts: 0, lastDate: s.date };
+                            if (!pd[pl]) pd[pl] = { player: pl, pts: 0, lastDate: s.date, maxSeasonPts: 0, maxSeasonDate: s.date };
                             pd[pl].pts += pts;
+                            if (pts > pd[pl].maxSeasonPts || (pts === pd[pl].maxSeasonPts && new Date(s.date) > new Date(pd[pl].maxSeasonDate))) {
+                                pd[pl].maxSeasonPts = pts;
+                                pd[pl].maxSeasonDate = s.date;
+                            }
                             if (new Date(s.date) > new Date(pd[pl].lastDate)) pd[pl].lastDate = s.date;
                         });
                     });
-                    const rk = Object.values(pd).sort((a, b) => {
-                        if (b.pts !== a.pts) return b.pts - a.pts;
-                        return new Date(b.lastDate) - new Date(a.lastDate);
-                    });
+                    const rk = Object.values(pd).sort(gammopSort);
                     const playerRk = rk.findIndex(r => r.player === name) + 1;
                     if (playerRk > 0) {
                         if (!bestRecentFormRank || playerRk < bestRecentFormRank.rank || (playerRk === bestRecentFormRank.rank && rk.length > bestRecentFormRank.total)) {
@@ -8227,18 +8231,18 @@
                         if (position === 1) pts += 1;
 
                         if (!playerYearData[player]) {
-                            playerYearData[player] = { player: player, pts: 0, games: 0 };
+                            playerYearData[player] = { player: player, pts: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
                         }
                         playerYearData[player].pts += pts;
                         playerYearData[player].games++;
+                        if (pts > playerYearData[player].maxSeasonPts || (pts === playerYearData[player].maxSeasonPts && new Date(season.date) > new Date(playerYearData[player].maxSeasonDate))) {
+                            playerYearData[player].maxSeasonPts = pts;
+                            playerYearData[player].maxSeasonDate = season.date;
+                        }
                     });
                 });
 
-                const yearRanking = Object.values(playerYearData).sort((a, b) => {
-                    if (b.pts !== a.pts) return b.pts - a.pts;
-                    if (b.games !== a.games) return b.games - a.games;
-                    return a.player.localeCompare(b.player);
-                });
+                const yearRanking = Object.values(playerYearData).sort(gammopSort);
 
                 yearRanking.forEach((pl, idx) => {
                     const rank = idx + 1;
@@ -8317,16 +8321,20 @@
                         if (position === 1) pts += 1;
 
                         if (!playerYearData[player]) {
-                            playerYearData[player] = { player: player, pts: 0, games: 0, w: 0, t3: 0 };
+                            playerYearData[player] = { player: player, pts: 0, games: 0, w: 0, t3: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
                         }
                         playerYearData[player].pts += pts;
                         playerYearData[player].games++;
+                        if (pts > playerYearData[player].maxSeasonPts || (pts === playerYearData[player].maxSeasonPts && new Date(season.date) > new Date(playerYearData[player].maxSeasonDate))) {
+                            playerYearData[player].maxSeasonPts = pts;
+                            playerYearData[player].maxSeasonDate = season.date;
+                        }
                         if (position === 1) playerYearData[player].w++;
                         if (position <= 3) playerYearData[player].t3++;
                     });
                 });
 
-                const yearRanking = Object.values(playerYearData).sort((a, b) => b.pts - a.pts);
+                const yearRanking = Object.values(playerYearData).sort(gammopSort);
 
                 // 1. Award Meilleur Nouveau
                 const newPlayers = [];
@@ -8712,12 +8720,19 @@
                                     player: player,
                                     pts: 0,
                                     games: 0,
-                                    lastDate: season.date
+                                    lastDate: season.date,
+                                    maxSeasonPts: 0,
+                                    maxSeasonDate: season.date
                                 };
                             }
 
                             playerData[player].pts += pts;
                             playerData[player].games++;
+
+                            if (pts > playerData[player].maxSeasonPts || (pts === playerData[player].maxSeasonPts && new Date(season.date) > new Date(playerData[player].maxSeasonDate))) {
+                                playerData[player].maxSeasonPts = pts;
+                                playerData[player].maxSeasonDate = season.date;
+                            }
 
                             if (new Date(season.date) > new Date(playerData[player].lastDate)) {
                                 playerData[player].lastDate = season.date;
@@ -8726,13 +8741,7 @@
                     });
 
                     // Créer le classement de forme récente à ce moment
-                    const ranking = Object.values(playerData).sort((a, b) => {
-                        if (b.pts !== a.pts) return b.pts - a.pts;
-                        const dateA = new Date(a.lastDate);
-                        const dateB = new Date(b.lastDate);
-                        if (dateB - dateA !== 0) return dateB - dateA;
-                        return a.player.localeCompare(b.player);
-                    });
+                    const ranking = Object.values(playerData).sort(gammopSort);
 
                     const playerRank = ranking.findIndex(r => r.player === name) + 1;
                     if (playerRank > 0) {
@@ -9052,7 +9061,13 @@
 
             // Update URL hash
             if (!_skipHashUpdate) {
-                history.pushState(null, '', '#' + tab);
+                if (tab === 'years') {
+                    var yearSel = document.getElementById('yearSelector');
+                    var yearVal = yearSel ? yearSel.value : '';
+                    history.pushState(null, '', yearVal ? '#years/' + yearVal : '#years');
+                } else {
+                    history.pushState(null, '', '#' + tab);
+                }
             }
         }
 

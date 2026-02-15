@@ -1965,20 +1965,24 @@ function mouvComputeRanking(seasonsList) {
             if (position === 1) points += 1;
 
             if (!playerData[player]) {
-                playerData[player] = { player: player, pts: 0, games: 0, lastDate: season.date };
+                playerData[player] = { player: player, pts: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
             }
             playerData[player].pts += points;
             playerData[player].games++;
-            if (new Date(season.date) > new Date(playerData[player].lastDate)) {
-                playerData[player].lastDate = season.date;
+            if (points > playerData[player].maxSeasonPts || (points === playerData[player].maxSeasonPts && new Date(season.date) > new Date(playerData[player].maxSeasonDate))) {
+                playerData[player].maxSeasonPts = points;
+                playerData[player].maxSeasonDate = season.date;
             }
         });
     });
 
     var ranking = Object.values(playerData).sort(function(a, b) {
         if (b.pts !== a.pts) return b.pts - a.pts;
-        var dA = new Date(a.lastDate), dB = new Date(b.lastDate);
-        if (dB - dA !== 0) return dB - dA;
+        if ((b.maxSeasonPts || 0) !== (a.maxSeasonPts || 0)) return (b.maxSeasonPts || 0) - (a.maxSeasonPts || 0);
+        if (a.maxSeasonDate && b.maxSeasonDate) {
+            var dA = new Date(a.maxSeasonDate), dB = new Date(b.maxSeasonDate);
+            if (dB - dA !== 0) return dB - dA;
+        }
         return a.player.localeCompare(b.player);
     });
 
@@ -2003,20 +2007,24 @@ function mouvComputeYearlyRanking(seasonsList, year) {
             if (position === 1) points += 1;
 
             if (!playerData[player]) {
-                playerData[player] = { player: player, pts: 0, games: 0, lastDate: season.date };
+                playerData[player] = { player: player, pts: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
             }
             playerData[player].pts += points;
             playerData[player].games++;
-            if (new Date(season.date) > new Date(playerData[player].lastDate)) {
-                playerData[player].lastDate = season.date;
+            if (points > playerData[player].maxSeasonPts || (points === playerData[player].maxSeasonPts && new Date(season.date) > new Date(playerData[player].maxSeasonDate))) {
+                playerData[player].maxSeasonPts = points;
+                playerData[player].maxSeasonDate = season.date;
             }
         });
     });
 
     return Object.values(playerData).sort(function(a, b) {
         if (b.pts !== a.pts) return b.pts - a.pts;
-        var dA = new Date(a.lastDate), dB = new Date(b.lastDate);
-        if (dB - dA !== 0) return dB - dA;
+        if ((b.maxSeasonPts || 0) !== (a.maxSeasonPts || 0)) return (b.maxSeasonPts || 0) - (a.maxSeasonPts || 0);
+        if (a.maxSeasonDate && b.maxSeasonDate) {
+            var dA = new Date(a.maxSeasonDate), dB = new Date(b.maxSeasonDate);
+            if (dB - dA !== 0) return dB - dA;
+        }
         return a.player.localeCompare(b.player);
     });
 }

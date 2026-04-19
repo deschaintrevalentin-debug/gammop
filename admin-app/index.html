@@ -358,6 +358,7 @@
                         <option value="Justepoi">Justepoi</option>
                         <option value="Disgame">Disgame</option>
                         <option value="Colanta">Colanta</option>
+                        <option value="Keske">Keske</option>
                     </select>
                 </div>
 
@@ -971,6 +972,7 @@ function detectGameType(seasonName) {
     if (n.includes('justepoi') || n.includes('juste poi')) return 'Justepoi';
     if (n.includes('disgame')) return 'Disgame';
     if (n.includes('colanta')) return 'Colanta';
+    if (n.includes('keske')) return 'Keske';
     if (n.includes('majority')) return 'Majority';
     return 'Majority';
 }
@@ -990,6 +992,7 @@ function getGameSymbol(g) {
     if (n.includes('ptibak')) return ' \u{1F521}';
     if (n.includes('colanta')) return ' \u{1F311}';
     if (n.includes('guesswo')) return ' \u{1F468}\u{1F3FC}';
+    if (n.includes('keske')) return ' \u2753';
     return '';
 }
 

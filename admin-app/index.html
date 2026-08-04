@@ -313,6 +313,7 @@
             <button class="tab-btn" onclick="showAdminTab('backup', this)">Backup</button>
             <button class="tab-btn" onclick="showAdminTab('mouvements', this)">📊 Mouvements</button>
             <button class="tab-btn" onclick="showAdminTab('ptibak', this)">🎲 Ptibak</button>
+            <button class="tab-btn" onclick="showAdminTab('evolutions', this)">📈 3 dernières saisons</button>
         </div>
 
         <!-- TAB: SAISONS -->
@@ -565,6 +566,18 @@
                         <div id="ptibakMessage" style="background:#36393f;color:#dcddde;padding:15px;border-radius:8px;font-family:'Segoe UI',sans-serif;font-size:0.95em;white-space:pre-wrap;line-height:1.6;cursor:pointer;border:2px solid #4a7c28" onclick="ptibakCopyMessage()" title="Cliquer pour copier"></div>
                         <p style="color:var(--text-secondary);font-size:0.85em;margin-top:8px">Cliquez sur le message pour le copier</p>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: EVOLUTIONS (3 dernieres saisons) -->
+        <div id="evolutions" class="content">
+            <div class="section">
+                <h3>📈 Évolutions des 3 dernières saisons</h3>
+                <p style="color:var(--text-secondary);margin-bottom:20px">Pour chacune des 3 dernières saisons officielles (saisons spéciales exclues), voici les mouvements du Top 10 des classements général, actuel et annuel, ainsi que les changements de division.</p>
+                <button class="btn btn-secondary" onclick="evoRender()" style="margin-bottom:20px">🔄 Recalculer</button>
+                <div id="evolutionsContent">
+                    <p style="color:var(--text-secondary);text-align:center;padding:40px">Chargement...</p>
                 </div>
             </div>
         </div>
@@ -1040,6 +1053,7 @@ function showAdminTab(tab, btn) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(tab).classList.add('active');
     if (btn) btn.classList.add('active');
+    if (tab === 'evolutions') evoRender();
 }
 
 function showMsg(text, type) {
@@ -2296,6 +2310,165 @@ function mouvRenderChanges(changes, seasonName) {
     html += '</div>';
 
     document.getElementById('mouvementsContent').innerHTML = html;
+}
+
+// ==================== EVOLUTIONS (3 DERNIERES SAISONS) ====================
+var EVO_RECENT_WINDOW = 10; // le "classement actuel" porte sur les 10 dernieres saisons officielles
+
+function evoEscape(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Saisons officielles (non speciales) triees de la plus ancienne a la plus recente
+function evoOfficialSeasons() {
+    return seasons
+        .filter(function(s) { return !s.isSpecial && s.date; })
+        .sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+}
+
+// Classement "actuel" : uniquement les N dernieres saisons officielles de la liste
+function evoComputeRecentRanking(seasonsList) {
+    return mouvComputeRanking(seasonsList.slice(-EVO_RECENT_WINDOW));
+}
+
+function evoRankMap(ranking) {
+    var map = {};
+    ranking.forEach(function(p, i) { map[p.player] = i + 1; });
+    return map;
+}
+
+// Mouvements dans le Top 10 entre deux classements (entrees, sorties, montees, descentes)
+function evoTop10Changes(oldRanking, newRanking) {
+    var oldMap = evoRankMap(oldRanking), newMap = evoRankMap(newRanking);
+    var changes = [];
+    for (var i = 0; i < Math.min(10, newRanking.length); i++) {
+        var player = newRanking[i].player, newRank = i + 1, oldRank = oldMap[player];
+        if (!oldRank || oldRank !== newRank) {
+            changes.push({ player: player, oldRank: oldRank || null, newRank: newRank, isNew: !oldRank || oldRank > 10 });
+        }
+    }
+    oldRanking.slice(0, 10).forEach(function(p) {
+        var newRank = newMap[p.player];
+        if (!newRank || newRank > 10) {
+            changes.push({ player: p.player, oldRank: oldMap[p.player], newRank: newRank || null, left: true });
+        }
+    });
+    return changes;
+}
+
+// Changements de division (bases sur le classement general)
+function evoDivisionChanges(oldRanking, newRanking) {
+    var oldMap = evoRankMap(oldRanking);
+    var changes = [];
+    newRanking.forEach(function(p, i) {
+        var newRank = i + 1, oldRank = oldMap[p.player];
+        if (!oldRank) return;
+        var oldDiv = mouvGetDivision(oldRank), newDiv = mouvGetDivision(newRank);
+        if (oldDiv !== newDiv) {
+            changes.push({ player: p.player, oldRank: oldRank, newRank: newRank, oldDiv: oldDiv, newDiv: newDiv, up: newRank < oldRank });
+        }
+    });
+    return changes;
+}
+
+function evoRenderTop10List(changes, label) {
+    if (changes.length === 0) {
+        return '<p style="color:var(--text-secondary);font-size:0.9em">Aucun mouvement dans le Top 10 ' + label + '.</p>';
+    }
+    var html = '';
+    changes.forEach(function(c) {
+        var name = evoEscape(c.player);
+        html += '<div style="padding:6px 0;border-bottom:1px solid var(--border-color);display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
+        if (c.left) {
+            html += '<span style="font-size:1.2em">🔻</span><strong>' + name + '</strong>';
+            html += '<span style="color:#e74c3c;font-size:0.9em">sort du Top 10 (rang ' + c.oldRank + ' → ' + (c.newRank || 'non classé') + ')</span>';
+        } else if (c.isNew) {
+            html += '<span style="font-size:1.2em">🆕</span><strong>' + name + '</strong>';
+            html += '<span style="color:#4a7c28;font-size:0.9em">entre dans le Top 10 (rang ' + c.newRank + ')' + (c.oldRank ? ' (avant : rang ' + c.oldRank + ')' : '') + '</span>';
+        } else {
+            var arrow = c.oldRank - c.newRank > 0 ? '⬆️' : '⬇️';
+            html += '<span style="font-size:1.2em">' + arrow + '</span><strong>' + name + '</strong>';
+            html += '<span style="color:var(--text-secondary);font-size:0.9em">rang ' + c.oldRank + ' → rang ' + c.newRank + '</span>';
+        }
+        html += '</div>';
+    });
+    return html;
+}
+
+function evoRenderDivisionList(changes) {
+    if (changes.length === 0) {
+        return '<p style="color:var(--text-secondary);font-size:0.9em">Aucun changement de division.</p>';
+    }
+    var html = '';
+    changes.forEach(function(c) {
+        var arrow = c.up ? '⬆️' : '⬇️';
+        html += '<div style="padding:6px 0;border-bottom:1px solid var(--border-color);display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
+        html += '<span style="font-size:1.2em">' + arrow + '</span><strong>' + evoEscape(c.player) + '</strong>';
+        html += '<span style="color:var(--text-secondary);font-size:0.9em">' + c.oldDiv + ' (rang ' + c.oldRank + ') → ' + c.newDiv + ' (rang ' + c.newRank + ')</span>';
+        html += '</div>';
+    });
+    return html;
+}
+
+function evoBlock(title, inner) {
+    return '<div style="background:var(--section-bg);border:1px solid var(--section-border);border-radius:10px;padding:15px;margin-bottom:15px">'
+        + '<h4 style="margin-bottom:10px">' + title + '</h4>' + inner + '</div>';
+}
+
+// Calcule l'impact d'une saison : classements avant (index exclu) vs apres (index inclus)
+function evoComputeSeasonImpact(official, index) {
+    var before = official.slice(0, index);
+    var after = official.slice(0, index + 1);
+    var season = official[index];
+    var year = String(season.date).substring(0, 4);
+
+    return {
+        season: season,
+        year: year,
+        seasonNumber: index + 1,
+        general: evoTop10Changes(mouvComputeRanking(before), mouvComputeRanking(after)),
+        recent: evoTop10Changes(evoComputeRecentRanking(before), evoComputeRecentRanking(after)),
+        yearly: evoTop10Changes(mouvComputeYearlyRanking(before, year), mouvComputeYearlyRanking(after, year)),
+        divisions: evoDivisionChanges(mouvComputeRanking(before), mouvComputeRanking(after))
+    };
+}
+
+function evoRender() {
+    var container = document.getElementById('evolutionsContent');
+    if (!container) return;
+
+    var official = evoOfficialSeasons();
+    if (official.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:40px">Aucune saison officielle enregistrée.</p>';
+        return;
+    }
+
+    // Index des 3 dernieres saisons officielles, de la plus recente a la plus ancienne
+    var indexes = [];
+    for (var i = official.length - 1; i >= 0 && indexes.length < 3; i--) indexes.push(i);
+
+    var html = '';
+    indexes.forEach(function(idx, order) {
+        var imp = evoComputeSeasonImpact(official, idx);
+        var badge = order === 0 ? 'Dernière saison' : 'Il y a ' + order + ' saison' + (order > 1 ? 's' : '');
+        var dateLabel = imp.season.date ? new Date(imp.season.date).toLocaleDateString('fr-FR') : '';
+
+        html += '<div style="border:2px solid var(--section-border);border-radius:12px;padding:18px;margin-bottom:25px">';
+        html += '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:15px">';
+        html += '<span style="background:#4a7c28;color:white;padding:3px 10px;border-radius:12px;font-size:0.8em">' + badge + '</span>';
+        html += '<h4 style="color:var(--text-accent);margin:0">Saison ' + imp.seasonNumber + ' — ' + evoEscape(imp.season.name) + '</h4>';
+        html += '<span style="color:var(--text-secondary);font-size:0.9em">' + dateLabel + ' · ' + evoEscape(getGameWithSymbol(imp.season.game) || '') + '</span>';
+        html += '</div>';
+
+        html += evoBlock('🏆 Top 10 — classement général', evoRenderTop10List(imp.general, 'général'));
+        html += evoBlock('⚡ Top 10 — classement actuel (' + EVO_RECENT_WINDOW + ' dernières saisons)', evoRenderTop10List(imp.recent, 'actuel'));
+        html += evoBlock('📅 Top 10 — classement annuel ' + imp.year, evoRenderTop10List(imp.yearly, 'annuel'));
+        html += evoBlock('🔄 Changements de division', evoRenderDivisionList(imp.divisions));
+
+        html += '</div>';
+    });
+
+    container.innerHTML = html;
 }
 
 // ==================== PTIBAK ====================

@@ -23,7 +23,7 @@
         :root {
             --bg-primary: #ffffff;
             --bg-secondary: #f8f9fa;
-            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bg-gradient: #e9ece7;
             --text-primary: #000000;
             --text-secondary: #666666;
             --text-accent: #2d5016;
@@ -32,12 +32,28 @@
             --section-border: #c8e6c9;
             --card-bg: #ffffff;
             --table-hover: #f8fdf9;
+
+            /* Refonte accueil : accent unique (vert pomme assombri pour rester lisible sur fond clair) */
+            --accent: #2f7d32;
+            --accent-ink: #ffffff;
+            --hero-bg: #ffffff;
+            --hero-text: #101210;
+            --hero-muted: #5b615b;
+            --home-surface: #ffffff;
+            --home-border: #dfe3dc;
+            --home-muted: #5b615b;
+            /* Section Jeux : volontairement plus sombre que le reste, dans les deux themes */
+            --games-bg: #1b1f1a;
+            --games-surface: #232823;
+            --games-border: #394137;
+            --games-text: #f2f4f0;
+            --games-muted: #b3bdb0;
         }
 
         body.dark-mode {
             --bg-primary: #1a1a1a;
             --bg-secondary: #252525;
-            --bg-gradient: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            --bg-gradient: #0e100e;
             --text-primary: #f5f5f5;
             --text-secondary: #d1d5db;
             --text-accent: #a7f3d0;
@@ -46,6 +62,20 @@
             --section-border: #404040;
             --card-bg: #2a2a2a;
             --table-hover: #333333;
+
+            --accent: #7bd44f;
+            --accent-ink: #10140f;
+            --hero-bg: #141713;
+            --hero-text: #f4f6f2;
+            --hero-muted: #a9b2a6;
+            --home-surface: #1b1f1a;
+            --home-border: #2f3630;
+            --home-muted: #a9b2a6;
+            --games-bg: #0d0f0c;
+            --games-surface: #161a14;
+            --games-border: #2b322a;
+            --games-text: #f2f4f0;
+            --games-muted: #a9b2a6;
         }
 
         /* Remplacer les couleurs vertes foncées par des couleurs claires en mode sombre */
@@ -118,29 +148,89 @@
         }
 
         header {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
-            padding: 40px 30px;
+            background: var(--hero-bg);
+            color: var(--hero-text);
+            padding: 28px 30px;
             text-align: center;
             position: relative;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            border-bottom: 1px solid var(--home-border);
         }
 
         header h1 {
-            font-size: 3.5em;
+            font-size: 2.2em;
             margin: 0;
             font-weight: 900;
-            letter-spacing: 8px;
-            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4);
+            letter-spacing: -0.02em;
             text-transform: uppercase;
+            color: var(--hero-text);
+            line-height: 1;
         }
 
         header p {
-            font-size: 1.2em;
-            opacity: 0.9;
-            margin-top: 8px;
-            font-weight: 300;
-            letter-spacing: 2px;
+            font-size: 1em;
+            margin-top: 10px;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            color: var(--hero-muted);
+        }
+
+        /* ---- HERO : uniquement sur l'accueil (classe posee par showTab) ---- */
+        body.home-active header {
+            min-height: 88vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 60px 30px;
+        }
+
+        body.home-active header h1 {
+            font-size: clamp(3.2rem, 13vw, 9rem);
+            line-height: 0.92;
+        }
+
+        body.home-active header p {
+            font-size: clamp(1rem, 2.2vw, 1.45rem);
+            margin-top: 18px;
+        }
+
+        .hero-discord {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            margin: 34px auto 0;
+            padding: 15px 30px;
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            color: var(--accent);
+            background: transparent;
+            font-size: 1.05em;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            text-decoration: underline;
+            text-decoration-color: var(--accent);
+            text-underline-offset: 4px;
+            transition: background 0.18s ease-out, color 0.18s ease-out;
+        }
+
+        body.home-active .hero-discord {
+            display: inline-flex;
+        }
+
+        .hero-discord:hover,
+        .hero-discord:focus-visible {
+            background: var(--accent);
+            color: var(--accent-ink);
+            text-decoration-color: var(--accent-ink);
+        }
+
+        body.home-active .search-container {
+            margin-top: 40px;
+        }
+
+        header :focus-visible,
+        .home-wrap :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 3px;
         }
 
         .search-container {
@@ -152,22 +242,21 @@
         .search-input {
             width: 100%;
             padding: 12px 40px 12px 15px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 25px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
+            border: 1px solid var(--home-border);
+            border-radius: 10px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             font-size: 1em;
-            transition: all 0.3s;
+            transition: border-color 0.18s ease-out;
         }
 
         .search-input::placeholder {
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--home-muted);
         }
 
         .search-input:focus {
             outline: none;
-            background: rgba(255, 255, 255, 0.3);
-            border-color: rgba(255, 255, 255, 0.5);
+            border-color: var(--accent);
         }
 
         .search-icon {
@@ -175,7 +264,7 @@
             right: 15px;
             top: 50%;
             transform: translateY(-50%);
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--home-muted);
             pointer-events: none;
         }
 
@@ -279,14 +368,14 @@
         }
 
         .tab-btn.active {
-            color: #4a7c28;
-            border-bottom-color: #4a7c28;
+            color: var(--accent);
+            border-bottom-color: var(--accent);
             background: var(--bg-primary);
         }
 
         body.dark-mode .tab-btn.active {
-            color: #d1fae5;
-            border-bottom-color: #d1fae5;
+            color: var(--accent);
+            border-bottom-color: var(--accent);
         }
 
         .games-dropdown {
@@ -819,7 +908,7 @@
             display: block;
             width: 24px;
             height: 3px;
-            background: white;
+            background: var(--hero-text);
             margin: 5px 0;
             border-radius: 2px;
             transition: all 0.3s;
@@ -897,6 +986,279 @@
             cursor: pointer;
             color: var(--text-primary);
             padding: 5px 10px;
+        }
+
+        /* ==================== REFONTE ACCUEIL ==================== */
+        .home-wrap {
+            display: grid;
+            gap: 72px;
+        }
+
+        .home-block-title {
+            font-size: clamp(1.45rem, 3vw, 2.1rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            margin-bottom: 24px;
+        }
+
+        /* ---- Carrousel (composant unique, reutilise) ---- */
+        .gcar {
+            position: relative;
+        }
+
+        .gcar-viewport {
+            position: relative; /* repere de reference pour offsetLeft des cartes */
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .gcar-viewport::-webkit-scrollbar {
+            display: none;
+        }
+
+        .gcar-track {
+            display: flex;
+            gap: 18px;
+            padding: 12px 0;
+            --gcar-card: 44%;
+        }
+
+        /* Espaceurs : permettent de centrer la premiere et la derniere carte.
+           En padding sur le track, les % de largeur des cartes seraient calcules
+           sur la zone restante — d'ou des cartes trop etroites. */
+        .gcar-track::before,
+        .gcar-track::after {
+            content: '';
+            flex: 0 0 calc((100% - var(--gcar-card)) / 2);
+        }
+
+        .gcar-card {
+            flex: 0 0 var(--gcar-card);
+            scroll-snap-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: var(--home-surface);
+            border: 1px solid var(--home-border);
+            border-radius: 14px;
+            padding: 26px 24px;
+            text-decoration: none;
+            color: var(--text-primary);
+            transform: scale(0.9);
+            opacity: 0.6;
+            transition: transform 0.18s ease-out, opacity 0.18s ease-out, border-color 0.18s ease-out;
+        }
+
+        .gcar-card.is-active {
+            transform: scale(1);
+            opacity: 1;
+            border-color: var(--accent);
+        }
+
+        .gcar-emoji {
+            font-size: 2.6em;
+            line-height: 1;
+        }
+
+        .gcar-title {
+            font-size: 1.2em;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+        }
+
+        .gcar-desc {
+            color: var(--home-muted);
+            font-size: 0.9em;
+            line-height: 1.55;
+        }
+
+        .gcar-meta {
+            margin-top: auto;
+            padding-top: 14px;
+            border-top: 1px solid var(--home-border);
+            font-size: 0.88em;
+            color: var(--home-muted);
+        }
+
+        .gcar-meta strong {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        .gcar-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 3;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 1px solid var(--home-border);
+            background: var(--home-surface);
+            color: var(--text-primary);
+            font-size: 1.4em;
+            line-height: 1;
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            transition: border-color 0.18s ease-out, color 0.18s ease-out;
+        }
+
+        .gcar-arrow:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .gcar-prev { left: -6px; }
+        .gcar-next { right: -6px; }
+
+        .gcar-dots {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .gcar-dot {
+            width: 9px;
+            height: 9px;
+            padding: 0;
+            border-radius: 50%;
+            border: 1px solid var(--home-border);
+            background: transparent;
+            cursor: pointer;
+            transition: background 0.18s ease-out, border-color 0.18s ease-out;
+        }
+
+        .gcar-dot.is-active {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* ---- Chiffres cles ---- */
+        .home-kpis {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            border-top: 1px solid var(--home-border);
+            border-bottom: 1px solid var(--home-border);
+        }
+
+        .home-kpi {
+            padding: 34px 14px;
+            text-align: center;
+            border-right: 1px solid var(--home-border);
+        }
+
+        .home-kpi:last-child {
+            border-right: none;
+        }
+
+        .home-kpi-value {
+            font-size: clamp(2.2rem, 5vw, 3.6rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1;
+            color: var(--accent);
+        }
+
+        .home-kpi-value.is-text {
+            font-size: clamp(1.1rem, 2.4vw, 1.7rem);
+        }
+
+        .home-kpi-label {
+            margin-top: 12px;
+            font-size: 0.78em;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--home-muted);
+        }
+
+        /* ---- Section Jeux ---- */
+        .home-games {
+            background: var(--games-bg);
+            border-radius: 16px;
+            padding: 44px 34px;
+        }
+
+        .home-games .home-block-title {
+            color: var(--games-text);
+        }
+
+        .home-games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
+            gap: 16px;
+        }
+
+        .home-game {
+            background: var(--games-surface);
+            border: 1px solid var(--games-border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: left;
+            width: 100%;
+            font: inherit;
+            color: var(--games-text);
+            cursor: pointer;
+            transition: border-color 0.18s ease-out;
+        }
+
+        .home-game:hover {
+            border-color: var(--accent);
+        }
+
+        .home-game-name {
+            font-size: 1.05em;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+        }
+
+        .home-game-desc {
+            margin-top: 10px;
+            font-size: 0.85em;
+            line-height: 1.5;
+            color: var(--games-muted);
+        }
+
+        .home-game-meta {
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid var(--games-border);
+            font-size: 0.78em;
+            line-height: 1.7;
+            color: var(--games-muted);
+        }
+
+        .home-footer {
+            padding-top: 24px;
+            border-top: 1px solid var(--home-border);
+            text-align: center;
+            font-size: 0.85em;
+            color: var(--home-muted);
+        }
+
+        .home-footer button {
+            border: none;
+            background: none;
+            font: inherit;
+            color: inherit;
+            text-decoration: underline;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .gcar-viewport { scroll-behavior: auto; }
+            .gcar-card,
+            .gcar-arrow,
+            .gcar-dot,
+            .hero-discord,
+            .home-game { transition: none; }
+            .content { animation: none; }
         }
 
         @media (max-width: 768px) {
@@ -1138,9 +1500,78 @@
         .modal-tab-content.active {
             display: block;
         }
+
+        /* ==================== REFONTE ACCUEIL : MOBILE ==================== */
+        @media (max-width: 768px) {
+            body.home-active header {
+                min-height: 82vh;
+                padding: 40px 15px;
+            }
+
+            body.home-active header h1 {
+                font-size: clamp(2.6rem, 16vw, 4.5rem);
+                letter-spacing: -0.02em;
+            }
+
+            body.home-active header p {
+                font-size: 1em;
+                margin-top: 14px;
+            }
+
+            .hero-discord {
+                margin-top: 28px;
+                padding: 14px 22px;
+                font-size: 0.95em;
+            }
+
+            .home-wrap {
+                gap: 48px;
+            }
+
+            .gcar-track {
+                --gcar-card: 70%;
+                gap: 12px;
+            }
+
+            .gcar-card {
+                padding: 20px 18px;
+            }
+
+            .gcar-arrow {
+                width: 36px;
+                height: 36px;
+                font-size: 1.2em;
+            }
+
+            .gcar-prev { left: 0; }
+            .gcar-next { right: 0; }
+
+            .home-kpis {
+                grid-template-columns: 1fr;
+            }
+
+            .home-kpi {
+                border-right: none;
+                border-bottom: 1px solid var(--home-border);
+                padding: 22px 10px;
+            }
+
+            .home-kpi:last-child {
+                border-bottom: none;
+            }
+
+            .home-games {
+                padding: 28px 18px;
+                border-radius: 12px;
+            }
+
+            .home-games-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
-<body>
+<body class="home-active">
     <div class="container">
         <!-- Mobile menu -->
         <div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="closeMobileMenu()"></div>
@@ -1163,7 +1594,8 @@
                 <span></span>
             </button>
             <h1>GAMMOP</h1>
-            <p>Serveur Discord de jeux</p>
+            <p>Serveur Discord de mini-jeux</p>
+            <a class="hero-discord" href="https://discord.com/invite/ShKeKz87qw" target="_blank" rel="noopener noreferrer">Rejoindre le serveur Discord</a>
             <div class="search-container">
                 <input type="text" id="searchInput" class="search-input" placeholder="Rechercher un joueur..." oninput="handleSearch()" onblur="hideSearchResults()" />
                 <span class="search-icon">🔍</span>
@@ -1474,7 +1906,29 @@
         }
         const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        function renderSupabaseItems(items) {
+            const container = document.getElementById('supabase-items');
+            if (!container) return;
+            if (!items || items.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            container.innerHTML = items.map(item => `
+                <div style="background:var(--home-surface);padding:16px 18px;border:1px solid var(--home-border);border-left:2px solid var(--accent);border-radius:10px;margin-bottom:10px">
+                    <h4 style="color:var(--text-primary);margin-bottom:6px">${item.title || ''}</h4>
+                    <p style="color:var(--home-muted);font-size:0.9em">${item.description || ''}</p>
+                    <small style="color:var(--home-muted)">${item.created_at ? new Date(item.created_at).toLocaleDateString('fr-FR') : ''}</small>
+                </div>
+            `).join('');
+        }
+
         async function loadFromSupabase() {
+            // updateHome() recree le conteneur a chaque rendu : on garde les
+            // publications en cache pour les reafficher sans refaire la requete.
+            if (window._gammopNews) {
+                renderSupabaseItems(window._gammopNews);
+                return;
+            }
             try {
                 const { data, error } = await sb
                     .from('Gammop')
@@ -1484,18 +1938,8 @@
 
                 if (error) throw error;
 
-                const container = document.getElementById('supabase-items');
-                if (container && data && data.length > 0) {
-                    container.innerHTML = data.map(item => `
-                        <div style="background:var(--card-bg);padding:15px;border-radius:10px;border-left:4px solid #4a7c28;margin-bottom:10px">
-                            <h4 style="color:#2d5016;margin-bottom:6px">${item.title || ''}</h4>
-                            <p style="color:var(--text-secondary);font-size:0.9em">${item.description || ''}</p>
-                            <small style="color:#999">${item.created_at ? new Date(item.created_at).toLocaleDateString('fr-FR') : ''}</small>
-                        </div>
-                    `).join('');
-                } else if (container) {
-                    container.innerHTML = '<p style="color:#999;text-align:center">Aucune donnée publiée.</p>';
-                }
+                window._gammopNews = data || [];
+                renderSupabaseItems(window._gammopNews);
             } catch (err) {
                 console.error('Erreur Supabase:', err.message);
             }
@@ -2361,273 +2805,363 @@
             el.innerHTML = html;
         }
 
+        // ==================== ACCUEIL : OUTILS ====================
+        function homeEsc(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        // Classement GAMMOP calcule sur une liste de saisons quelconque
+        function homeRankSeasons(seasonsList) {
+            var playerData = {};
+            seasonsList.forEach(function(season) {
+                var total = season.players.length;
+                season.players.forEach(function(player, index) {
+                    var position = index + 1;
+                    var pts = (total - position) + 1;
+                    pts += Math.floor(((total - position) + 1) / position);
+                    if (position <= 10) pts += (11 - position);
+                    if (position <= 5) pts += (6 - position);
+                    if (position <= 3) pts += (4 - position);
+                    if (position === 1) pts += 1;
+
+                    if (!playerData[player]) {
+                        playerData[player] = { player: player, pts: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
+                    }
+                    playerData[player].pts += pts;
+                    playerData[player].games++;
+                    if (pts > playerData[player].maxSeasonPts || (pts === playerData[player].maxSeasonPts && new Date(season.date) > new Date(playerData[player].maxSeasonDate))) {
+                        playerData[player].maxSeasonPts = pts;
+                        playerData[player].maxSeasonDate = season.date;
+                    }
+                });
+            });
+            return Object.values(playerData).sort(gammopSort);
+        }
+
+        function homeTopHolder(counts) {
+            var best = null;
+            Object.keys(counts).forEach(function(player) {
+                if (!best || counts[player] > best.count || (counts[player] === best.count && player.localeCompare(best.player) < 0)) {
+                    best = { player: player, count: counts[player] };
+                }
+            });
+            return best;
+        }
+
+        // Detenteurs des records de fruits (pommes vertes / rouges / poires)
+        function homeFruitRecords() {
+            var normal = seasons.filter(function(s) { return !s.isSpecial; });
+            var green = {}, red = {}, pear = {};
+
+            normal.forEach(function(s) {
+                if (s.players && s.players.length) green[s.players[0]] = (green[s.players[0]] || 0) + 1;
+            });
+            seasons.filter(function(s) { return s.isSpecial; }).forEach(function(s) {
+                if (s.players && s.players.length) pear[s.players[0]] = (pear[s.players[0]] || 0) + 1;
+            });
+
+            // Pommes rouges : memes regles que getPlayerYearlyFirstPlaces()
+            // -> annee ecoulee (pas la derniere annee jouee) ET au moins 10 saisons
+            var byYear = {}, lastYear = 0;
+            normal.forEach(function(s) {
+                var y = new Date(s.date).getFullYear();
+                if (y > lastYear) lastYear = y;
+                if (!byYear[y]) byYear[y] = [];
+                byYear[y].push(s);
+            });
+            Object.keys(byYear).forEach(function(y) {
+                if (parseInt(y, 10) >= lastYear || byYear[y].length < 10) return;
+                var champion = homeRankSeasons(byYear[y])[0];
+                if (champion) red[champion.player] = (red[champion.player] || 0) + 1;
+            });
+
+            return { green: homeTopHolder(green), red: homeTopHolder(red), pear: homeTopHolder(pear) };
+        }
+
+        // Premiers des trois classements, au jour J
+        function homeRankingLeaders() {
+            var normal = seasons.filter(function(s) { return !s.isSpecial; });
+            var byDate = normal.slice().sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+
+            // Actuel : meme perimetre que l'onglet Classement actuel (10 dernieres saisons au plus)
+            var recentSeasons = byDate.slice(-Math.min(10, byDate.length));
+            var lastSeason = byDate.length ? byDate[byDate.length - 1] : null;
+            var year = lastSeason ? new Date(lastSeason.date).getFullYear() : new Date().getFullYear();
+            var yearSeasons = normal.filter(function(s) { return new Date(s.date).getFullYear() === year; });
+
+            return {
+                recent: homeRankSeasons(recentSeasons)[0] || null,
+                general: rankingData.length ? rankingData[0] : null,
+                yearly: homeRankSeasons(yearSeasons)[0] || null,
+                recentCount: recentSeasons.length,
+                totalCount: normal.length,
+                year: year,
+                yearCount: yearSeasons.length,
+                lastSeason: lastSeason
+            };
+        }
+
+        // Par jeu : dernier vainqueur et leader du classement du jeu
+        function homeGameHighlights() {
+            var normal = seasons.filter(function(s) { return !s.isSpecial; });
+            var byGame = {};
+            normal.forEach(function(s) {
+                var game = s.game || detectGameType(s.name);
+                if (!byGame[game]) byGame[game] = [];
+                byGame[game].push(s);
+            });
+
+            return Object.keys(byGame).map(function(game) {
+                var list = byGame[game].slice().sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
+                var last = list[0];
+                var leader = homeRankSeasons(list)[0];
+                return {
+                    game: game,
+                    count: list.length,
+                    description: getGameDescription(game),
+                    lastWinner: (last && last.players && last.players.length) ? last.players[0] : null,
+                    lastSeason: last ? last.name : null,
+                    leader: leader ? leader.player : null
+                };
+            }).sort(function(a, b) { return b.count - a.count; });
+        }
+
+        // ==================== ACCUEIL : CARROUSEL ====================
+        // Composant unique, instancie par les sections Recompenses et Classements.
+        var _gcarRaf = {};
+
+        // Carte mise en avant au chargement : celle du milieu, pour que les deux
+        // voisines soient visibles sans que l'utilisateur ait a faire defiler.
+        function gcarStartIndex(count) {
+            return Math.floor(count / 2);
+        }
+
+        function homeCarousel(id, label, cards) {
+            var start = gcarStartIndex(cards.length);
+            var html = '<div class="gcar" id="' + id + '">';
+            html += '<button type="button" class="gcar-arrow gcar-prev" aria-label="Carte précédente" onclick="gcarMove(\'' + id + '\', -1)">&#8249;</button>';
+            html += '<div class="gcar-viewport" id="' + id + '-vp" tabindex="0" role="group" aria-roledescription="carrousel" aria-label="' + homeEsc(label) + '" onkeydown="gcarKey(event, \'' + id + '\')" onscroll="gcarSync(\'' + id + '\')">';
+            html += '<div class="gcar-track">';
+            cards.forEach(function(card, i) {
+                html += '<a class="gcar-card' + (i === start ? ' is-active' : '') + '" href="#' + card.tab + '" onclick="return gcarOpen(event, \'' + card.tab + '\')">';
+                html += '<span class="gcar-emoji" aria-hidden="true">' + card.emoji + '</span>';
+                html += '<span class="gcar-title">' + card.title + '</span>';
+                html += '<span class="gcar-desc">' + card.desc + '</span>';
+                html += '<span class="gcar-meta">' + card.meta + '</span>';
+                html += '</a>';
+            });
+            html += '</div></div>';
+            html += '<button type="button" class="gcar-arrow gcar-next" aria-label="Carte suivante" onclick="gcarMove(\'' + id + '\', 1)">&#8250;</button>';
+            html += '<div class="gcar-dots">';
+            cards.forEach(function(card, i) {
+                html += '<button type="button" class="gcar-dot' + (i === start ? ' is-active' : '') + '" aria-label="Aller à la carte ' + (i + 1) + ' sur ' + cards.length + '" onclick="gcarGoTo(\'' + id + '\', ' + i + ')"></button>';
+            });
+            html += '</div></div>';
+            return html;
+        }
+
+        // Positionne le carrousel sur sa carte de depart, sans animation au chargement.
+        function gcarInit(id) {
+            var vp = document.getElementById(id + '-vp');
+            if (!vp) return;
+            var previous = vp.style.scrollBehavior;
+            vp.style.scrollBehavior = 'auto';
+            gcarGoTo(id, gcarStartIndex(gcarCards(id).length));
+            vp.style.scrollBehavior = previous;
+        }
+
+        function gcarCards(id) {
+            var vp = document.getElementById(id + '-vp');
+            return vp ? Array.prototype.slice.call(vp.querySelectorAll('.gcar-card')) : [];
+        }
+
+        function gcarIndex(id) {
+            var vp = document.getElementById(id + '-vp');
+            var cards = gcarCards(id);
+            if (!vp || !cards.length) return 0;
+            var center = vp.scrollLeft + vp.clientWidth / 2;
+            var best = 0, bestDist = Infinity;
+            cards.forEach(function(card, i) {
+                var d = Math.abs((card.offsetLeft + card.offsetWidth / 2) - center);
+                if (d < bestDist) { bestDist = d; best = i; }
+            });
+            return best;
+        }
+
+        function gcarPaint(id, index) {
+            gcarCards(id).forEach(function(card, i) {
+                card.classList.toggle('is-active', i === index);
+            });
+            var dots = document.querySelectorAll('#' + id + ' .gcar-dot');
+            Array.prototype.forEach.call(dots, function(dot, i) {
+                dot.classList.toggle('is-active', i === index);
+                dot.setAttribute('aria-current', i === index ? 'true' : 'false');
+            });
+        }
+
+        function gcarGoTo(id, index) {
+            var vp = document.getElementById(id + '-vp');
+            var cards = gcarCards(id);
+            if (!vp || !cards.length) return;
+            // Boucle infinie : au-dela du dernier on revient au premier, et inversement
+            var i = ((index % cards.length) + cards.length) % cards.length;
+            var card = cards[i];
+            vp.scrollLeft = card.offsetLeft + card.offsetWidth / 2 - vp.clientWidth / 2;
+            gcarPaint(id, i);
+        }
+
+        function gcarMove(id, delta) {
+            gcarGoTo(id, gcarIndex(id) + delta);
+        }
+
+        function gcarKey(event, id) {
+            if (event.key === 'ArrowRight') { event.preventDefault(); gcarMove(id, 1); }
+            else if (event.key === 'ArrowLeft') { event.preventDefault(); gcarMove(id, -1); }
+        }
+
+        // Le scroll natif gere le swipe tactile : on se contente de suivre la position.
+        function gcarSync(id) {
+            if (_gcarRaf[id]) return;
+            _gcarRaf[id] = requestAnimationFrame(function() {
+                _gcarRaf[id] = null;
+                gcarPaint(id, gcarIndex(id));
+            });
+        }
+
+        function gcarOpen(event, tab) {
+            event.preventDefault();
+            showTab(tab, null);
+            window.scrollTo(0, 0);
+            return false;
+        }
+
+        // ==================== ACCUEIL : RENDU ====================
         function updateHome() {
             const el = document.getElementById('home');
             if (!el) return;
             const normalSeasons = seasons.filter(s => !s.isSpecial);
 
             if (seasons.length === 0 || rankingData.length === 0) {
-                el.innerHTML = '<div class="section" style="text-align:center;padding:60px 20px">'
+                el.innerHTML = '<div class="home-wrap"><div id="supabase-items"></div>'
+                    + '<div style="text-align:center;padding:60px 20px">'
                     + '<h2 style="color:var(--text-secondary);margin-bottom:15px">Aucune donnée pour le moment</h2>'
-                    + '<p style="color:var(--text-secondary)">Ajoutez des saisons dans l\'admin pour voir les classements ici.</p></div>';
+                    + '<p style="color:var(--text-secondary)">Ajoutez des saisons dans l\'admin pour voir les classements ici.</p></div></div>';
+                if (typeof loadFromSupabase === 'function') loadFromSupabase();
                 return;
             }
 
-            const totalPlayers = rankingData.length;
-            const totalGames = normalSeasons.length;
-            const currentLeader = rankingData[0];
+            const records = homeFruitRecords();
+            const leaders = homeRankingLeaders();
+            const gamesList = homeGameHighlights();
 
-            // Trouver le joueur avec le plus de victoires
-            const mostWins = rankingData.length > 0 ? [...rankingData].sort((a, b) => b.w - a.w)[0] : null;
+            const lastSeasonDate = leaders.lastSeason
+                ? new Date(leaders.lastSeason.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+                : '—';
 
-            // Trouver le joueur le plus actif
-            const mostActive = rankingData.length > 0 ? [...rankingData].sort((a, b) => b.games - a.games)[0] : null;
-
-            // Calculer la date de la dernière partie
-            const lastGame = normalSeasons.length > 0 ? [...normalSeasons].sort((a, b) => new Date(b.date) - new Date(a.date))[0] : null;
-            const lastGameDate = lastGame ? new Date(lastGame.date).toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'}) : 'N/A';
-
-            let html = '<div style="text-align:center;padding:40px 20px;background:linear-gradient(135deg,#f8fdf9,#e8f5e9);border-radius:15px;margin-bottom:30px">';
-            html += '<p class="home-description" style="color:#2d5016;font-size:1.3em;max-width:700px;margin:0 auto;line-height:1.6">Serveur discord de mini-jeux, retrouvez toutes les statistiques et les classements sur ce site</p>';
-            html += '</div>';
-
-            // Explication du système de classement
-            html += '<div class="section" style="background:white;padding:25px;border-radius:12px;margin-bottom:30px;border-left:5px solid #4a7c28">';
-            html += '<h2 style="color:#2d5016;margin-bottom:20px;font-size:1.8em">📊 Récompenses</h2>';
-            html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px">';
-
-            // Pommes vertes
-            html += '<div style="background:#f8fdf9;padding:20px;border-radius:10px;border:2px solid #4a7c28">';
-            html += '<div style="font-size:3em;margin-bottom:10px;text-align:center">🍏</div>';
-            html += '<h3 style="color:#2d5016;text-align:center;margin-bottom:10px">Pommes Vertes</h3>';
-            html += '<p style="color:#666;line-height:1.6">Les <strong>pommes vertes</strong> représentent vos <strong>victoires</strong> dans les saisons normales. Chaque 1ère place vous rapporte une pomme verte et compte dans le classement général !</p>';
-            html += '</div>';
-
-            // Pommes rouges
-            html += '<div style="background:#fff5f5;padding:20px;border-radius:10px;border:2px solid #dc3545">';
-            html += '<div style="font-size:3em;margin-bottom:10px;text-align:center">🍎</div>';
-            html += '<h3 style="color:#c82333;text-align:center;margin-bottom:10px">Pommes Rouges</h3>';
-            html += '<p style="color:#666;line-height:1.6">Les <strong>pommes rouges</strong> sont les <strong>champions annuels</strong>. À la fin de chaque année, le joueur avec le plus de points sur l\'année remporte une pomme rouge</p>';
-            html += '</div>';
-
-            // Poires
-            html += '<div style="background:#f9f5ff;padding:20px;border-radius:10px;border:2px solid #9c27b0">';
-            html += '<div style="font-size:3em;margin-bottom:10px;text-align:center">🍐</div>';
-            html += '<h3 style="color:#7b1fa2;text-align:center;margin-bottom:10px">Poires</h3>';
-            html += '<p style="color:#666;line-height:1.6">Les <strong>poires</strong> récompensent les victoires dans les <strong>saisons spéciales</strong>. Ces saisons qui ne sont pas organisées par Emmop ou qui sont des saisons à thème ne comptent pas dans le classement général mais ont leur propre palmarès !</p>';
-            html += '</div>';
-
-            html += '</div></div>';
-
-            // ==================== SECTION CLASSEMENTS ====================
-            html += '<div class="section" style="background:white;padding:25px;border-radius:12px;margin-bottom:30px;border-left:5px solid #4a7c28">';
-            html += '<h2 style="color:#2d5016;margin-bottom:20px;font-size:1.8em">🏆 Classements</h2>';
-            html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px">';
-
-            // 1. Calculer le classement actuel (10 dernières saisons)
-            const sortedSeasonsForRecent = [...normalSeasons].sort((a, b) => new Date(a.date) - new Date(b.date));
-            let recentTopPlayer = '';
-            if (sortedSeasonsForRecent.length >= 10) {
-                const recentSeasons = sortedSeasonsForRecent.slice(-10);
-                const playerDataRecent = {};
-                recentSeasons.forEach(season => {
-                    const totalPlayersInSeason = season.players.length;
-                    season.players.forEach((player, index) => {
-                        const position = index + 1;
-                        let pts = (totalPlayersInSeason - position) + 1;
-                        pts += Math.floor(((totalPlayersInSeason - position) + 1) / position);
-                        if (position <= 10) pts += (11 - position);
-                        if (position <= 5) pts += (6 - position);
-                        if (position <= 3) pts += (4 - position);
-                        if (position === 1) pts += 1;
-
-                        if (!playerDataRecent[player]) {
-                            playerDataRecent[player] = { player: player, pts: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
-                        }
-                        playerDataRecent[player].pts += pts;
-                        playerDataRecent[player].games++;
-                        if (pts > playerDataRecent[player].maxSeasonPts || (pts === playerDataRecent[player].maxSeasonPts && new Date(season.date) > new Date(playerDataRecent[player].maxSeasonDate))) {
-                            playerDataRecent[player].maxSeasonPts = pts;
-                            playerDataRecent[player].maxSeasonDate = season.date;
-                        }
-                    });
-                });
-                const recentRanking = Object.values(playerDataRecent).sort(gammopSort);
-                recentTopPlayer = recentRanking.length > 0 ? recentRanking[0].player : '';
+            function recordLine(holder) {
+                return holder
+                    ? 'Record : <strong>' + homeEsc(holder.player) + ' — ' + holder.count + '</strong>'
+                    : 'Record : <strong>—</strong>';
+            }
+            function leaderLine(entry) {
+                return entry
+                    ? '1<sup>er</sup> : <strong>' + homeEsc(entry.player) + ' — ' + entry.pts + ' pts</strong>'
+                    : '1<sup>er</sup> : <strong>—</strong>';
             }
 
-            // 2. Top 1 du classement général (déjà disponible)
-            const generalTopPlayer = rankingData.length > 0 ? rankingData[0].player : '';
+            let html = '<div class="home-wrap">';
 
-            // 3. Calculer le classement annuel (année du dernier jeu)
-            const lastGameYear = lastGame ? new Date(lastGame.date).getFullYear() : new Date().getFullYear();
-            const yearSeasons = normalSeasons.filter(s => new Date(s.date).getFullYear() === lastGameYear);
-            const yearSeasonsCount = yearSeasons.length;
-            let yearTopPlayer = '';
-            if (yearSeasons.length > 0) {
-                const playerYearData = {};
-                yearSeasons.forEach(season => {
-                    const totalPlayersInSeason = season.players.length;
-                    season.players.forEach((player, index) => {
-                        const position = index + 1;
-                        let pts = (totalPlayersInSeason - position) + 1;
-                        pts += Math.floor(((totalPlayersInSeason - position) + 1) / position);
-                        if (position <= 10) pts += (11 - position);
-                        if (position <= 5) pts += (6 - position);
-                        if (position <= 3) pts += (4 - position);
-                        if (position === 1) pts += 1;
+            // Publications (table Gammop), sous le hero
+            html += '<div id="supabase-items"></div>';
 
-                        if (!playerYearData[player]) {
-                            playerYearData[player] = { player: player, pts: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
-                        }
-                        playerYearData[player].pts += pts;
-                        playerYearData[player].games++;
-                        if (pts > playerYearData[player].maxSeasonPts || (pts === playerYearData[player].maxSeasonPts && new Date(season.date) > new Date(playerYearData[player].maxSeasonDate))) {
-                            playerYearData[player].maxSeasonPts = pts;
-                            playerYearData[player].maxSeasonDate = season.date;
-                        }
-                    });
-                });
-                const yearRanking = Object.values(playerYearData).sort(gammopSort);
-                yearTopPlayer = yearRanking.length > 0 ? yearRanking[0].player : '';
-            }
-
-            // Carte Classement Actuel
-            html += '<div style="background:#fff9e6;padding:20px;border-radius:10px;border:2px solid #ffc107;cursor:pointer" onclick="showTab(\'recent\', event)">';
-            html += '<div style="font-size:3em;margin-bottom:10px;text-align:center">⚡</div>';
-            html += '<h3 style="color:#f57c00;text-align:center;margin-bottom:10px">Classement Actuel</h3>';
-            if (recentTopPlayer) {
-                html += `<p style="font-size:1.3em;font-weight:bold;color:#2d5016;text-align:center;margin:15px 0">👑 ${recentTopPlayer}${getPlayerApples(recentTopPlayer)}</p>`;
-            }
-            html += '<p style="color:#666;font-size:0.9em;text-align:center">Classement sur les 10 dernières saisons</p>';
-            html += '</div>';
-
-            // Carte Classement Général
-            html += '<div style="background:#f8fdf9;padding:20px;border-radius:10px;border:2px solid #4a7c28;cursor:pointer" onclick="showTab(\'general\', event)">';
-            html += '<div style="font-size:3em;margin-bottom:10px;text-align:center">🏆</div>';
-            html += '<h3 style="color:#2d5016;text-align:center;margin-bottom:10px">Classement Général</h3>';
-            if (generalTopPlayer) {
-                html += `<p style="font-size:1.3em;font-weight:bold;color:#2d5016;text-align:center;margin:15px 0">👑 ${generalTopPlayer}${getPlayerApples(generalTopPlayer)}</p>`;
-            }
-            html += `<p style="color:#666;font-size:0.9em;text-align:center">Classement sur les ${totalGames} saisons de Gammop</p>`;
-            html += '</div>';
-
-            // Carte Classement Annuel
-            html += '<div style="background:#fff5f5;padding:20px;border-radius:10px;border:2px solid #dc3545;cursor:pointer" onclick="showTab(\'years\', event)">';
-            html += '<div style="font-size:3em;margin-bottom:10px;text-align:center">🍎</div>';
-            html += '<h3 style="color:#c82333;text-align:center;margin-bottom:10px">Classement Annuel</h3>';
-            if (yearTopPlayer) {
-                html += `<p style="font-size:1.3em;font-weight:bold;color:#2d5016;text-align:center;margin:15px 0">👑 ${yearTopPlayer}${getPlayerApples(yearTopPlayer)}</p>`;
-            }
-            html += `<p style="color:#666;font-size:0.9em;text-align:center">Classement sur les saisons ayant eu lieu en ${lastGameYear} (${yearSeasonsCount} saison${yearSeasonsCount > 1 ? 's' : ''})</p>`;
-            html += '</div>';
-
-            html += '</div></div>';
-
-            // Statistiques générales
-            html += '<div class="stats-grid" style="margin-bottom:30px">';
-
-            html += '<div class="stat-card">';
-            html += '<h3 style="color:#4a7c28">🎮</h3>';
-            html += `<p style="font-size:2.5em;font-weight:bold;color:#2d5016;margin:10px 0">${totalGames}</p>`;
-            html += '<p>Saisons jouées</p>';
-            html += '</div>';
-
-            html += '<div class="stat-card">';
-            html += '<h3 style="color:#4a7c28">👥</h3>';
-            html += `<p style="font-size:2.5em;font-weight:bold;color:#2d5016;margin:10px 0">${totalPlayers}</p>`;
-            html += '<p>Joueurs actifs</p>';
-            html += '</div>';
-
-            html += '<div class="stat-card">';
-            html += '<h3 style="color:#4a7c28">📅</h3>';
-            html += `<p style="font-size:1.2em;font-weight:bold;color:#2d5016;margin:10px 0">${lastGameDate}</p>`;
-            html += '<p>Dernière partie</p>';
-            html += '</div>';
-
-            html += '</div>';
-
-            // Section jeux disponibles
-            html += '<div class="section" style="margin-top:40px">';
-            html += '<h2 style="text-align:center;margin-bottom:30px;font-size:2em;color:#2d5016">🎲 Les jeux</h2>';
-            html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px">';
-
-            // Récupérer tous les jeux uniques et calculer le meilleur joueur
-            const gamesData = {};
-            normalSeasons.forEach(s => {
-                const game = s.game || detectGameType(s.name);
-                if (!gamesData[game]) {
-                    gamesData[game] = {
-                        count: 0,
-                        seasons: [],
-                        playerData: {}
-                    };
+            // ==================== RECOMPENSES ====================
+            html += '<section aria-labelledby="homeRewardsTitle">';
+            html += '<h2 class="home-block-title" id="homeRewardsTitle">Récompenses</h2>';
+            html += homeCarousel('carRewards', 'Récompenses', [
+                {
+                    tab: 'winners', emoji: '🍏', title: 'Pommes Vertes',
+                    desc: 'Les <strong>pommes vertes</strong> représentent vos <strong>victoires</strong> dans les saisons normales. Chaque 1ère place vous rapporte une pomme verte et compte dans le classement général !',
+                    meta: recordLine(records.green)
+                },
+                {
+                    tab: 'years', emoji: '🍎', title: 'Pommes Rouges',
+                    desc: 'Les <strong>pommes rouges</strong> sont les <strong>champions annuels</strong>. À la fin de chaque année, le joueur avec le plus de points sur l\'année remporte une pomme rouge.',
+                    meta: recordLine(records.red)
+                },
+                {
+                    tab: 'special-winners', emoji: '🍐', title: 'Poires',
+                    desc: 'Les <strong>poires</strong> récompensent les victoires dans les <strong>saisons spéciales</strong>. Ces saisons ne comptent pas dans le classement général mais ont leur propre palmarès !',
+                    meta: recordLine(records.pear)
                 }
-                gamesData[game].count++;
-                gamesData[game].seasons.push(s);
-            });
+            ]);
+            html += '</section>';
 
-            // Pour chaque jeu, calculer le classement
-            Object.keys(gamesData).forEach(game => {
-                const gameSeasons = gamesData[game].seasons;
-                const playerData = {};
-
-                gameSeasons.forEach(season => {
-                    const totalPlayers = season.players.length;
-                    season.players.forEach((player, index) => {
-                        const position = index + 1;
-                        let pts = (totalPlayers - position) + 1;
-                        pts += Math.floor(((totalPlayers - position) + 1) / position);
-                        if (position <= 10) pts += (11 - position);
-                        if (position <= 5) pts += (6 - position);
-                        if (position <= 3) pts += (4 - position);
-                        if (position === 1) pts += 1;
-
-                        if (!playerData[player]) {
-                            playerData[player] = { player: player, pts: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
-                        }
-                        playerData[player].pts += pts;
-                        playerData[player].games++;
-                        if (pts > playerData[player].maxSeasonPts || (pts === playerData[player].maxSeasonPts && new Date(season.date) > new Date(playerData[player].maxSeasonDate))) {
-                            playerData[player].maxSeasonPts = pts;
-                            playerData[player].maxSeasonDate = season.date;
-                        }
-                    });
-                });
-
-                // Trouver le meilleur joueur
-                const ranking = Object.values(playerData).sort(gammopSort);
-
-                gamesData[game].topPlayer = ranking.length > 0 ? ranking[0].player : '';
-            });
-
-            const gamesList = Object.entries(gamesData).sort((a, b) => b[1].count - a[1].count);
-            gamesList.forEach(([game, data]) => {
-                const symbol = getGameWithSymbol(game);
-                const description = getGameDescription(game);
-                const topPlayer = data.topPlayer;
-                html += `<div style="background:white;padding:20px;border-radius:10px;border:2px solid #e0e0e0;text-align:left;transition:all 0.3s;cursor:pointer" onclick="showGameRanking('${game.replace(/'/g, "\\'")}')" onmouseover="this.style.borderColor='#4a7c28';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='#e0e0e0';this.style.transform='translateY(0)'">`;
-                html += `<div style="font-size:1.5em;margin-bottom:8px;text-align:center;font-weight:600;color:#2d5016">${symbol}</div>`;
-                html += `<div style="color:#999;font-size:0.8em;margin-bottom:8px;text-align:center">${data.count} saison${data.count > 1 ? 's' : ''}</div>`;
-                if (topPlayer) {
-                    html += `<div style="color:#4a7c28;font-size:0.85em;margin-bottom:10px;text-align:center;font-weight:600">👑 ${topPlayer}${getPlayerApples(topPlayer)}</div>`;
+            // ==================== CLASSEMENTS ====================
+            html += '<section aria-labelledby="homeRankingsTitle">';
+            html += '<h2 class="home-block-title" id="homeRankingsTitle">Classements</h2>';
+            html += homeCarousel('carRankings', 'Classements', [
+                {
+                    tab: 'recent', emoji: '⚡', title: 'Classement actuel',
+                    desc: 'Classement sur les ' + leaders.recentCount + ' dernières saisons.',
+                    meta: leaderLine(leaders.recent)
+                },
+                {
+                    tab: 'general', emoji: '🏆', title: 'Classement général',
+                    desc: 'Classement sur les ' + leaders.totalCount + ' saisons de Gammop.',
+                    meta: leaderLine(leaders.general)
+                },
+                {
+                    tab: 'years', emoji: '🍎', title: 'Classement annuel',
+                    desc: 'Classement sur les saisons ayant eu lieu en ' + leaders.year + ' (' + leaders.yearCount + ' saison' + (leaders.yearCount > 1 ? 's' : '') + ').',
+                    meta: leaderLine(leaders.yearly)
                 }
-                if (description) {
-                    html += `<div style="color:#666;font-size:0.85em;line-height:1.4;text-align:left">${description}</div>`;
+            ]);
+            html += '</section>';
+
+            // ==================== CHIFFRES CLES ====================
+            html += '<section class="home-kpis" aria-label="Chiffres clés">';
+            html += '<div class="home-kpi"><div class="home-kpi-value">' + rankingData.length + '</div>'
+                + '<div class="home-kpi-label">Joueur' + (rankingData.length > 1 ? 's' : '') + ' unique' + (rankingData.length > 1 ? 's' : '') + '</div></div>';
+            html += '<div class="home-kpi"><div class="home-kpi-value">' + normalSeasons.length + '</div>'
+                + '<div class="home-kpi-label">Saison' + (normalSeasons.length > 1 ? 's' : '') + '</div></div>';
+            html += '<div class="home-kpi"><div class="home-kpi-value is-text">' + lastSeasonDate + '</div>'
+                + '<div class="home-kpi-label">Dernière saison</div></div>';
+            html += '</section>';
+
+            // ==================== JEUX ====================
+            html += '<section class="home-games" aria-labelledby="homeGamesTitle">';
+            html += '<h2 class="home-block-title" id="homeGamesTitle">Les jeux</h2>';
+            html += '<div class="home-games-grid">';
+            gamesList.forEach(function(g) {
+                html += '<button type="button" class="home-game" data-game="' + homeEsc(g.game) + '" onclick="showGameRanking(this.dataset.game)">';
+                html += '<div class="home-game-name">' + homeEsc(getGameWithSymbol(g.game)) + '</div>';
+                if (g.description) {
+                    html += '<div class="home-game-desc">' + homeEsc(g.description) + '</div>';
                 }
+                html += '<div class="home-game-meta">';
+                html += 'Dernier vainqueur : ' + (g.lastWinner ? homeEsc(g.lastWinner) + ' — ' + homeEsc(g.lastSeason) : '—') + '<br>';
+                html += '1er au classement : ' + (g.leader ? homeEsc(g.leader) : '—');
                 html += '</div>';
+                html += '</button>';
             });
+            html += '</div></section>';
 
-            html += '</div>';
-            html += '</div>';
-
-            // Footer avec lien mentions légales
-            html += '<div style="margin-top:40px;padding:20px;text-align:center;border-top:1px solid var(--border-color);color:var(--text-secondary);font-size:0.85em">';
+            // ==================== FOOTER ====================
+            html += '<div class="home-footer">';
             html += '<span>© ' + new Date().getFullYear() + ' GAMMOP</span>';
-            html += ' • <span style="cursor:pointer;text-decoration:underline" onclick="showTab(\'mentions-legales\', event)">Mentions légales</span>';
+            html += ' • <button type="button" onclick="showTab(\'mentions-legales\', event)">Mentions légales</button>';
+            html += '</div>';
+
             html += '</div>';
 
             el.innerHTML = html;
+
+            gcarInit('carRewards');
+            gcarInit('carRankings');
+
+            if (typeof loadFromSupabase === 'function') loadFromSupabase();
         }
 
         function updateLeaders() {
@@ -9051,6 +9585,9 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             var el = document.getElementById(tab);
             if (el) el.classList.add('active');
+
+            // Le hero plein ecran n'existe que sur l'accueil
+            document.body.classList.toggle('home-active', tab === 'home');
 
             // Highlight the correct tab button based on tab ID
             var btnId = getTabButtonId(tab);

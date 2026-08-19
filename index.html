@@ -1317,9 +1317,63 @@
             display: block;
         }
 
+        .gcar-card-link {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+            text-decoration: none;
+            color: inherit;
+        }
+
         .gcar-emoji {
             font-size: 2.6em;
             line-height: 1;
+        }
+
+        .gcar-last {
+            font-size: 0.85em;
+            line-height: 1.55;
+            color: var(--home-muted);
+        }
+
+        .gcar-last strong {
+            color: var(--text-primary);
+        }
+
+        .gcar-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        /* Les actions n'existent que sur la carte centrale, mais gardent leur
+           place pour que les trois cartes conservent la meme hauteur */
+        .gcar-card:not(.is-active) .gcar-actions {
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .gcar-action {
+            flex: 1 1 auto;
+            min-height: 40px;
+            padding: 9px 14px;
+            font: inherit;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: var(--accent-text);
+            background: transparent;
+            border: 1px solid var(--home-border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color 0.18s ease-out, background 0.18s ease-out;
+        }
+
+        .gcar-action:hover,
+        .gcar-action:focus-visible {
+            border-color: var(--accent);
+            background: rgba(127, 200, 100, 0.08);
         }
 
         .gcar-title {
@@ -2031,6 +2085,10 @@
                     <span class="branch-badge">Bientôt disponible</span>
                 </div>
             </div>
+        </div>
+
+        <div id="winners-palmares" class="content">
+            <!-- Contenu genere par updateWinners() -->
         </div>
 
         <!-- BRANCHE DISCORD : classements, recompenses, chiffres cles et jeux -->
@@ -3324,6 +3382,71 @@
             return { green: homeTopHolder(green), red: homeTopHolder(red), pear: homeTopHolder(pear) };
         }
 
+        // Dernier vainqueur de chaque fruit
+        function homeLastWinners() {
+            var normal = seasons.filter(function(s) { return !s.isSpecial; })
+                .sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+            var special = seasons.filter(function(s) { return s.isSpecial; })
+                .sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+
+            // --- Pomme verte : vainqueur de la derniere partie officielle ---
+            var green = null;
+            var lastNormal = normal.length ? normal[normal.length - 1] : null;
+            if (lastNormal && lastNormal.players && lastNormal.players.length) {
+                green = {
+                    player: lastNormal.players[0],
+                    seasonName: lastNormal.name,      // contient deja "<Jeu> Saison <n>"
+                    game: lastNormal.game,
+                    globalNumber: normal.length,      // numero global de la partie
+                    date: lastNormal.date
+                };
+            }
+
+            // --- Pomme rouge : derniere annee recompensee ---
+            // Une annee donne une pomme rouge si elle est ecoulee ET compte 10 parties ou plus.
+            var byYear = {}, lastYear = 0;
+            normal.forEach(function(season) {
+                var y = new Date(season.date).getFullYear();
+                if (y > lastYear) lastYear = y;
+                if (!byYear[y]) byYear[y] = [];
+                byYear[y].push(season);
+            });
+            var awarded = Object.keys(byYear)
+                .map(Number)
+                .filter(function(y) { return y < lastYear && byYear[y].length >= 10; })
+                .sort(function(a, b) { return a - b; });
+
+            var red = null;
+            if (awarded.length) {
+                var year = awarded[awarded.length - 1];
+                var yearSeasons = byYear[year];
+                var champion = homeRankSeasons(yearSeasons)[0];
+                var lastOfYear = yearSeasons[yearSeasons.length - 1];
+                if (champion) {
+                    red = {
+                        player: champion.player,
+                        year: year,
+                        appleNumber: awarded.length,       // rang dans la serie historique
+                        date: lastOfYear ? lastOfYear.date : null,
+                        lastOfficialYear: lastYear
+                    };
+                }
+            }
+
+            // --- Poire : vainqueur de la derniere saison speciale ---
+            var pear = null;
+            var lastSpecial = special.length ? special[special.length - 1] : null;
+            if (lastSpecial && lastSpecial.players && lastSpecial.players.length) {
+                pear = {
+                    player: lastSpecial.players[0],
+                    number: lastSpecial.specialNumber,
+                    date: lastSpecial.date
+                };
+            }
+
+            return { green: green, red: red, pear: pear };
+        }
+
         // Premiers des trois classements, au jour J
         function homeRankingLeaders() {
             var normal = seasons.filter(function(s) { return !s.isSpecial; });
@@ -3389,15 +3512,27 @@
             html += '<div class="gcar-viewport" id="' + id + '-vp" tabindex="0" role="group" aria-roledescription="carrousel" aria-label="' + homeEsc(label) + '" onkeydown="gcarKey(event, \'' + id + '\')" onscroll="gcarSync(\'' + id + '\')">';
             html += '<div class="gcar-track">';
             cards.forEach(function(card, i) {
-                html += '<a class="gcar-card' + (i === start ? ' is-active' : '') + '" href="#' + card.tab + '"'
-                    + ' data-index="' + i + '" aria-current="' + (i === start ? 'true' : 'false') + '"'
+                // La carte est un conteneur : le lien et les boutons d'action sont
+                // cote a cote, jamais imbriques l'un dans l'autre.
+                html += '<div class="gcar-card' + (i === start ? ' is-active' : '') + '" data-index="' + i + '"'
+                    + ' aria-current="' + (i === start ? 'true' : 'false') + '"'
                     + ' onclick="return gcarOpen(event, \'' + id + '\', ' + i + ', \'' + card.tab + '\')">';
+                html += '<a class="gcar-card-link" href="#' + card.tab + '" onclick="return gcarOpen(event, \'' + id + '\', ' + i + ', \'' + card.tab + '\')">';
                 html += '<span class="gcar-emoji" aria-hidden="true">' + card.emoji + '</span>';
                 html += '<span class="gcar-title">' + card.title + '</span>';
                 html += '<span class="gcar-desc">' + card.desc + '</span>';
                 html += '<span class="gcar-meta">' + card.meta + '</span>';
+                if (card.last) html += '<span class="gcar-last">' + card.last + '</span>';
                 html += '<span class="gcar-cta" aria-hidden="true">Voir →</span>';
                 html += '</a>';
+                if (card.actions && card.actions.length) {
+                    html += '<div class="gcar-actions">';
+                    card.actions.forEach(function(action) {
+                        html += '<button type="button" class="gcar-action" onclick="gcarAction(event, \'' + action.tab + '\', \'' + (action.section || '') + '\')">' + action.label + '</button>';
+                    });
+                    html += '</div>';
+                }
+                html += '</div>';
             });
             html += '</div></div>';
             html += '<button type="button" class="gcar-arrow gcar-next" aria-label="Carte suivante" onclick="gcarMove(\'' + id + '\', 1)">&#8250;</button>';
@@ -3407,6 +3542,21 @@
             });
             html += '</div></div>';
             return html;
+        }
+
+        // Bouton d'action dans une carte : ne doit pas declencher la navigation de la carte
+        function gcarAction(event, tab, section) {
+            event.preventDefault();
+            event.stopPropagation();
+            showTab(tab, null);
+            window.scrollTo(0, 0);
+            if (section) {
+                setTimeout(function() {
+                    var target = document.getElementById(section);
+                    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 120);
+            }
+            return false;
         }
 
         // Positionne le carrousel sur sa carte de depart, sans animation au chargement.
@@ -3480,8 +3630,25 @@
 
         // Clic sur une carte laterale : elle vient au centre, sans naviguer.
         // Clic sur la carte centrale : c'est la seule qui navigue.
+        var _gcarResize = null;
+        window.addEventListener('resize', function() {
+            clearTimeout(_gcarResize);
+            _gcarResize = setTimeout(function() {
+                ['carRewards', 'carRankings'].forEach(function(id) {
+                    var vp = document.getElementById(id + '-vp');
+                    if (!vp) return;
+                    var current = gcarIndex(id);
+                    var previous = vp.style.scrollBehavior;
+                    vp.style.scrollBehavior = 'auto';
+                    gcarGoTo(id, current);
+                    vp.style.scrollBehavior = previous;
+                });
+            }, 150);
+        });
+
         function gcarOpen(event, id, index, tab) {
             event.preventDefault();
+            event.stopPropagation();
             if (index !== gcarIndex(id)) {
                 gcarGoTo(id, index);
                 return false;
@@ -3516,12 +3683,20 @@
             }
 
             const records = homeFruitRecords();
+            const lastWins = homeLastWinners();
             const leaders = homeRankingLeaders();
             const gamesList = homeGameHighlights();
 
             const lastSeasonDate = leaders.lastSeason
                 ? new Date(leaders.lastSeason.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
                 : '—';
+
+            function shortDate(d) {
+                return d ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—';
+            }
+            function lastLine(content) {
+                return 'Dernier vainqueur : ' + content;
+            }
 
             function recordLine(holder) {
                 return holder
@@ -3546,17 +3721,40 @@
                 {
                     tab: 'winners', emoji: '🍏', title: 'Pommes Vertes',
                     desc: 'Les <strong>pommes vertes</strong> représentent vos <strong>victoires</strong> dans les saisons normales. Chaque 1ère place vous rapporte une pomme verte et compte dans le classement général !',
-                    meta: recordLine(records.green)
+                    meta: recordLine(records.green),
+                    last: lastWins.green
+                        ? lastLine('<strong>' + homeEsc(lastWins.green.player) + '</strong> — ' + homeEsc(lastWins.green.seasonName) + ' (n°' + lastWins.green.globalNumber + ')')
+                        : lastLine('—'),
+                    actions: [
+                        { label: 'Liste des vainqueurs', tab: 'winners' },
+                        { label: 'Palmarès', tab: 'winners-palmares' }
+                    ]
                 },
                 {
                     tab: 'years', emoji: '🍎', title: 'Pommes Rouges',
-                    desc: 'Les <strong>pommes rouges</strong> sont les <strong>champions annuels</strong>. À la fin de chaque année, le joueur avec le plus de points sur l\'année remporte une pomme rouge.',
-                    meta: recordLine(records.red)
+                    desc: 'Les <strong>pommes rouges</strong> sont les <strong>champions annuels</strong>. À la fin de chaque année, le joueur avec le plus de points sur l\'année remporte une pomme rouge. Seules les années comptant au moins 10 parties sont récompensées.',
+                    meta: recordLine(records.red),
+                    last: lastWins.red
+                        ? lastLine('<strong>' + homeEsc(lastWins.red.player) + '</strong> — ' + shortDate(lastWins.red.date) + '<br>'
+                            + 'Pomme rouge n°' + lastWins.red.appleNumber + ' (année ' + lastWins.red.year + ')<br>'
+                            + 'Dernier jeu officiel : ' + lastWins.red.lastOfficialYear)
+                        : lastLine('—'),
+                    actions: [
+                        { label: 'Liste des vainqueurs', tab: 'years-palmares', section: 'redAppleWinners' },
+                        { label: 'Palmarès', tab: 'years-palmares', section: 'redApplePalmares' }
+                    ]
                 },
                 {
                     tab: 'special-winners', emoji: '🍐', title: 'Poires',
                     desc: 'Les <strong>poires</strong> récompensent les victoires dans les <strong>saisons spéciales</strong>. Ces saisons ne comptent pas dans le classement général mais ont leur propre palmarès !',
-                    meta: recordLine(records.pear)
+                    meta: recordLine(records.pear),
+                    last: lastWins.pear
+                        ? lastLine('<strong>' + homeEsc(lastWins.pear.player) + '</strong> — n°' + (lastWins.pear.number || '—') + ', ' + shortDate(lastWins.pear.date))
+                        : lastLine('—'),
+                    actions: [
+                        { label: 'Liste des vainqueurs', tab: 'special-winners' },
+                        { label: 'Palmarès et statistiques', tab: 'special-palmares' }
+                    ]
                 }
             ]);
             html += '</section>';
@@ -6193,8 +6391,13 @@
 
             html += '</div>';
 
-            // SECTION 2: Palmarès (classement par pommes vertes)
-            html += '<div class="section"><h3>🏆 Palmarès</h3>';
+            // La liste s'arrete ici : le palmares a sa propre vue et sa propre URL
+            el.innerHTML = html;
+
+            // SECTION 2: Palmarès (classement par pommes vertes), vue #winners-palmares
+            const palmaresEl = document.getElementById('winners-palmares');
+            if (!palmaresEl) return;
+            html = '<div class="section"><h1 class="view-title">🏆 Palmarès des vainqueurs</h1>';
             html += '<div style="margin-bottom:20px;color:var(--text-secondary);font-size:0.95em">Classement des joueurs par nombre de pommes vertes gagnées</div>';
 
             const sortedByApples = Object.entries(winStats).map(([p, d]) => ({player:p, ...d})).sort((a, b) => b.count - a.count);
@@ -6242,7 +6445,7 @@
             });
 
             html += '</div></div>';
-            el.innerHTML = html;
+            palmaresEl.innerHTML = html;
         }
 
         function updateYearsPalmares() {
@@ -6317,7 +6520,7 @@
                 }
             });
 
-            let html = '<div class="section"><h1 class="view-title">🍎 Historique des Champions Annuels</h1>';
+            let html = '<div class="section" id="redAppleWinners"><h1 class="view-title">🍎 Historique des Champions Annuels</h1>';
             html += '<div style="margin-bottom:20px;color:#666;font-size:0.95em">Joueurs ayant remporté le classement annuel (pomme rouge pour les années écoulées, pomme verte pour l\'année en cours)</div>';
             html += '<div style="display:grid;gap:15px">';
 
@@ -6353,7 +6556,7 @@
             html += '</div></div>';
 
             // Section Awards par année
-            html += '<div class="section"><h3>🏆 Awards par Année</h3>';
+            html += '<div class="section" id="redApplePalmares"><h3>🏆 Awards par Année</h3>';
             html += '<div style="margin-bottom:20px;color:#666;font-size:0.95em">Palmarès des différents awards décernés chaque année</div>';
 
             years.forEach(year => {
@@ -7937,33 +8140,10 @@
         }
 
         function selectWinnersOption(option) {
-            if (option === 'liste') {
-                showTab('winners', event);
-                // Scroll vers la liste des vainqueurs
-                setTimeout(() => {
-                    const winnersContent = document.getElementById('winners');
-                    const listSection = winnersContent.querySelector('.section');
-                    if (listSection) {
-                        listSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                }, 100);
-            } else if (option === 'palmares') {
-                showTab('winners', event);
-                // Scroll vers le palmarès
-                setTimeout(() => {
-                    const winnersContent = document.getElementById('winners');
-                    const sections = winnersContent.querySelectorAll('.section');
-                    if (sections.length > 1) {
-                        sections[1].scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                }, 100);
-            }
-
-            // Cacher le dropdown
-            const dropdown = document.getElementById('winnersDropdown');
-            dropdown.classList.remove('show');
+            showTab(option === 'palmares' ? 'winners-palmares' : 'winners', event);
+            var dropdown = document.getElementById('winnersDropdown');
+            if (dropdown) dropdown.classList.remove('show');
         }
-
         function openPlayer(name) {
             const p = rankingData.find(x => x.player === name);
             const isSpecialOnly = !p && (window._specialOnlyPlayers || []).includes(name);
@@ -10138,8 +10318,13 @@
             // Les carrousels sont mesures en pixels : ils doivent etre repositionnes
             // quand la branche devient visible (largeur nulle tant qu'elle est masquee)
             if (tab === 'discord' && typeof gcarInit === 'function') {
+                // La vue vient d'etre affichee : ses largeurs ne sont pas encore
+                // stabilisees. On repositionne tout de suite puis apres la mise en
+                // page (polices et emojis peuvent encore la decaler).
                 gcarInit('carRewards');
                 gcarInit('carRankings');
+                setTimeout(function() { gcarInit('carRewards'); gcarInit('carRankings'); }, 0);
+                setTimeout(function() { gcarInit('carRewards'); gcarInit('carRankings'); }, 250);
             }
 
             updatePageMeta(tab);

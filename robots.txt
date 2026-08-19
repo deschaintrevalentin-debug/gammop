@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin-app/
+Disallow: /recuperer-donnees.html
+
+Sitemap: /sitemap.xml

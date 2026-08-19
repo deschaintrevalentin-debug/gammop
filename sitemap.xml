@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GAMMOP - sitemap
+
+  A REMPLACER : mettre l'URL reelle du site a la place de https://VOTRE-DOMAINE
+  (une seule occurrence ci-dessous). Sans domaine reel, ce fichier n'est pas exploitable
+  par les moteurs de recherche.
+
+  Note : le site est une application a page unique routee par ancres (#recent, #general...).
+  Les fragments d'URL ne sont jamais indexes comme des pages distinctes : le sitemap ne
+  declare donc que la page racine.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>https://VOTRE-DOMAINE/</loc>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+    </url>
+</urlset>

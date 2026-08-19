@@ -4,7 +4,20 @@
     <!-- VERSION MODIFIEE CLAUDE - TEST 13 OCT 22:50 -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GAMMOP - Classement Général</title>
+    <title>GAMMOP — Serveur Discord de mini-jeux</title>
+    <meta name="description" id="metaDescription" content="Tous les classements et statistiques des mini-jeux du serveur Discord GAMMOP.">
+    <link rel="canonical" id="metaCanonical" href="">
+    <meta name="theme-color" id="metaThemeColor" content="#141713">
+    <meta property="og:site_name" content="GAMMOP">
+    <meta property="og:type" content="website">
+    <meta property="og:title" id="metaOgTitle" content="GAMMOP — Serveur Discord de mini-jeux">
+    <meta property="og:description" id="metaOgDescription" content="Tous les classements et statistiques des mini-jeux du serveur Discord GAMMOP.">
+    <meta property="og:url" id="metaOgUrl" content="">
+    <meta property="og:locale" content="fr_FR">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" id="metaTwitterTitle" content="GAMMOP — Serveur Discord de mini-jeux">
+    <meta name="twitter:description" id="metaTwitterDescription" content="Tous les classements et statistiques des mini-jeux du serveur Discord GAMMOP.">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23141713'/%3E%3Cpath fill='%237bd44f' d='M10 9h5v2h-5zM17 9h5v2h-5zM8 11h16v2H8zM6 13h20v8H6zM8 21h16v2H8zM10 23h12v2H10zM12 25h8v2h-8z'/%3E%3Crect x='15' y='5' width='2' height='4' fill='%238b5a2b'/%3E%3C/svg%3E">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -495,6 +508,16 @@
             color: #2d5016;
             margin-bottom: 20px;
             font-size: 1.5em;
+        }
+
+        /* Titre de vue : un seul h1 par vue, meme rendu que les anciens h3 */
+        .view-title,
+        .section h1.view-title {
+            color: #2d5016;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            font-weight: 700;
+            line-height: 1.3;
         }
 
         table {
@@ -1642,7 +1665,7 @@
             <div class="section" id="generalSection">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
                     <div style="display:flex;align-items:center">
-                        <h3 style="margin:0">Classement Général</h3>
+                        <h1 class="view-title" style="margin:0">Classement Général</h1>
                         <span class="info-icon">
                             i
                             <div class="tooltip">
@@ -1663,7 +1686,7 @@
 
         <div id="stats" class="content">
             <div class="section" style="text-align:center;padding:40px 20px">
-                <h3 style="color:#2d5016;margin-bottom:25px">📈 Statistiques</h3>
+                <h1 class="view-title" style="margin-bottom:25px">📈 Statistiques</h1>
                 <p style="color:#666;margin-bottom:30px">Choisissez une catégorie de statistiques :</p>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;max-width:700px;margin:0 auto">
                     <div onclick="selectStatsCategory('globales')" style="cursor:pointer;background:#e8f5e9;padding:25px 15px;border-radius:12px;border:2px solid #c8e6c9;transition:transform 0.2s,box-shadow 0.2s" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
@@ -1732,7 +1755,7 @@
 
         <div id="games" class="content">
             <div class="section">
-                <h3>Sélectionner un Jeu</h3>
+                <h1 class="view-title">🎮 Sélectionner un Jeu</h1>
                 <div class="form-group">
                     <select id="gameSelector" onchange="updateGames()">
                         <option value="">-- Choisir un jeu --</option>
@@ -1744,7 +1767,7 @@
 
         <div id="years" class="content">
             <div class="section">
-                <h3>Classements par Année</h3>
+                <h1 class="view-title">Classements par Année</h1>
                 <div class="form-group">
                     <select id="yearSelector" onchange="onYearSelectorChange()">
                         <option value="">-- Choisir une année --</option>
@@ -1785,7 +1808,7 @@
     <!-- Player Modal -->
     <div id="mentions-legales" class="content">
         <div class="section" style="max-width:800px;margin:0 auto">
-            <h2 style="color:var(--text-accent);margin-bottom:20px">📜 Mentions Légales</h2>
+            <h1 class="view-title" style="margin-bottom:20px">📜 Mentions Légales</h1>
 
             <div style="margin-bottom:25px">
                 <h3 style="color:var(--text-accent);margin-bottom:10px">1. Éditeur du site</h3>
@@ -2030,6 +2053,7 @@
                 // Update URL hash
                 if (!_skipHashUpdate) {
                     history.pushState(null, '', '#game/' + encodeURIComponent(gameName));
+                    updatePageMeta('games', getGameWithSymbol(gameName) + ' — Classement — ' + SITE_NAME, 'Le classement du jeu ' + gameName + ' sur GAMMOP.');
                 }
             }, 100);
         }
@@ -2167,6 +2191,7 @@
             // Update URL hash
             if (!_skipHashUpdate) {
                 history.pushState(null, '', '#game-palmares/' + encodeURIComponent(gameName));
+                updatePageMeta('games', getGameWithSymbol(gameName) + ' — Palmarès — ' + SITE_NAME, 'Le palmarès du jeu ' + gameName + ' sur GAMMOP.');
             }
         }
 
@@ -2383,6 +2408,7 @@
                 document.body.classList.add('dark-mode');
             }
             updateDarkModeButton();
+            updateThemeColor();
 
             if (debugMode) {
                 debugLog.push('SUPABASE_URL: ' + SUPABASE_URL);
@@ -2468,6 +2494,8 @@
             // Navigate to hash if present in URL (e.g. #general, #player/Name)
             if (window.location.hash) {
                 navigateToHash();
+            } else {
+                updatePageMeta('home');
             }
         }
 
@@ -2488,6 +2516,7 @@
             const isDark = document.body.classList.contains('dark-mode');
             localStorage.setItem('gammopDarkMode', isDark);
             updateDarkModeButton();
+            updateThemeColor();
             // Mettre à jour les tableaux pour appliquer les bonnes couleurs de fond
             if (typeof updateGeneral === 'function') updateGeneral();
             if (typeof updateRecentRanking === 'function') updateRecentRanking();
@@ -3249,7 +3278,7 @@
             html += '</div>';
 
             // Frise chronologique de la domination
-            html += '<div class="section"><h3>📊 Frise de Domination</h3>';
+            html += '<div class="section"><h1 class="view-title">📊 Frise de Domination</h1>';
             html += '<p style="color:#666;margin-bottom:20px">Évolution du leadership au fil des saisons</p>';
 
             // Créer une carte des couleurs pour chaque joueur
@@ -3477,7 +3506,7 @@
             html += '</div>';
 
             // Frise chronologique de la domination
-            html += '<div class="section"><h3>📊 Frise de Domination - Forme Récente</h3>';
+            html += '<div class="section"><h1 class="view-title">📊 Frise de Domination - Forme Récente</h1>';
             html += '<p style="color:#666;margin-bottom:20px">Évolution du leadership en forme récente (10 dernières parties) au fil des saisons</p>';
 
             // Créer une carte des couleurs pour chaque joueur
@@ -4239,7 +4268,8 @@
                 }));
 
             // Générer le HTML
-            let html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:20px">';
+            let html = '<h1 class="view-title">📈 Statistiques</h1>';
+            html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:20px">';
 
             // 1. Taux de participation
             html += '<div class="section"><h3>📊 Taux de Participation</h3><p style="color:#666;font-size:0.9em;margin-bottom:15px">Pourcentage de participations</p>';
@@ -5570,7 +5600,7 @@
             let html = `<div class="section" id="recentSection">`;
             html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">';
             html += '<div style="display:flex;align-items:center">';
-            html += `<h3 style="margin:0">⚡ Forme Récente (${recentSeasonsCount} dernières parties)</h3>`;
+            html += `<h1 class="view-title" style="margin:0">⚡ Forme Récente (${recentSeasonsCount} dernières parties)</h1>`;
             html += '<span class="info-icon">';
             html += 'i';
             html += '<div class="tooltip">';
@@ -5657,7 +5687,7 @@
             });
 
             // SECTION 1: Liste des vainqueurs (ordre antichronologique)
-            let html = '<div class="section"><h3>🍏 Liste des Vainqueurs</h3>';
+            let html = '<div class="section"><h1 class="view-title">🍏 Liste des Vainqueurs</h1>';
             html += '<div style="margin-bottom:20px;color:var(--text-secondary);font-size:0.95em">Historique complet de toutes les victoires par ordre antichronologique</div>';
 
             if (allWins.length === 0) {
@@ -5853,7 +5883,7 @@
                 }
             });
 
-            let html = '<div class="section"><h3>🍎 Historique des Champions Annuels</h3>';
+            let html = '<div class="section"><h1 class="view-title">🍎 Historique des Champions Annuels</h1>';
             html += '<div style="margin-bottom:20px;color:#666;font-size:0.95em">Joueurs ayant remporté le classement annuel (pomme rouge pour les années écoulées, pomme verte pour l\'année en cours)</div>';
             html += '<div style="display:grid;gap:15px">';
 
@@ -6012,7 +6042,7 @@
             const specialSeasons = seasons.filter(s => s.isSpecial);
 
             if (specialSeasons.length === 0) {
-                el.innerHTML = '<div class="section"><h3>🍐 Vainqueurs des Saisons Spéciales</h3><p style="color:var(--text-secondary);text-align:center;padding:40px">Aucune saison spéciale enregistrée pour le moment.</p></div>';
+                el.innerHTML = '<div class="section"><h1 class="view-title">🍐 Vainqueurs des Saisons Spéciales</h1><p style="color:var(--text-secondary);text-align:center;padding:40px">Aucune saison spéciale enregistrée pour le moment.</p></div>';
                 return;
             }
 
@@ -6038,7 +6068,7 @@
             const sortedWins = [...allWins].sort((a, b) => new Date(b.date) - new Date(a.date));
 
             let html = '<div class="section">';
-            html += '<h3>🍐 Vainqueurs des Saisons Spéciales</h3>';
+            html += '<h1 class="view-title">🍐 Vainqueurs des Saisons Spéciales</h1>';
             html += '<div style="margin-bottom:20px;color:var(--text-secondary);font-size:0.95em">Liste antichronologique de tous les vainqueurs des saisons spéciales</div>';
 
             // Créer le tableau
@@ -6122,7 +6152,7 @@
             const specialSeasons = seasons.filter(s => s.isSpecial && s.organizer);
 
             if (specialSeasons.length === 0) {
-                el.innerHTML = '<div class="section"><h3>👔 Organisateurs de Saisons Spéciales</h3><p style="color:var(--text-secondary);text-align:center;padding:40px">Aucune saison spéciale organisée pour le moment.</p></div>';
+                el.innerHTML = '<div class="section"><h1 class="view-title">👔 Organisateurs de Saisons Spéciales</h1><p style="color:var(--text-secondary);text-align:center;padding:40px">Aucune saison spéciale organisée pour le moment.</p></div>';
                 return;
             }
 
@@ -6150,7 +6180,7 @@
             const sortedOrganizers = Object.values(organizersData).sort((a, b) => b.count - a.count);
 
             let html = '<div class="section">';
-            html += '<h3>👔 Organisateurs de Saisons Spéciales</h3>';
+            html += '<h1 class="view-title">👔 Organisateurs de Saisons Spéciales</h1>';
             html += '<div style="margin-bottom:20px;color:var(--text-secondary);font-size:0.95em">Liste des organisateurs avec le nombre de saisons organisées</div>';
 
             html += '<div style="display:grid;gap:20px">';
@@ -6212,7 +6242,7 @@
             const specialSeasons = seasons.filter(s => s.isSpecial);
 
             if (specialSeasons.length === 0) {
-                el.innerHTML = '<div class="section"><h3>🏅 Palmarès des Saisons Spéciales</h3><p style="color:var(--text-secondary);text-align:center;padding:40px">Aucune saison spéciale enregistrée.</p></div>';
+                el.innerHTML = '<div class="section"><h1 class="view-title">🏅 Palmarès des Saisons Spéciales</h1><p style="color:var(--text-secondary);text-align:center;padding:40px">Aucune saison spéciale enregistrée.</p></div>';
                 return;
             }
 
@@ -6256,7 +6286,7 @@
             });
 
             let html = '<div class="section">';
-            html += '<h3>🏅 Palmarès des Saisons Spéciales</h3>';
+            html += '<h1 class="view-title">🏅 Palmarès des Saisons Spéciales</h1>';
             html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:20px;margin-top:20px">';
 
             html += '<div style="background:var(--section-bg);border-radius:12px;padding:20px;border:2px solid var(--section-border)">';
@@ -6306,7 +6336,7 @@
 
             const years = Object.keys(yearStats).sort((a, b) => b - a);
 
-            let html = '<div class="section"><h3>📈 Statistiques des Classements Annuels</h3>';
+            let html = '<div class="section"><h1 class="view-title">📈 Statistiques des Classements Annuels</h1>';
 
             // Calculer les classements annuels
             const yearRankings = {};
@@ -6582,7 +6612,7 @@
             const gameSafeId = selectedGame.replace(/[^a-zA-Z0-9]/g, '');
             let html = `<div class="section" id="gameSection${gameSafeId}">`;
             html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">`;
-            html += `<h3 style="margin:0;display:flex;align-items:center;gap:10px">🎮 ${getGameWithSymbol(selectedGame)} <span style="font-size:0.7em;color:#666;font-weight:normal">(${gameSeasons.length} saison${gameSeasons.length > 1 ? 's' : ''})</span></h3>`;
+            html += `<h2 style="margin:0;display:flex;align-items:center;gap:10px;font-size:1.35em;color:var(--text-accent)">${getGameWithSymbol(selectedGame)} <span style="font-size:0.7em;color:#666;font-weight:normal">(${gameSeasons.length} saison${gameSeasons.length > 1 ? 's' : ''})</span></h2>`;
             html += `</div>`;
 
             // Classement général du jeu
@@ -6682,6 +6712,7 @@
             var yearVal = document.getElementById('yearSelector').value;
             if (!_skipHashUpdate && yearVal) {
                 history.pushState(null, '', '#years/' + yearVal);
+                updatePageMeta('years', 'Classement annuel ' + yearVal + ' — ' + SITE_NAME, 'Le classement GAMMOP de l\'année ' + yearVal + '.');
             }
         }
 
@@ -7193,6 +7224,7 @@
             // Update URL hash
             if (!_skipHashUpdate) {
                 history.pushState(null, '', '#season/' + encodeURIComponent(seasonName));
+                updatePageMeta('winners', seasonName + ' — ' + SITE_NAME, 'Le classement complet de la saison ' + seasonName + ' sur GAMMOP.');
             }
         }
 
@@ -7276,6 +7308,7 @@
             // Push year-specific hash (seulement si pas appelé depuis navigateToHash)
             if (!_skipHashUpdate) {
                 history.pushState(null, '', '#years/' + year);
+                updatePageMeta('years', 'Classement annuel ' + year + ' — ' + SITE_NAME, 'Le classement GAMMOP de l\'année ' + year + '.');
             }
 
             // Cacher le dropdown
@@ -9394,6 +9427,7 @@
             // Update URL hash for player modal
             if (!_skipHashUpdate) {
                 history.pushState(null, '', '#player/' + encodeURIComponent(name));
+                updatePageMeta('home', name + ' — Profil — ' + SITE_NAME, 'Le profil, les statistiques et le palmarès de ' + name + ' sur GAMMOP.');
             }
         }
 
@@ -9535,6 +9569,7 @@
 
             if (!_skipHashUpdate) {
                 history.pushState(null, '', '#player/' + encodeURIComponent(name));
+                updatePageMeta('home', name + ' — Profil — ' + SITE_NAME, 'Le profil, les statistiques et le palmarès de ' + name + ' sur GAMMOP.');
             }
         }
 
@@ -9580,6 +9615,62 @@
             return null;
         }
 
+        // ==================== TITRES ET METADONNEES PAR ROUTE ====================
+        var SITE_NAME = 'GAMMOP';
+        var PAGE_META = {
+            'home':                    ['GAMMOP — Serveur Discord de mini-jeux', 'Tous les classements et statistiques des mini-jeux du serveur Discord GAMMOP.'],
+            'discord':                 ['Classements et statistiques — GAMMOP', 'Récompenses, classements et jeux du serveur Discord GAMMOP.'],
+            'recent':                  ['Classement actuel — GAMMOP', 'Le classement GAMMOP sur les 10 dernières saisons officielles.'],
+            'general':                 ['Classement général — GAMMOP', 'Le classement général de toutes les saisons officielles de GAMMOP.'],
+            'years':                   ['Classement annuel — GAMMOP', 'Le classement GAMMOP année par année.'],
+            'winners':                 ['Vainqueurs — GAMMOP', 'La liste de toutes les parties de GAMMOP et de leurs vainqueurs.'],
+            'winners-palmares':        ['Palmarès des vainqueurs — GAMMOP', 'Le palmarès des joueurs par nombre de victoires en saison officielle.'],
+            'special-winners':         ['Saisons spéciales — GAMMOP', 'Les vainqueurs des saisons spéciales de GAMMOP.'],
+            'special-palmares':        ['Palmarès des saisons spéciales — GAMMOP', 'Palmarès et statistiques des saisons spéciales de GAMMOP.'],
+            'special-organizers':      ['Organisateurs des saisons spéciales — GAMMOP', 'Les organisateurs des saisons spéciales de GAMMOP.'],
+            'stats':                   ['Statistiques — GAMMOP', 'Toutes les statistiques des joueurs et des jeux de GAMMOP.'],
+            'games':                   ['Jeux — GAMMOP', 'Tous les mini-jeux du serveur Discord GAMMOP et leurs classements.'],
+            'leaders':                 ['Évolution des leaders — GAMMOP', 'L\'évolution du leader du classement général de GAMMOP.'],
+            'leaders-recent':          ['Évolution des leaders (forme récente) — GAMMOP', 'L\'évolution du leader du classement actuel de GAMMOP.'],
+            'years-palmares':          ['Palmarès annuel — GAMMOP', 'Les champions annuels de GAMMOP et leurs pommes rouges.'],
+            'years-stats':             ['Statistiques des pommes rouges — GAMMOP', 'Statistiques détaillées des champions annuels de GAMMOP.'],
+            'stats-globales':          ['Statistiques globales — GAMMOP', 'Les statistiques globales de GAMMOP.'],
+            'stats-classement-actuel': ['Statistiques du classement actuel — GAMMOP', 'Les statistiques du classement actuel de GAMMOP.'],
+            'stats-classement-general':['Statistiques du classement général — GAMMOP', 'Les statistiques du classement général de GAMMOP.'],
+            'stats-classement-annuel': ['Statistiques du classement annuel — GAMMOP', 'Les statistiques du classement annuel de GAMMOP.'],
+            'stats-par-jeux':          ['Statistiques par jeux — GAMMOP', 'Les statistiques de GAMMOP jeu par jeu.'],
+            'stats-faits-interessants':['Faits intéressants — GAMMOP', 'Les faits marquants de l\'histoire de GAMMOP.'],
+            'mentions-legales':        ['Mentions légales — GAMMOP', 'Mentions légales du site GAMMOP.']
+        };
+
+        function setMeta(id, attr, value) {
+            var el = document.getElementById(id);
+            if (el) el.setAttribute(attr, value);
+        }
+
+        // Met a jour title, description, canonical et Open Graph selon la route
+        function updatePageMeta(route, customTitle, customDescription) {
+            var entry = PAGE_META[route] || PAGE_META['home'];
+            var title = customTitle || entry[0];
+            var description = customDescription || entry[1];
+            var url = location.origin + location.pathname + (location.hash || '');
+
+            document.title = title;
+            setMeta('metaDescription', 'content', description);
+            setMeta('metaOgTitle', 'content', title);
+            setMeta('metaOgDescription', 'content', description);
+            setMeta('metaTwitterTitle', 'content', title);
+            setMeta('metaTwitterDescription', 'content', description);
+            setMeta('metaOgUrl', 'content', url);
+            setMeta('metaCanonical', 'href', url);
+        }
+
+        // La couleur de barre d'adresse suit le theme
+        function updateThemeColor() {
+            var dark = document.body.classList.contains('dark-mode');
+            setMeta('metaThemeColor', 'content', dark ? '#141713' : '#ffffff');
+        }
+
         function showTab(tab, evt) {
             document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -9608,6 +9699,8 @@
                     history.pushState(null, '', '#' + tab);
                 }
             }
+
+            updatePageMeta(tab);
         }
 
         function navigateToHash() {

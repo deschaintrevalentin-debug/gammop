@@ -1289,6 +1289,34 @@
             border-color: var(--accent);
         }
 
+        /* Les cartes laterales ramenent au centre : curseur et survol distincts */
+        .gcar-card:not(.is-active) {
+            cursor: e-resize;
+        }
+
+        .gcar-card:not(.is-active):hover,
+        .gcar-card:not(.is-active):focus-visible {
+            opacity: 0.85;
+        }
+
+        .gcar-card.is-active:hover .gcar-cta,
+        .gcar-card.is-active:focus-visible .gcar-cta {
+            text-decoration: underline;
+        }
+
+        /* L'appel a l'action n'existe que sur la carte centrale */
+        .gcar-cta {
+            display: none;
+            margin-top: 10px;
+            font-size: 0.85em;
+            font-weight: 700;
+            color: var(--accent-text);
+        }
+
+        .gcar-card.is-active .gcar-cta {
+            display: block;
+        }
+
         .gcar-emoji {
             font-size: 2.6em;
             line-height: 1;
@@ -3361,11 +3389,14 @@
             html += '<div class="gcar-viewport" id="' + id + '-vp" tabindex="0" role="group" aria-roledescription="carrousel" aria-label="' + homeEsc(label) + '" onkeydown="gcarKey(event, \'' + id + '\')" onscroll="gcarSync(\'' + id + '\')">';
             html += '<div class="gcar-track">';
             cards.forEach(function(card, i) {
-                html += '<a class="gcar-card' + (i === start ? ' is-active' : '') + '" href="#' + card.tab + '" onclick="return gcarOpen(event, \'' + card.tab + '\')">';
+                html += '<a class="gcar-card' + (i === start ? ' is-active' : '') + '" href="#' + card.tab + '"'
+                    + ' data-index="' + i + '" aria-current="' + (i === start ? 'true' : 'false') + '"'
+                    + ' onclick="return gcarOpen(event, \'' + id + '\', ' + i + ', \'' + card.tab + '\')">';
                 html += '<span class="gcar-emoji" aria-hidden="true">' + card.emoji + '</span>';
                 html += '<span class="gcar-title">' + card.title + '</span>';
                 html += '<span class="gcar-desc">' + card.desc + '</span>';
                 html += '<span class="gcar-meta">' + card.meta + '</span>';
+                html += '<span class="gcar-cta" aria-hidden="true">Voir →</span>';
                 html += '</a>';
             });
             html += '</div></div>';
@@ -3409,6 +3440,7 @@
         function gcarPaint(id, index) {
             gcarCards(id).forEach(function(card, i) {
                 card.classList.toggle('is-active', i === index);
+                card.setAttribute('aria-current', i === index ? 'true' : 'false');
             });
             var dots = document.querySelectorAll('#' + id + ' .gcar-dot');
             Array.prototype.forEach.call(dots, function(dot, i) {
@@ -3446,8 +3478,14 @@
             });
         }
 
-        function gcarOpen(event, tab) {
+        // Clic sur une carte laterale : elle vient au centre, sans naviguer.
+        // Clic sur la carte centrale : c'est la seule qui navigue.
+        function gcarOpen(event, id, index, tab) {
             event.preventDefault();
+            if (index !== gcarIndex(id)) {
+                gcarGoTo(id, index);
+                return false;
+            }
             showTab(tab, null);
             window.scrollTo(0, 0);
             return false;

@@ -146,18 +146,29 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--bg-gradient);
+            /* Fond unique sur toute la largeur du viewport : plus de bandes laterales */
+            background: var(--bg-primary);
             min-height: 100vh;
-            padding: 20px;
+            padding: 0;
+            overflow-x: hidden;
         }
 
         .container {
+            width: 100%;
+            max-width: none;
+            margin: 0;
+            background: transparent;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        /* Largeur de lecture : le contenu reste centre, le fond reste bord a bord */
+        .content,
+        .tabs-inner,
+        .header-inner {
             max-width: 1400px;
-            margin: 0 auto;
-            background: var(--bg-primary);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         header {
@@ -355,6 +366,8 @@
             border-bottom: 2px solid var(--border-color);
             overflow-x: auto;
             flex-wrap: wrap;
+            padding-left: max(0px, calc((100% - 1400px) / 2));
+            padding-right: max(0px, calc((100% - 1400px) / 2));
         }
 
         .tab-btn {
@@ -483,7 +496,7 @@
 
         .content {
             display: none;
-            padding: 30px;
+            padding: 30px clamp(16px, 4vw, 40px);
             animation: fadeIn 0.3s;
         }
 
@@ -1286,11 +1299,7 @@
 
         @media (max-width: 768px) {
             body {
-                padding: 5px;
-            }
-
-            .container {
-                border-radius: 10px;
+                padding: 0;
             }
 
             header {

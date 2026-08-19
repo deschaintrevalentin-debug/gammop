@@ -524,6 +524,13 @@
         }
 
         /* Titre de vue : un seul h1 par vue, meme rendu que les anciens h3 */
+        /* En-tetes de tableau figees : on garde le contexte en scrollant un long classement */
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
         .view-title,
         .section h1.view-title {
             color: #2d5016;
@@ -1027,6 +1034,9 @@
         /* ==================== REFONTE ACCUEIL ==================== */
         .home-wrap {
             display: grid;
+            /* minmax(0,1fr) : sans ca, la piste de grille s'elargit a la largeur
+               intrinseque du carrousel et fait deborder la page sur mobile */
+            grid-template-columns: minmax(0, 1fr);
             gap: 72px;
         }
 
@@ -1370,6 +1380,77 @@
                 font-size: 0.75em;
             }
 
+            /* Carrousel : fleches et points au format tactile */
+            .gcar-arrow {
+                width: 44px;
+                height: 44px;
+            }
+
+            .gcar-dot {
+                width: 44px;
+                height: 44px;
+                border: none;
+                background: none;
+                position: relative;
+            }
+
+            .gcar-dot::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 9px;
+                height: 9px;
+                border-radius: 50%;
+                border: 1px solid var(--home-border);
+            }
+
+            .gcar-dot.is-active::after {
+                background: var(--accent);
+                border-color: var(--accent);
+            }
+
+            .gcar-dots {
+                gap: 0;
+            }
+
+            /* Cibles tactiles : minimum 44px, espacees */
+            a.player-name,
+            span[onclick*="openPlayer"],
+            span[onclick*="showSeasonDetail"],
+            span[onclick*="showGameRanking"],
+            .player-name,
+            .games-dropdown-item,
+            .mobile-menu .mobile-menu-item,
+            .search-result-item {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 44px;
+                min-width: 44px;
+            }
+
+            /* Lignes et blocs cliquables generes en div */
+            div[onclick] {
+                min-height: 44px;
+            }
+
+            .games-dropdown-item,
+            .mobile-menu .mobile-menu-item,
+            .search-result-item {
+                display: flex;
+            }
+
+            td, th {
+                padding: 10px 8px;
+            }
+
+            .btn {
+                min-height: 44px;
+                padding: 12px 18px;
+            }
+
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 10px;
@@ -1392,9 +1473,13 @@
             }
 
             .tooltip {
-                width: 250px;
+                /* Ancre a droite de l'icone : la bulle se deploie vers la gauche
+                   et ne peut plus deborder du viewport */
+                width: min(250px, calc(100vw - 40px));
+                max-width: calc(100vw - 40px);
                 font-size: 0.8em;
-                left: 0;
+                left: auto;
+                right: 0;
                 transform: none;
             }
 
@@ -2508,17 +2593,47 @@
             }
         }
 
+        var _menuOpener = null;
+
         function toggleMobileMenu() {
-            document.getElementById('mobileMenu').classList.toggle('show');
+            var menu = document.getElementById('mobileMenu');
+            var willOpen = !menu.classList.contains('show');
+            menu.classList.toggle('show');
             document.getElementById('mobileMenuOverlay').classList.toggle('show');
-            document.body.style.overflow = document.getElementById('mobileMenu').classList.contains('show') ? 'hidden' : '';
+            document.body.style.overflow = willOpen ? 'hidden' : '';
+            if (willOpen) {
+                _menuOpener = document.activeElement;
+                var first = menu.querySelector('.mobile-menu-item');
+                if (first) first.focus();
+            }
         }
 
         function closeMobileMenu() {
-            document.getElementById('mobileMenu').classList.remove('show');
+            var menu = document.getElementById('mobileMenu');
+            var wasOpen = menu.classList.contains('show');
+            menu.classList.remove('show');
             document.getElementById('mobileMenuOverlay').classList.remove('show');
             document.body.style.overflow = '';
+            // On rend le focus au bouton qui a ouvert le menu
+            if (wasOpen && _menuOpener && typeof _menuOpener.focus === 'function') {
+                _menuOpener.focus();
+            }
+            _menuOpener = null;
         }
+
+        // Echap ferme le menu mobile (et la modale joueur si elle est ouverte)
+        document.addEventListener('keydown', function(e) {
+            if (e.key !== 'Escape') return;
+            var menu = document.getElementById('mobileMenu');
+            if (menu && menu.classList.contains('show')) {
+                closeMobileMenu();
+                return;
+            }
+            var modal = document.getElementById('playerModal');
+            if (modal && modal.classList.contains('active') && typeof closeModal === 'function') {
+                closeModal();
+            }
+        });
 
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');

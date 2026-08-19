@@ -1052,6 +1052,169 @@
             padding: 5px 10px;
         }
 
+        /* ==================== PORTAIL : LES DEUX BRANCHES ==================== */
+        /* Sur le portail : pas de barre de navigation, hero compact, deux cartes */
+        body.portal-active .tabs,
+        body.portal-active .hamburger-btn {
+            display: none;
+        }
+
+        /* Le bloc d'en-tete GAMMOP n'existe que sur le portail */
+        body:not(.portal-active) header {
+            display: none;
+        }
+
+        /* Hors portail, on reserve une bande pour les outils flottants :
+           ils ne peuvent plus recouvrir la barre de navigation */
+        body:not(.portal-active) {
+            padding-top: 72px;
+        }
+
+        body.portal-active header {
+            min-height: 0;
+            padding: clamp(24px, 6vh, 64px) 20px clamp(12px, 2vh, 24px);
+            border-bottom: none;
+        }
+
+        body.portal-active header h1 {
+            font-size: clamp(2.8rem, 11vw, 7rem);
+            line-height: 0.92;
+        }
+
+        body.portal-active header p {
+            font-size: clamp(0.95rem, 2vw, 1.35rem);
+            margin-top: 14px;
+        }
+
+        body.portal-active .hero-discord {
+            display: inline-flex;
+            margin-top: clamp(16px, 2.5vh, 30px);
+        }
+
+        body.portal-active .container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        body.portal-active #home.active {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 0;
+            padding-bottom: clamp(20px, 5vh, 60px);
+        }
+
+        .branch-grid {
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            gap: clamp(16px, 3vw, 36px);
+            flex-wrap: wrap;
+        }
+
+        .branch-card {
+            /* Format carre strict et dimensions identiques pour les deux cartes */
+            width: min(38vh, 40vw, 330px);
+            aspect-ratio: 1 / 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            padding: clamp(14px, 2vw, 26px);
+            text-align: center;
+            text-decoration: none;
+            color: var(--text-primary);
+            background: var(--home-surface);
+            border: 1px solid var(--home-border);
+            border-radius: 18px;
+            position: relative;
+            transition: border-color 0.18s ease-out, transform 0.18s ease-out;
+        }
+
+        .branch-card:not(.is-disabled):hover,
+        .branch-card:not(.is-disabled):focus-visible {
+            border-color: var(--accent);
+            transform: translateY(-3px);
+        }
+
+        .branch-visual {
+            display: block;
+            width: clamp(64px, 12vh, 110px);
+            height: clamp(64px, 12vh, 110px);
+            color: var(--accent-text);
+        }
+
+        .branch-visual svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .branch-title {
+            font-size: clamp(1.15rem, 2.4vw, 1.7rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .branch-subtitle {
+            font-size: clamp(0.78rem, 1.4vw, 0.95rem);
+            line-height: 1.45;
+            color: var(--home-muted);
+            max-width: 26ch;
+        }
+
+        .branch-card.is-disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+            filter: saturate(0.5);
+        }
+
+        .branch-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 0.68rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 5px 10px;
+            border: 1px solid var(--home-border);
+            border-radius: 999px;
+            color: var(--home-muted);
+        }
+
+        /* Outils persistants (recherche + theme), presents sur toutes les vues */
+        .floating-tools {
+            position: fixed;
+            top: 14px;
+            right: 16px;
+            z-index: 1200;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .floating-tools .search-container {
+            margin: 0;
+            width: min(280px, 42vw);
+        }
+
+        .floating-tools .search-input {
+            background: var(--bg-primary);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+        }
+
+        .floating-tools #darkModeBtn {
+            background: var(--home-surface);
+            color: var(--text-primary);
+            border: 1px solid var(--home-border);
+            min-width: 44px;
+            min-height: 44px;
+            padding: 0 12px;
+        }
+
         /* ==================== REFONTE ACCUEIL ==================== */
         .home-wrap {
             display: grid;
@@ -1662,6 +1825,49 @@
                 font-size: 0.95em;
             }
 
+            .branch-card {
+                width: min(48vw, 200px);
+                gap: 8px;
+                border-radius: 14px;
+            }
+
+            .branch-subtitle {
+                font-size: 0.72rem;
+                line-height: 1.35;
+            }
+
+            .branch-badge {
+                top: 8px;
+                right: 8px;
+                font-size: 0.6rem;
+                padding: 3px 7px;
+            }
+
+            body.portal-active header {
+                padding-bottom: 8px;
+            }
+
+            body.portal-active .hero-discord {
+                margin-top: 14px;
+                padding: 12px 18px;
+            }
+
+            .floating-tools {
+                top: 8px;
+                right: 8px;
+                left: 8px;
+                gap: 8px;
+            }
+
+            .floating-tools .search-container {
+                width: auto;
+                flex: 1;
+            }
+
+            body.portal-active header {
+                padding-top: 84px;
+            }
+
             .home-wrap {
                 gap: 48px;
             }
@@ -1709,13 +1915,14 @@
         }
     </style>
 </head>
-<body class="home-active">
+<body class="portal-active">
     <div class="container">
         <!-- Mobile menu -->
         <div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="closeMobileMenu()"></div>
         <nav class="mobile-menu" id="mobileMenu">
             <button class="mobile-menu-close" onclick="closeMobileMenu()">&times;</button>
-            <button class="mobile-menu-item active" onclick="showTab('home', event); closeMobileMenu()">🏠 Accueil</button>
+            <button class="mobile-menu-item" onclick="showTab('home', event); closeMobileMenu()">🏠 Accueil</button>
+            <button class="mobile-menu-item active" onclick="showTab('discord', event); closeMobileMenu()">💬 Sur Discord</button>
             <button class="mobile-menu-item" onclick="showTab('recent', event); closeMobileMenu()">⚡ Classement actuel</button>
             <button class="mobile-menu-item" onclick="showTab('general', event); closeMobileMenu()">🏆 Classement général</button>
             <button class="mobile-menu-item" onclick="showTab('years', event); closeMobileMenu()">🍎 Classement annuel</button>
@@ -1726,26 +1933,29 @@
         </nav>
 
         <header>
-            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleMobileMenu()">
+            <h1>GAMMOP</h1>
+            <p>Serveur Discord de mini-jeux</p>
+            <a class="hero-discord" href="https://discord.com/invite/ShKeKz87qw" target="_blank" rel="noopener noreferrer">Rejoindre le serveur Discord</a>
+        </header>
+
+        <!-- Outils persistants : visibles sur le portail comme dans la branche -->
+        <div class="floating-tools">
+            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleMobileMenu()" aria-label="Ouvrir le menu">
                 <span></span>
                 <span></span>
                 <span></span>
             </button>
-            <h1>GAMMOP</h1>
-            <p>Serveur Discord de mini-jeux</p>
-            <a class="hero-discord" href="https://discord.com/invite/ShKeKz87qw" target="_blank" rel="noopener noreferrer">Rejoindre le serveur Discord</a>
             <div class="search-container">
-                <input type="text" id="searchInput" class="search-input" placeholder="Rechercher un joueur..." oninput="handleSearch()" onblur="hideSearchResults()" />
-                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" class="search-input" placeholder="Rechercher un joueur..." oninput="handleSearch()" onblur="hideSearchResults()" aria-label="Rechercher un joueur" />
+                <span class="search-icon" aria-hidden="true">🔍</span>
                 <div id="searchResults" class="search-results"></div>
             </div>
-            <div class="header-btns">
-                <button id="darkModeBtn" class="btn" onclick="toggleDarkMode()" style="background:#2d3748;color:white" title="Activer/Désactiver le mode sombre">🌙</button>
-            </div>
-        </header>
+            <button id="darkModeBtn" class="btn" onclick="toggleDarkMode()" title="Activer/Désactiver le mode sombre" aria-label="Activer ou désactiver le mode sombre">🌙</button>
+        </div>
 
         <div class="tabs">
-            <button class="tab-btn active" id="homeTab" onclick="showTab('home', event)">🏠 Accueil</button>
+            <button class="tab-btn" id="homeTab" onclick="showTab('home', event)">🏠 Accueil</button>
+            <button class="tab-btn active" id="discordTab" onclick="showTab('discord', event)">💬 Sur Discord</button>
             <button class="tab-btn" id="recentTab" onclick="showTab('recent', event)" onmouseover="showRecentDropdown()" onmouseout="hideRecentDropdown()">⚡ Classement actuel</button>
             <div id="recentDropdown" class="games-dropdown" onmouseover="keepRecentDropdown()" onmouseout="hideRecentDropdown()"></div>
             <button class="tab-btn" id="generalTab" onclick="showTab('general', event)" onmouseover="showGeneralDropdown()" onmouseout="hideGeneralDropdown()">🏆 Classement général</button>
@@ -1762,18 +1972,50 @@
             <div id="gamesDropdown" class="games-dropdown" onmouseover="keepGamesDropdown()" onmouseout="hideGamesDropdown()"></div>
         </div>
 
+        <!-- PORTAIL : choix entre les deux branches -->
         <div id="home" class="content active">
-            <!-- Données Supabase -->
+            <div class="branch-grid">
+                <a class="branch-card" href="#discord" onclick="return openBranch(event, 'discord')">
+                    <span class="branch-visual" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="img" focusable="false"><path fill="currentColor" d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg>
+                    </span>
+                    <span class="branch-title">Sur Discord</span>
+                    <span class="branch-subtitle">Tous les classements et les statistiques des jeux du serveur Discord</span>
+                </a>
+
+                <div class="branch-card is-disabled" aria-disabled="true">
+                    <span class="branch-visual" aria-hidden="true">
+                        <svg viewBox="0 0 16 16" shape-rendering="crispEdges" role="img" focusable="false">
+                            <rect x="7" y="1" width="2" height="4" fill="#8b5a2b"/>
+                            <rect x="9" y="2" width="3" height="1" fill="currentColor"/>
+                            <rect x="10" y="3" width="2" height="1" fill="currentColor"/>
+                            <rect x="4" y="5" width="3" height="1" fill="currentColor"/>
+                            <rect x="9" y="5" width="3" height="1" fill="currentColor"/>
+                            <rect x="3" y="6" width="10" height="1" fill="currentColor"/>
+                            <rect x="2" y="7" width="12" height="4" fill="currentColor"/>
+                            <rect x="3" y="11" width="10" height="1" fill="currentColor"/>
+                            <rect x="4" y="12" width="8" height="1" fill="currentColor"/>
+                            <rect x="5" y="13" width="6" height="1" fill="currentColor"/>
+                        </svg>
+                    </span>
+                    <span class="branch-title">Sur le site</span>
+                    <span class="branch-subtitle">Bientôt : les jeux jouables directement sur le site</span>
+                    <span class="branch-badge">Bientôt disponible</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- BRANCHE DISCORD : classements, recompenses, chiffres cles et jeux -->
+        <div id="discord" class="content">
             <div id="supabase-items" style="margin-bottom:20px"></div>
-            <!-- Loading indicator -->
             <div id="loadingIndicator" style="text-align:center;padding:60px 20px">
                 <div style="font-size:3em;margin-bottom:20px">🎮</div>
                 <div style="font-size:1.2em;color:var(--text-secondary);margin-bottom:10px">Chargement des données...</div>
-                <div style="width:200px;height:4px;background:#e0e0e0;border-radius:2px;margin:0 auto;overflow:hidden">
-                    <div style="width:30%;height:100%;background:linear-gradient(90deg,#4a7c28,#7bed9f);border-radius:2px;animation:loading 1.5s ease-in-out infinite"></div>
+                <div style="width:200px;height:4px;background:var(--home-border);border-radius:2px;margin:0 auto;overflow:hidden">
+                    <div style="width:30%;height:100%;background:var(--accent);border-radius:2px;animation:loading 1.5s ease-in-out infinite"></div>
                 </div>
             </div>
-            <!-- Content loaded by updateHome() -->
+            <!-- Contenu genere par updateHome() -->
         </div>
 
         <div id="general" class="content">
@@ -3212,8 +3454,17 @@
         }
 
         // ==================== ACCUEIL : RENDU ====================
+        // Ouvre une branche depuis le portail (les cartes sont de vrais liens)
+        function openBranch(event, branch) {
+            event.preventDefault();
+            showTab(branch, null);
+            window.scrollTo(0, 0);
+            return false;
+        }
+
+        // Rend la branche Discord : recompenses, classements, chiffres cles, jeux
         function updateHome() {
-            const el = document.getElementById('home');
+            const el = document.getElementById('discord');
             if (!el) return;
             const normalSeasons = seasons.filter(s => !s.isSpecial);
 
@@ -9751,6 +10002,7 @@
         function getTabButtonId(tab) {
             if (tab === 'home') return 'homeTab';
             if (tab === 'recent' || tab === 'leaders-recent') return 'recentTab';
+            if (tab === 'discord') return 'discordTab';
             if (tab === 'general' || tab === 'leaders') return 'generalTab';
             if (tab === 'years' || tab === 'years-palmares' || tab === 'years-stats') return 'yearsTab';
             if (tab === 'winners') return 'winnersTab';
@@ -9822,8 +10074,8 @@
             var el = document.getElementById(tab);
             if (el) el.classList.add('active');
 
-            // Le hero plein ecran n'existe que sur l'accueil
-            document.body.classList.toggle('home-active', tab === 'home');
+            // Le portail (titre geant, bouton Discord, deux branches) n'existe que sur #home
+            document.body.classList.toggle('portal-active', tab === 'home');
 
             // Highlight the correct tab button based on tab ID
             var btnId = getTabButtonId(tab);
@@ -9843,6 +10095,13 @@
                 } else {
                     history.pushState(null, '', '#' + tab);
                 }
+            }
+
+            // Les carrousels sont mesures en pixels : ils doivent etre repositionnes
+            // quand la branche devient visible (largeur nulle tant qu'elle est masquee)
+            if (tab === 'discord' && typeof gcarInit === 'function') {
+                gcarInit('carRewards');
+                gcarInit('carRankings');
             }
 
             updatePageMeta(tab);

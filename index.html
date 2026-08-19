@@ -1052,6 +1052,187 @@
             padding: 5px 10px;
         }
 
+        /* ==================== LISTE DES VAINQUEURS ==================== */
+        .wtable-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--home-border);
+            border-radius: 12px;
+        }
+
+        .wtable {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95em;
+        }
+
+        .wtable thead th {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-size: 0.75em;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            text-align: left;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--home-border);
+            white-space: nowrap;
+        }
+
+        .wtable tbody tr {
+            border-bottom: 1px solid var(--home-border);
+        }
+
+        /* Alternance tres legere + surlignage au survol */
+        .wtable tbody tr:nth-child(even) {
+            background: rgba(127, 127, 127, 0.05);
+        }
+
+        .wtable tbody tr:hover {
+            background: rgba(127, 200, 100, 0.10);
+        }
+
+        .wtable td {
+            padding: 12px 14px;
+            vertical-align: middle;
+        }
+
+        .wcol-num {
+            color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            width: 1%;
+        }
+
+        .wcol-date {
+            color: var(--text-secondary);
+            white-space: nowrap;
+            width: 1%;
+        }
+
+        /* La teinte du jeu reste un filet fin, jamais un aplat */
+        .wcol-game {
+            border-left: 3px solid var(--game-tint, var(--home-border));
+            white-space: nowrap;
+        }
+
+        .wgame-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .wgame-name:hover {
+            color: var(--accent-text);
+            text-decoration: underline;
+        }
+
+        .wgame-season {
+            display: block;
+            margin-top: 2px;
+            font-size: 0.82em;
+            color: var(--text-secondary);
+            cursor: pointer;
+            text-decoration: underline dotted;
+        }
+
+        /* Le pseudo est l'information principale de la ligne */
+        .wplayer {
+            font-size: 1.25em;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            color: var(--accent-text);
+            cursor: pointer;
+        }
+
+        .wplayer:hover {
+            text-decoration: underline;
+        }
+
+        .wrank {
+            margin-left: 6px;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .wfirst {
+            margin-left: 8px;
+            font-size: 0.72em;
+            font-style: italic;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .wcol-count {
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            width: 1%;
+        }
+
+        /* Sous 700px, le tableau devient des cartes empilees : le pseudo, information
+           principale, doit rester en premier et lisible sans scroll horizontal */
+        @media (max-width: 700px) {
+            .wtable-wrap {
+                overflow-x: visible;
+                border: none;
+                border-radius: 0;
+            }
+
+            .wtable thead {
+                display: none;
+            }
+
+            .wtable,
+            .wtable tbody {
+                display: block;
+                width: 100%;
+            }
+
+            .wtable tr {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 0 10px;
+                padding: 6px 12px 10px;
+                border-left: 3px solid var(--game-tint, var(--home-border));
+                border-bottom: 1px solid var(--home-border);
+                border-radius: 8px;
+                margin-bottom: 8px;
+                background: var(--home-surface);
+            }
+
+            .wtable td {
+                display: block;
+                width: auto;
+                padding: 0;
+                border: none;
+            }
+
+            .wcol-player { order: 1; flex: 1 1 100%; }
+            .wcol-game   { order: 2; flex: 1 1 100%; border-left: none; white-space: normal; }
+            .wcol-num    { order: 3; }
+            .wcol-date   { order: 4; }
+            .wcol-count  { order: 5; text-align: left; }
+
+            .wcol-count::after {
+                content: ' participants';
+            }
+
+            .wcol-num::after,
+            .wcol-date::after {
+                content: '·';
+                margin-left: 10px;
+                opacity: 0.45;
+            }
+
+            .wgame-season {
+                display: inline;
+                margin-left: 8px;
+            }
+        }
+
         /* ==================== PORTAIL : LES DEUX BRANCHES ==================== */
         /* Sur le portail : pas de barre de navigation, hero compact, deux cartes */
         body.portal-active .tabs,
@@ -1907,6 +2088,19 @@
                 font-size: 0.95em;
             }
 
+            .wtable {
+                font-size: 0.85em;
+            }
+
+            .wtable td,
+            .wtable thead th {
+                padding: 10px 10px;
+            }
+
+            .wplayer {
+                font-size: 1.1em;
+            }
+
             .branch-card {
                 width: min(48vw, 200px);
                 gap: 8px;
@@ -2636,6 +2830,14 @@
                 history.pushState(null, '', '#game-palmares/' + encodeURIComponent(gameName));
                 updatePageMeta('games', getGameWithSymbol(gameName) + ' — Palmarès — ' + SITE_NAME, 'Le palmarès du jeu ' + gameName + ' sur GAMMOP.');
             }
+        }
+
+        // Teinte sourde et stable par jeu : sert uniquement a distinguer les lignes
+        function gameTint(game) {
+            var name = String(game || '');
+            var hash = 0;
+            for (var i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) % 360;
+            return 'hsl(' + hash + ', 28%, 50%)';
         }
 
         function getSeasonNumber(season) {
@@ -6318,77 +6520,68 @@
                 }
             });
 
-            // SECTION 1: Liste des vainqueurs (ordre antichronologique)
+            // SECTION 1: Liste des vainqueurs, un tableau ligne par ligne
+            // Numerotation globale sur les seules parties officielles
+            const officialSorted = normalSeasons.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+            const officialNumber = {};
+            officialSorted.forEach((season, i) => { officialNumber[season.name + '|' + season.date] = i + 1; });
+
             let html = '<div class="section"><h1 class="view-title">🍏 Liste des Vainqueurs</h1>';
-            html += '<div style="margin-bottom:20px;color:var(--text-secondary);font-size:0.95em">Historique complet de toutes les victoires par ordre antichronologique</div>';
+            html += '<div style="margin-bottom:20px;color:var(--text-secondary);font-size:0.95em">Historique complet de toutes les parties officielles, de la plus récente à la plus ancienne</div>';
 
             if (allWins.length === 0) {
-                html += '<p style="color:var(--text-secondary);text-align:center;padding:40px">Aucune victoire enregistrée pour le moment.</p>';
-                html += '</div>';
-                html += '<div class="section"><h3>🏆 Palmarès</h3>';
-                html += '<p style="color:var(--text-secondary);text-align:center;padding:40px">Aucun palmarès disponible.</p>';
-                html += '</div>';
+                html += '<p style="color:var(--text-secondary);text-align:center;padding:40px">Aucune victoire enregistrée pour le moment.</p></div>';
                 el.innerHTML = html;
+                const emptyPalmares = document.getElementById('winners-palmares');
+                if (emptyPalmares) {
+                    emptyPalmares.innerHTML = '<div class="section"><h1 class="view-title">🏆 Palmarès des vainqueurs</h1>'
+                        + '<p style="color:var(--text-secondary);text-align:center;padding:40px">Aucun palmarès disponible.</p></div>';
+                }
                 return;
             }
 
-            // Trier les victoires par numéro de saison décroissant (du plus récent au plus ancien)
-            const sortedWins = [...allWins].sort((a, b) => b.num - a.num);
+            // Ordre antechronologique
+            const sortedWins = allWins
+                .map(w => Object.assign({}, w, { globalNum: officialNumber[w.season + '|' + w.date] || 0 }))
+                .sort((a, b) => b.globalNum - a.globalNum);
 
-            // Créer le tableau
-            html += '<table style="width:100%;border-collapse:collapse;background:var(--card-bg);box-shadow:0 2px 8px rgba(0,0,0,0.1);border-radius:8px;overflow:hidden">';
-            html += '<thead>';
-            html += '<tr style="background:linear-gradient(135deg,#4a7c28,#5d9c35);color:white">';
-            html += '<th style="padding:15px;text-align:left;font-size:1.1em;font-weight:600">Vainqueur</th>';
-            html += '<th style="padding:15px;text-align:left;font-size:1.1em;font-weight:600">Saison</th>';
-            html += '<th style="padding:15px;text-align:center;font-size:1.1em;font-weight:600">🍏 Pommes</th>';
-            html += '</tr>';
-            html += '</thead>';
-            html += '<tbody>';
+            html += '<div class="wtable-wrap">';
+            html += '<table class="wtable">';
+            html += '<thead><tr>';
+            html += '<th class="wcol-num">N°</th>';
+            html += '<th class="wcol-date">Date</th>';
+            html += '<th class="wcol-game">Jeu</th>';
+            html += '<th class="wcol-player">Vainqueur</th>';
+            html += '<th class="wcol-count">Participants</th>';
+            html += '</tr></thead><tbody>';
 
-            sortedWins.forEach((w, idx) => {
-                const date = new Date(w.date).toLocaleDateString('fr-FR', {day:'numeric', month:'short', year:'numeric'});
-
-                // Calculer le nombre de pommes au moment de cette victoire
-                const applesAtWin = allWins.filter(win => win.winner === w.winner && win.num <= w.num).length;
-                const isFirstWin = applesAtWin === 1;
-
-                // Alterner les couleurs de fond
-                const bgColor = idx % 2 === 0 ? 'var(--section-bg)' : 'var(--card-bg)';
-
-                html += `<tr style="background:${bgColor};border-bottom:1px solid var(--border-color);transition:background 0.2s" onmouseover="this.style.background='var(--table-hover)'" onmouseout="this.style.background='${bgColor}'">`;
-
-                // Colonne Vainqueur
-                html += `<td style="padding:15px">`;
+            sortedWins.forEach(w => {
+                const season = normalSeasons.find(x => x.name === w.season && x.date === w.date);
+                const date = new Date(w.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+                // Rang de la victoire au moment ou elle a ete obtenue (compteur fige)
+                const winRank = allWins.filter(x => x.winner === w.winner && (officialNumber[x.season + '|' + x.date] || 0) <= w.globalNum).length;
+                const seasonLabel = w.season.replace(new RegExp('^' + w.game + '\\s*', 'i'), '');
                 const escapedWinner = w.winner.replace(/'/g, "\\'");
-                html += `<div style="display:flex;align-items:center;gap:8px">`;
-                html += `<div style="font-size:1.4em;font-weight:bold;color:var(--accent-text);cursor:pointer" onclick="openPlayer('${escapedWinner}')">${w.winner}</div>`;
-                if (isFirstWin) {
-                    html += `<span style="font-size:0.75em;color:var(--text-secondary);opacity:0.7;font-style:italic">1ère 🍏</span>`;
-                }
-                html += `</div>`;
-                html += `</td>`;
+                const escapedSeason = w.season.replace(/'/g, "\\'");
+                const escapedGame = (w.game || '').replace(/'/g, "\\'");
 
-                // Colonne Saison gagnée
-                html += `<td style="padding:15px">`;
-                html += `<div style="font-size:1.1em;font-weight:600;color:var(--accent-text);margin-bottom:4px;cursor:pointer;text-decoration:underline dotted" onclick="showSeasonDetail('${w.season.replace(/'/g, "\\'")}')">${w.season}</div>`;
-                html += `<div style="font-size:0.9em;color:var(--text-secondary)">${date} • ${getGameWithSymbol(w.game)}</div>`;
-                html += `</td>`;
-
-                // Colonne Pommes au moment de la victoire
-                html += `<td style="padding:15px;text-align:center">`;
-                html += `<div style="display:flex;align-items:center;justify-content:center;gap:8px">`;
-                html += `<span style="font-size:2em">🍏</span>`;
-                html += `<span style="font-size:1.5em;font-weight:bold;color:var(--accent-text)">${applesAtWin}</span>`;
-                html += `</div>`;
-                html += `</td>`;
-
-                html += `</tr>`;
+                html += '<tr style="--game-tint:' + gameTint(w.game) + '">';
+                html += '<td class="wcol-num">n°' + w.globalNum + '</td>';
+                html += '<td class="wcol-date">' + date + '</td>';
+                html += '<td class="wcol-game">'
+                    + '<span class="wgame-name" onclick="showGameRanking(\'' + escapedGame + '\')" title="Voir le classement de ce jeu">' + getGameWithSymbol(w.game) + '</span>'
+                    + '<span class="wgame-season" onclick="showSeasonDetail(\'' + escapedSeason + '\')" title="Voir le détail de cette partie">' + (seasonLabel || w.season) + '</span>'
+                    + '</td>';
+                html += '<td class="wcol-player">'
+                    + '<span class="wplayer" onclick="openPlayer(\'' + escapedWinner + '\')">' + w.winner + '</span>'
+                    + '<span class="wrank">(' + winRank + ')</span>'
+                    + (winRank === 1 ? '<span class="wfirst">1ère 🍏</span>' : '')
+                    + '</td>';
+                html += '<td class="wcol-count">' + (season && season.players ? season.players.length : '—') + '</td>';
+                html += '</tr>';
             });
 
-            html += '</tbody>';
-            html += '</table>';
-
+            html += '</tbody></table></div>';
             html += '</div>';
 
             // La liste s'arrete ici : le palmares a sa propre vue et sa propre URL

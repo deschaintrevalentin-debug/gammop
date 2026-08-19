@@ -7341,6 +7341,155 @@
             html += '</div>';
 
             html += '</div>';
+
+            // ==================== POMMES ROUGES : ANALYSE DETAILLEE ====================
+            // Regle : une annee attribue une pomme rouge si elle est ecoulee ET compte
+            // au moins 10 parties officielles. Les annees en dessous du seuil sont
+            // affichees mais explicitement signalees comme non attributives.
+            const raNormal = seasons.filter(s => !s.isSpecial)
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+            const raByYear = {};
+            let raLastYear = 0;
+            raNormal.forEach(season => {
+                const y = new Date(season.date).getFullYear();
+                if (y > raLastYear) raLastYear = y;
+                (raByYear[y] = raByYear[y] || []).push(season);
+            });
+
+            const raYears = Object.keys(raByYear).map(Number).sort((a, b) => a - b);
+            const raRows = [];
+            let raAppleNo = 0;
+            raYears.forEach(year => {
+                const list = raByYear[year];
+                const elapsed = year < raLastYear;
+                const enough = list.length >= 10;
+                const awarded = elapsed && enough;
+                const ranking = homeRankSeasons(list);
+                if (awarded) raAppleNo++;
+                raRows.push({
+                    year: year,
+                    seasons: list.length,
+                    awarded: awarded,
+                    elapsed: elapsed,
+                    enough: enough,
+                    appleNumber: awarded ? raAppleNo : null,
+                    winner: ranking[0] || null,
+                    second: ranking[1] || null,
+                    gap: (ranking[0] && ranking[1]) ? ranking[0].pts - ranking[1].pts : null
+                });
+            });
+
+            const awardedRows = raRows.filter(r => r.awarded);
+            const holders = {};
+            awardedRows.forEach(r => {
+                if (!r.winner) return;
+                (holders[r.winner.player] = holders[r.winner.player] || []).push(r);
+            });
+            const holderList = Object.keys(holders)
+                .map(p => ({ player: p, years: holders[p].map(r => r.year).sort((a, b) => a - b), count: holders[p].length }))
+                .sort((a, b) => b.count - a.count || a.player.localeCompare(b.player));
+
+            // Series consecutives de titres
+            let bestStreak = null;
+            holderList.forEach(h => {
+                let run = 1, best = 1, bestEnd = h.years[0];
+                for (let k = 1; k < h.years.length; k++) {
+                    // Deux titres se suivent s'ils portent sur deux annees attributives consecutives
+                    const previousAwarded = awardedRows.filter(r => r.year < h.years[k]).pop();
+                    if (previousAwarded && previousAwarded.year === h.years[k - 1]) { run++; } else { run = 1; }
+                    if (run > best) { best = run; bestEnd = h.years[k]; }
+                }
+                if (!bestStreak || best > bestStreak.count) bestStreak = { player: h.player, count: best, end: bestEnd };
+            });
+
+            // Plus longue periode sans nouveau detenteur
+            const seen = new Set();
+            let longestDry = null, dryStart = null;
+            awardedRows.forEach(r => {
+                if (!r.winner) return;
+                if (seen.has(r.winner.player)) {
+                    if (dryStart === null) dryStart = r.year;
+                    const span = r.year - dryStart + 1;
+                    if (!longestDry || span > longestDry.span) longestDry = { span: span, from: dryStart, to: r.year };
+                } else {
+                    seen.add(r.winner.player);
+                    dryStart = null;
+                }
+            });
+
+            const tightest = awardedRows.filter(r => r.gap !== null).sort((a, b) => a.gap - b.gap)[0];
+
+            html += '<div class="section"><h3>🍎 Les pommes rouges en détail</h3>';
+            html += '<p style="color:var(--text-secondary);margin-bottom:18px;font-size:0.95em">Une pomme rouge est attribuée à l\'année écoulée comptant <strong>au moins 10 parties officielles</strong>. Les années en dessous de ce seuil, ainsi que l\'année en cours, ne sont pas récompensées.</p>';
+
+            // Chiffres cles
+            html += '<div class="home-kpis" style="margin-bottom:24px">';
+            html += '<div class="home-kpi"><div class="home-kpi-value">' + awardedRows.length + '</div><div class="home-kpi-label">Pomme' + (awardedRows.length > 1 ? 's' : '') + ' rouge' + (awardedRows.length > 1 ? 's' : '') + ' attribuée' + (awardedRows.length > 1 ? 's' : '') + '</div></div>';
+            html += '<div class="home-kpi"><div class="home-kpi-value">' + holderList.length + '</div><div class="home-kpi-label">Détenteur' + (holderList.length > 1 ? 's' : '') + ' distinct' + (holderList.length > 1 ? 's' : '') + '</div></div>';
+            html += '<div class="home-kpi"><div class="home-kpi-value">' + raRows.filter(r => !r.awarded).length + '</div><div class="home-kpi-label">Année' + (raRows.filter(r => !r.awarded).length > 1 ? 's' : '') + ' non récompensée' + (raRows.filter(r => !r.awarded).length > 1 ? 's' : '') + '</div></div>';
+            html += '</div>';
+
+            // Palmares des detenteurs
+            html += '<h4 style="margin:18px 0 10px">🏅 Palmarès des détenteurs</h4>';
+            if (holderList.length === 0) {
+                html += '<p style="color:var(--text-secondary)">Aucune pomme rouge attribuée pour le moment.</p>';
+            } else {
+                html += '<div class="wtable-wrap"><table class="wtable"><thead><tr>';
+                html += '<th>Joueur</th><th>Pommes rouges</th><th>Années</th></tr></thead><tbody>';
+                holderList.forEach(h => {
+                    html += '<tr>';
+                    html += '<td class="wcol-player"><span class="wplayer" onclick="openPlayer(\'' + h.player.replace(/'/g, "\\'") + '\')">' + h.player + '</span></td>';
+                    html += '<td>' + '🍎'.repeat(Math.min(h.count, 5)) + ' <strong>' + h.count + '</strong></td>';
+                    html += '<td class="wcol-date">' + h.years.join(', ') + '</td>';
+                    html += '</tr>';
+                });
+                html += '</tbody></table></div>';
+            }
+
+            // Repartition annee par annee
+            html += '<h4 style="margin:24px 0 10px">📅 Année par année</h4>';
+            html += '<div class="wtable-wrap"><table class="wtable"><thead><tr>';
+            html += '<th>Année</th><th>Parties</th><th>Pomme rouge</th><th>Vainqueur</th><th>Écart avec le 2ᵉ</th></tr></thead><tbody>';
+            raRows.slice().reverse().forEach(r => {
+                html += '<tr>';
+                html += '<td><strong>' + r.year + '</strong></td>';
+                html += '<td class="wcol-date">' + r.seasons + '</td>';
+                if (r.awarded) {
+                    html += '<td>🍎 n°' + r.appleNumber + '</td>';
+                    html += '<td class="wcol-player"><span class="wplayer" onclick="openPlayer(\'' + r.winner.player.replace(/'/g, "\\'") + '\')">' + r.winner.player + '</span></td>';
+                    html += '<td class="wcol-date">' + (r.gap !== null ? '+' + r.gap + ' pts sur ' + r.second.player : '—') + '</td>';
+                } else {
+                    const reason = !r.elapsed ? 'année en cours' : 'moins de 10 parties';
+                    html += '<td style="color:var(--text-secondary)">— <span style="font-size:0.85em">(' + reason + ')</span></td>';
+                    html += '<td class="wcol-date" style="color:var(--text-secondary)">' + (r.winner ? r.winner.player + ' (en tête)' : '—') + '</td>';
+                    html += '<td class="wcol-date">—</td>';
+                }
+                html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+
+            // Faits marquants
+            html += '<h4 style="margin:24px 0 10px">🎯 Faits marquants</h4>';
+            html += '<div style="display:grid;gap:10px">';
+            if (tightest) {
+                html += '<div>🔥 <strong>Année la plus disputée</strong> : ' + tightest.year + ', ' + tightest.winner.player
+                    + ' ne devance ' + tightest.second.player + ' que de <strong>' + tightest.gap + ' point' + (tightest.gap > 1 ? 's' : '') + '</strong>.</div>';
+            }
+            if (bestStreak && bestStreak.count > 1) {
+                html += '<div>🔁 <strong>Plus longue série</strong> : ' + bestStreak.player + ', <strong>' + bestStreak.count
+                    + ' titres consécutifs</strong> jusqu\'en ' + bestStreak.end + '.</div>';
+            } else {
+                html += '<div>🔁 <strong>Plus longue série</strong> : aucun joueur n\'a enchaîné deux titres consécutifs.</div>';
+            }
+            const multi = holderList.filter(h => h.count > 1);
+            html += '<div>👑 <strong>Joueurs multi-titrés</strong> : ' + (multi.length ? multi.map(h => h.player + ' (' + h.count + ')').join(', ') : 'aucun') + '.</div>';
+            if (longestDry) {
+                html += '<div>⏳ <strong>Plus longue période sans nouveau détenteur</strong> : de ' + longestDry.from + ' à ' + longestDry.to + '.</div>';
+            }
+            html += '</div>';
+
+            html += '</div>';
+
             el.innerHTML = html;
         }
 
@@ -8105,7 +8254,7 @@
             html += `<div class="games-dropdown-item" onclick="selectYearOption('palmares')">🏅 Palmarès</div>`;
 
             // Section 4: Statistiques
-            html += `<div class="games-dropdown-item" onclick="selectYearOption('stats')">📈 Statistiques</div>`;
+            html += `<div class="games-dropdown-item" onclick="selectYearOption('stats')">📈 Statistiques des pommes rouges</div>`;
 
             dropdown.innerHTML = html;
             dropdown.style.left = rect.left + 'px';

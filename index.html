@@ -396,6 +396,29 @@
             padding-right: max(0px, calc((100% - 1400px) / 2));
         }
 
+        /* Ecriteau GAMMOP : reprend la typographie du portail en tres petit,
+           seul chemin de retour vers l'ecran d'accueil general */
+        .brand-mark {
+            display: inline-flex;
+            align-items: center;
+            padding: 15px 20px;
+            font-size: 1.05em;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            text-transform: uppercase;
+            text-decoration: none;
+            color: var(--text-primary);
+            border-bottom: 3px solid transparent;
+            border-right: 1px solid var(--border-color);
+            white-space: nowrap;
+            transition: color 0.18s ease-out;
+        }
+
+        .brand-mark:hover,
+        .brand-mark:focus-visible {
+            color: var(--accent-text);
+        }
+
         .tab-btn {
             display: inline-block;
             text-decoration: none;
@@ -2138,6 +2161,12 @@
                 font-size: 0.95em;
             }
 
+            .brand-mark {
+                padding: 12px 14px;
+                font-size: 0.95em;
+                min-height: 44px;
+            }
+
             .gcar-action {
                 min-height: 44px;
             }
@@ -2243,6 +2272,19 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Tres petits ecrans : l'ecriteau devient un monogramme */
+        @media (max-width: 380px) {
+            .brand-mark {
+                font-size: 0;
+                padding: 12px;
+            }
+
+            .brand-mark::before {
+                content: 'G';
+                font-size: 1.15rem;
+            }
+        }
     </style>
 </head>
 <body class="portal-active">
@@ -2251,8 +2293,7 @@
         <div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="closeMobileMenu()"></div>
         <nav class="mobile-menu" id="mobileMenu">
             <button class="mobile-menu-close" onclick="closeMobileMenu()">&times;</button>
-            <a class="mobile-menu-item" href="/" onclick="closeMobileMenu()">🏠 Accueil</a>
-            <a class="mobile-menu-item active" href="/discord" onclick="closeMobileMenu()">💬 Sur Discord</a>
+            <a class="mobile-menu-item active" href="/discord" onclick="closeMobileMenu()">🏠 Accueil</a>
             <a class="mobile-menu-item" href="/classement-actuel" onclick="closeMobileMenu()">⚡ Classement actuel</a>
             <a class="mobile-menu-item" href="/classement-general" onclick="closeMobileMenu()">🏆 Classement général</a>
             <a class="mobile-menu-item" href="/classement-annuel" onclick="closeMobileMenu()">🍎 Classement annuel</a>
@@ -2284,8 +2325,8 @@
         </div>
 
         <div class="tabs">
-            <a class="tab-btn" id="homeTab" href="/">🏠 Accueil</a>
-            <a class="tab-btn active" id="discordTab" href="/discord">💬 Sur Discord</a>
+            <a class="brand-mark" href="/" aria-label="Retour à l'accueil GAMMOP">GAMMOP</a>
+            <a class="tab-btn active" id="homeTab" href="/discord">🏠 Accueil</a>
             <a class="tab-btn" id="recentTab" href="/classement-actuel" onmouseover="showRecentDropdown()" onmouseout="hideRecentDropdown()">⚡ Classement actuel</a>
             <div id="recentDropdown" class="games-dropdown" onmouseover="keepRecentDropdown()" onmouseout="hideRecentDropdown()"></div>
             <a class="tab-btn" id="generalTab" href="/classement-general" onmouseover="showGeneralDropdown()" onmouseout="hideGeneralDropdown()">🏆 Classement général</a>
@@ -10665,7 +10706,7 @@
         }
 
         function getTabButtonId(tab) {
-            if (tab === 'home' || tab === 'discord') return 'homeTab';
+            if (tab === 'discord') return 'homeTab';
             if (tab === 'recent' || tab === 'leaders-recent') return 'recentTab';
             if (tab === 'general' || tab === 'leaders') return 'generalTab';
             if (tab === 'years' || tab === 'years-palmares' || tab === 'years-stats') return 'yearsTab';

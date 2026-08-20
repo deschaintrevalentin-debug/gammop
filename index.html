@@ -2293,7 +2293,7 @@
             <a class="mobile-menu-item active" href="/discord" onclick="closeMobileMenu()">🏠 Accueil</a>
             <a class="mobile-menu-item" href="/classement-actuel" onclick="closeMobileMenu()">⚡ Classement actuel</a>
             <a class="mobile-menu-item" href="/classement-general" onclick="closeMobileMenu()">🏆 Classement général</a>
-            <a class="mobile-menu-item" href="/classement-annuel" onclick="closeMobileMenu()">🍎 Classement annuel</a>
+            <a class="mobile-menu-item" href="/palmares" onclick="closeMobileMenu()">🍎 Classement annuel</a>
             <a class="mobile-menu-item" href="/vainqueurs" onclick="closeMobileMenu()">🍏 Vainqueurs</a>
             <a class="mobile-menu-item" href="/saisons-speciales" onclick="closeMobileMenu()">🍐 Saisons Spéciales</a>
             <a class="mobile-menu-item" href="/statistiques" onclick="closeMobileMenu()">📈 Statistiques</a>
@@ -2328,7 +2328,7 @@
             <div id="recentDropdown" class="games-dropdown" onmouseover="keepRecentDropdown()" onmouseout="hideRecentDropdown()"></div>
             <a class="tab-btn" id="generalTab" href="/classement-general" onmouseover="showGeneralDropdown()" onmouseout="hideGeneralDropdown()">🏆 Classement général</a>
             <div id="generalDropdown" class="games-dropdown" onmouseover="keepGeneralDropdown()" onmouseout="hideGeneralDropdown()"></div>
-            <a class="tab-btn" id="yearsTab" href="/classement-annuel" onmouseover="showYearsDropdown()" onmouseout="hideYearsDropdown()">🍎 Classement annuel</a>
+            <a class="tab-btn" id="yearsTab" href="/palmares" onmouseover="showYearsDropdown()" onmouseout="hideYearsDropdown()">🍎 Classement annuel</a>
             <div id="yearsDropdown" class="games-dropdown" onmouseover="keepYearsDropdown()" onmouseout="hideYearsDropdown()"></div>
             <a class="tab-btn" id="winnersTab" href="/vainqueurs" onmouseover="showWinnersDropdown()" onmouseout="hideWinnersDropdown()">🍏 Vainqueurs</a>
             <div id="winnersDropdown" class="games-dropdown" onmouseover="keepWinnersDropdown()" onmouseout="hideWinnersDropdown()"></div>
@@ -2371,6 +2371,10 @@
                     <span class="branch-badge">Bientôt disponible</span>
                 </div>
             </div>
+        </div>
+
+        <div id="year-winners" class="content">
+            <!-- Contenu genere par updateYearWinners() -->
         </div>
 
         <div id="winners-palmares" class="content">
@@ -3608,6 +3612,55 @@
             if (!latest) return;
             var label = new Date(latest).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
             el.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+        }
+
+        // ==================== ANNEES : SOCLE PARTAGE (§0.3) ====================
+        // Une annee est officielle des lors qu'elle compte SEUIL_ANNEE_OFFICIELLE
+        // saisons ou plus. En dessous : pas de pomme rouge, et awards grises.
+        // Ce seuil et ce predicat ne doivent exister qu'ici.
+        var SEUIL_ANNEE_OFFICIELLE = 10;
+
+        /** Saisons officielles (hors saisons speciales) d'une annee donnee. */
+        function saisonsDeLAnnee(annee) {
+            return (seasons || []).filter(function(s) {
+                return !s.isSpecial && s.date && new Date(s.date).getFullYear() === Number(annee);
+            });
+        }
+
+        /** Predicat unique du §0.3. */
+        function estAnneeOfficielle(annee) {
+            return saisonsDeLAnnee(annee).length >= SEUIL_ANNEE_OFFICIELLE;
+        }
+
+        /**
+         * L'annee actuelle (§5.2) est celle du dernier jeu enregistre dans le
+         * dashboard admin, et non l'annee civile courante.
+         */
+        function anneeActuelle() {
+            var derniere = null;
+            (seasons || []).forEach(function(s) {
+                if (s.isSpecial || !s.date) return;
+                if (!derniere || new Date(s.date) > new Date(derniere)) derniere = s.date;
+            });
+            return derniere ? new Date(derniere).getFullYear() : new Date().getFullYear();
+        }
+
+        /** Toutes les annees jouees, de la plus recente a la plus ancienne. */
+        function anneesJouees() {
+            var set = {};
+            (seasons || []).forEach(function(s) {
+                if (!s.isSpecial && s.date) set[new Date(s.date).getFullYear()] = true;
+            });
+            return Object.keys(set).map(Number).sort(function(a, b) { return b - a; });
+        }
+
+        /** Joueurs distincts ayant participe a au moins une partie de l'annee. */
+        function participantsDeLAnnee(annee) {
+            var set = {};
+            saisonsDeLAnnee(annee).forEach(function(s) {
+                (s.players || []).forEach(function(p) { set[p] = true; });
+            });
+            return Object.keys(set).length;
         }
 
         // ==================== ACCUEIL : OUTILS ====================
@@ -6675,6 +6728,107 @@
             el.innerHTML = html;
         }
 
+        /**
+         * Tableau "liste des vainqueurs", partage par la vue globale (§E) et par
+         * la liste annuelle (§4.2). La numerotation reste globale : le n° d'une
+         * partie ne change pas selon la vue depuis laquelle on la consulte.
+         */
+        function winnersTableHtml(seasonsAMontrer) {
+            var officielles = (seasons || []).filter(function(s) { return !s.isSpecial; });
+            var triees = officielles.slice().sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+            var numeroGlobal = {};
+            triees.forEach(function(season, i) { numeroGlobal[season.name + '|' + season.date] = i + 1; });
+
+            // Compteur historique de victoires, calcule sur toutes les parties
+            var toutesVictoires = triees
+                .filter(function(s) { return s.players && s.players.length; })
+                .map(function(s) {
+                    return { season: s.name, game: s.game, date: s.date, winner: s.players[0] };
+                });
+
+            var lignes = seasonsAMontrer
+                .filter(function(s) { return s.players && s.players.length; })
+                .map(function(s) {
+                    return {
+                        season: s.name, game: s.game, date: s.date, winner: s.players[0],
+                        participants: s.players.length,
+                        globalNum: numeroGlobal[s.name + '|' + s.date] || 0
+                    };
+                })
+                .sort(function(a, b) { return b.globalNum - a.globalNum; });
+
+            if (!lignes.length) {
+                return '<p style="color:var(--text-secondary);text-align:center;padding:40px">Aucune victoire enregistrée.</p>';
+            }
+
+            var html = '<div class="wtable-wrap"><table class="wtable">';
+            html += '<thead><tr>';
+            html += '<th class="wcol-num">N°</th>';
+            html += '<th class="wcol-date">Date</th>';
+            html += '<th class="wcol-game">Jeu</th>';
+            html += '<th class="wcol-player">Vainqueur</th>';
+            html += '<th class="wcol-count">Participants</th>';
+            html += '</tr></thead><tbody>';
+
+            lignes.forEach(function(w) {
+                var date = new Date(w.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+                // Rang de la victoire au moment ou elle a ete obtenue (compteur fige)
+                var rangVictoire = toutesVictoires.filter(function(x) {
+                    return x.winner === w.winner && (numeroGlobal[x.season + '|' + x.date] || 0) <= w.globalNum;
+                }).length;
+                var libelleSaison = w.season.replace(new RegExp('^' + w.game + '\\s*', 'i'), '');
+                var winnerEch = w.winner.replace(/'/g, "\\'");
+                var seasonEch = w.season.replace(/'/g, "\\'");
+                var gameEch = (w.game || '').replace(/'/g, "\\'");
+
+                html += '<tr style="--game-tint:' + gameTint(w.game) + '">';
+                html += '<td class="wcol-num">n°' + w.globalNum + '</td>';
+                html += '<td class="wcol-date">' + date + '</td>';
+                html += '<td class="wcol-game">'
+                    + '<a class="wgame-name" href="' + pathForGame(w.game) + '" onclick="showGameRanking(\'' + gameEch + '\');return false" title="Voir le classement de ce jeu">' + getGameWithSymbol(w.game) + '</a>'
+                    + '<a class="wgame-season" href="' + pathForSeason(w.season) + '" onclick="showSeasonDetail(\'' + seasonEch + '\');return false" title="Voir le détail de cette partie">' + (libelleSaison || w.season) + '</a>'
+                    + '</td>';
+                html += '<td class="wcol-player">'
+                    + '<a class="wplayer" href="' + pathForPlayer(w.winner) + '" onclick="openPlayer(\'' + winnerEch + '\');return false">' + w.winner + '</a>'
+                    + '<span class="wrank">(' + rangVictoire + ')</span>'
+                    + (rangVictoire === 1 ? '<span class="wfirst">1ère 🍏</span>' : '')
+                    + '</td>';
+                html += '<td class="wcol-count">' + w.participants + '</td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody></table></div>';
+            return html;
+        }
+
+        /** Vue "Liste des vainqueurs" d'une annee (sous-onglet du classement annuel). */
+        function updateYearWinners(annee) {
+            var el = document.getElementById('year-winners');
+            if (!el) return;
+            var saisons = saisonsDeLAnnee(annee);
+            var html = '<div class="section">';
+            html += '<h1 class="view-title">🍏 Vainqueurs ' + annee + '</h1>';
+            html += '<div style="margin-bottom:20px;color:var(--text-secondary);font-size:0.95em">'
+                + 'Les ' + saisons.length + ' partie' + (saisons.length > 1 ? 's' : '') + ' officielle'
+                + (saisons.length > 1 ? 's' : '') + ' de ' + annee + ' et leur vainqueur, de la plus récente à la plus ancienne.'
+                + '</div>';
+            html += winnersTableHtml(saisons);
+            html += '</div>';
+            el.innerHTML = html;
+        }
+
+        function showYearWinners(annee) {
+            updateYearWinners(annee);
+            showTab('year-winners', null);
+            if (!_skipHashUpdate) {
+                history.pushState(null, '', '/classement-annuel/' + annee + '/vainqueurs');
+            }
+            updatePageMeta('year-winners', 'Vainqueurs ' + annee + ' — ' + SITE_NAME,
+                'Toutes les parties officielles de ' + annee + ' sur GAMMOP et leurs vainqueurs, avec le nombre de participants de chaque partie.');
+            var dropdown = document.getElementById('yearsDropdown');
+            if (dropdown) dropdown.classList.remove('show');
+        }
+
         function updateWinners() {
             console.log('updateWinners() appelée');
             const el = document.getElementById('winners');
@@ -6729,43 +6883,7 @@
                 .map(w => Object.assign({}, w, { globalNum: officialNumber[w.season + '|' + w.date] || 0 }))
                 .sort((a, b) => b.globalNum - a.globalNum);
 
-            html += '<div class="wtable-wrap">';
-            html += '<table class="wtable">';
-            html += '<thead><tr>';
-            html += '<th class="wcol-num">N°</th>';
-            html += '<th class="wcol-date">Date</th>';
-            html += '<th class="wcol-game">Jeu</th>';
-            html += '<th class="wcol-player">Vainqueur</th>';
-            html += '<th class="wcol-count">Participants</th>';
-            html += '</tr></thead><tbody>';
-
-            sortedWins.forEach(w => {
-                const season = normalSeasons.find(x => x.name === w.season && x.date === w.date);
-                const date = new Date(w.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
-                // Rang de la victoire au moment ou elle a ete obtenue (compteur fige)
-                const winRank = allWins.filter(x => x.winner === w.winner && (officialNumber[x.season + '|' + x.date] || 0) <= w.globalNum).length;
-                const seasonLabel = w.season.replace(new RegExp('^' + w.game + '\\s*', 'i'), '');
-                const escapedWinner = w.winner.replace(/'/g, "\\'");
-                const escapedSeason = w.season.replace(/'/g, "\\'");
-                const escapedGame = (w.game || '').replace(/'/g, "\\'");
-
-                html += '<tr style="--game-tint:' + gameTint(w.game) + '">';
-                html += '<td class="wcol-num">n°' + w.globalNum + '</td>';
-                html += '<td class="wcol-date">' + date + '</td>';
-                html += '<td class="wcol-game">'
-                    + '<a class="wgame-name" href="' + pathForGame(w.game) + '" onclick="showGameRanking(\'' + escapedGame + '\');return false" title="Voir le classement de ce jeu">' + getGameWithSymbol(w.game) + '</a>'
-                    + '<a class="wgame-season" href="' + pathForSeason(w.season) + '" onclick="showSeasonDetail(\'' + escapedSeason + '\');return false" title="Voir le détail de cette partie">' + (seasonLabel || w.season) + '</a>'
-                    + '</td>';
-                html += '<td class="wcol-player">'
-                    + '<a class="wplayer" href="' + pathForPlayer(w.winner) + '" onclick="openPlayer(\'' + escapedWinner + '\');return false">' + w.winner + '</a>'
-                    + '<span class="wrank">(' + winRank + ')</span>'
-                    + (winRank === 1 ? '<span class="wfirst">1ère 🍏</span>' : '')
-                    + '</td>';
-                html += '<td class="wcol-count">' + (season && season.players ? season.players.length : '—') + '</td>';
-                html += '</tr>';
-            });
-
-            html += '</tbody></table></div>';
+            html += winnersTableHtml(normalSeasons);
             html += '</div>';
 
             // La liste s'arrete ici : le palmares a sa propre vue et sa propre URL
@@ -8415,39 +8533,24 @@
             const tab = document.getElementById('yearsTab');
             const rect = tab.getBoundingClientRect();
 
-            // Récupérer toutes les années uniques
-            const yearsSet = new Set();
-            seasons.forEach(s => {
-                const year = new Date(s.date).getFullYear();
-                yearsSet.add(year);
-            });
-            const years = Array.from(yearsSet).sort((a, b) => b - a); // Ordre décroissant
-            const latestYear = years[0]; // La dernière année
+            const courante = anneeActuelle();
+            const annees = anneesJouees();
 
-            // Remplir le dropdown avec les sections
+            // Exactement quatre entrees (§4.2), dans cet ordre.
             let html = '';
-
-            // Section 1: Classement annuel de la dernière année
-            html += `<div class="games-dropdown-item" onclick="selectYearOption('current', ${latestYear})">📊 Classement annuel ${latestYear}</div>`;
-
-            // Section 2: Anciens classements annuels
+            html += `<div class="games-dropdown-item" onclick="selectYearFromDropdown(${courante})">📊 Classement annuel actuel</div>`;
             html += `<div class="games-dropdown-header">Anciens classements annuels</div>`;
-            years.forEach(year => {
+            annees.filter(function(a) { return a !== courante; }).forEach(year => {
                 html += `<div class="games-dropdown-item" onclick="selectYearFromDropdown(${year})">${year}</div>`;
             });
-
-            // Section 3: Palmarès
+            html += `<div class="games-dropdown-item" onclick="showYearWinners(${courante})">🍏 Liste des vainqueurs</div>`;
             html += `<div class="games-dropdown-item" onclick="selectYearOption('palmares')">🏅 Palmarès</div>`;
-
-            // Section 4: Statistiques
-            html += `<div class="games-dropdown-item" onclick="selectYearOption('stats')">📈 Statistiques des pommes rouges</div>`;
 
             dropdown.innerHTML = html;
             dropdown.style.left = rect.left + 'px';
             dropdown.style.top = (rect.bottom + 5) + 'px';
             dropdown.classList.add('show');
         }
-
         function hideYearsDropdown() {
             yearsDropdownTimeout = setTimeout(() => {
                 const dropdown = document.getElementById('yearsDropdown');
@@ -8482,22 +8585,11 @@
         }
 
         function selectYearOption(option, year) {
-            if (option === 'current') {
-                // Aller au classement de l'année courante
-                selectYearFromDropdown(year);
-            } else if (option === 'palmares') {
-                // Aller à la page Palmarès annuel
-                showTab('years-palmares', event);
-            } else if (option === 'stats') {
-                // Aller à la page Statistiques annuelles
-                showTab('years-stats', event);
-            }
-
-            // Cacher le dropdown
+            if (option === 'current') selectYearFromDropdown(year);
+            else if (option === 'palmares') showTab('years-palmares', event);
             const dropdown = document.getElementById('yearsDropdown');
-            dropdown.classList.remove('show');
+            if (dropdown) dropdown.classList.remove('show');
         }
-
         function showRecentDropdown() {
             hideAllDropdowns();
             const dropdown = document.getElementById('recentDropdown');
@@ -10785,7 +10877,7 @@
             if (tab === 'discord') return 'homeTab';
             if (tab === 'recent' || tab === 'leaders-recent') return 'recentTab';
             if (tab === 'general' || tab === 'leaders') return 'generalTab';
-            if (tab === 'years' || tab === 'years-palmares' || tab === 'years-stats') return 'yearsTab';
+            if (tab === 'years' || tab === 'years-palmares' || tab === 'years-stats' || tab === 'year-winners') return 'yearsTab';
             if (tab === 'winners' || tab === 'winners-palmares') return 'winnersTab';
             if (tab.startsWith('special-')) return 'specialSeasonsTab';
             if (tab === 'stats' || tab.startsWith('stats-')) return 'statsTab';
@@ -10891,8 +10983,9 @@
             // /classement-annuel/2024
             if (parts[0] === 'classement-annuel' && parts[1]) {
                 var year = parseInt(parts[1], 10);
-                if (!isNaN(year)) selectYearFromDropdown(year);
-                else showTab('years');
+                if (isNaN(year)) showTab('years');
+                else if (parts[2] === 'vainqueurs') showYearWinners(year);
+                else selectYearFromDropdown(year);
                 _skipHashUpdate = false;
                 return;
             }

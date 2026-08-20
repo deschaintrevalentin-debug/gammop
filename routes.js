@@ -106,6 +106,7 @@
         'stats-classement-annuel': ['Statistiques du classement annuel — GAMMOP', 'Les statistiques détaillées des classements annuels de GAMMOP : meilleures années, records de points et régularité des joueurs.'],
         'stats-par-jeux': ['Statistiques par jeux — GAMMOP', 'Les statistiques du serveur GAMMOP jeu par jeu : nombre de saisons, vainqueurs et meilleurs joueurs de chaque mini-jeu du Discord.'],
         'stats-faits-interessants': ['Faits intéressants — GAMMOP', 'Les faits marquants et les records de l\'histoire de GAMMOP : séries, remontées, dominations et curiosités du serveur Discord de mini-jeux.'],
+        'year-winners': ['Vainqueurs de l\'année — GAMMOP', 'Les parties officielles d\'une année sur GAMMOP et leurs vainqueurs, avec le nombre de participants de chaque partie du serveur Discord.'],
         'mentions-legales': ['Mentions légales — GAMMOP', 'Mentions légales, hébergement et politique de données personnelles du site GAMMOP, le serveur Discord de mini-jeux édité par Emmop.']
     };
 
@@ -137,6 +138,13 @@
 
         var parts = clean.split('/').filter(Boolean);
 
+        if (parts[0] === 'classement-annuel' && parts[1] && parts[2] === 'vainqueurs') {
+            return {
+                title: 'Vainqueurs ' + parts[1] + ' — ' + SITE_NAME,
+                description: 'Toutes les parties officielles de ' + parts[1] + ' sur GAMMOP et leurs vainqueurs, avec le nombre de participants de chaque partie.',
+                view: 'year-winners', found: true
+            };
+        }
         if (parts[0] === 'classement-annuel' && parts[1]) {
             return {
                 title: 'Classement annuel ' + parts[1] + ' — ' + SITE_NAME,

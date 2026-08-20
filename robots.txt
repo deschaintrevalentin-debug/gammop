@@ -1,6 +1,8 @@
 User-agent: *
 Allow: /
+
 Disallow: /admin-app/
 Disallow: /recuperer-donnees.html
+Disallow: /api/
 
-Sitemap: /sitemap.xml
+Sitemap: https://www.gammop.com/sitemap.xml

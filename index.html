@@ -2563,7 +2563,7 @@
             </div>
 
             <div style="margin-top:30px;padding-top:20px;border-top:1px solid var(--border-color);text-align:center;color:var(--text-secondary);font-size:0.85em">
-                Dernière mise à jour : Février 2025
+                Dernière mise à jour : <span id="legalUpdated">—</span>
             </div>
         </div>
     </div>
@@ -3560,6 +3560,18 @@
             el.innerHTML = html;
         }
 
+        // Mentions legales : la date de mise a jour suit la derniere saison enregistree
+        function updateLegalDate() {
+            var el = document.getElementById('legalUpdated');
+            if (!el || !seasons || !seasons.length) return;
+            var latest = seasons.reduce(function(acc, s) {
+                return (!acc || new Date(s.date) > new Date(acc)) ? s.date : acc;
+            }, null);
+            if (!latest) return;
+            var label = new Date(latest).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+            el.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+        }
+
         // ==================== ACCUEIL : OUTILS ====================
         function homeEsc(s) {
             return String(s == null ? '' : s)
@@ -4076,6 +4088,8 @@
 
             gcarInit('carRewards');
             gcarInit('carRankings');
+
+            updateLegalDate();
 
             if (typeof loadFromSupabase === 'function') loadFromSupabase();
         }

@@ -14,10 +14,15 @@
     <meta property="og:description" id="metaOgDescription" content="Tous les classements et statistiques des mini-jeux du serveur Discord GAMMOP.">
     <meta property="og:url" id="metaOgUrl" content="">
     <meta property="og:locale" content="fr_FR">
-    <meta name="twitter:card" content="summary">
+    <meta property="og:image" id="metaOgImage" content="https://www.gammop.com/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" id="metaTwitterImage" content="https://www.gammop.com/og-image.png">
     <meta name="twitter:title" id="metaTwitterTitle" content="GAMMOP — Serveur Discord de mini-jeux">
     <meta name="twitter:description" id="metaTwitterDescription" content="Tous les classements et statistiques des mini-jeux du serveur Discord GAMMOP.">
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23141713'/%3E%3Cpath fill='%237bd44f' d='M10 9h5v2h-5zM17 9h5v2h-5zM8 11h16v2H8zM6 13h20v8H6zM8 21h16v2H8zM10 23h12v2H10zM12 25h8v2h-8z'/%3E%3Crect x='15' y='5' width='2' height='4' fill='%238b5a2b'/%3E%3C/svg%3E">
+    <script src="/routes.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -10612,87 +10617,18 @@
         // chemin, pilotees par l'History API, avec redirection des anciennes URL.
         var _skipHashUpdate = false; // conserve : reference a plusieurs endroits
 
-        // Slug normalise : minuscules, accents translitteres, tirets
-        function slugify(value) {
-            var slug = String(value == null ? '' : value)
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, '-')
-                .replace(/^-+|-+$/g, '');
-            // Pseudos entierement non latins : on retombe sur un encodage sur
-            return slug || encodeURIComponent(String(value == null ? '' : value));
-        }
+        // Table de routes, slugs et metadonnees : definis une seule fois dans
+        // /routes.js, partages avec la fonction de rendu serveur.
+        var ROUTES = window.GAMMOP_ROUTES;
+        var slugify = ROUTES.slugify;
+        var PATH_TO_VIEW = ROUTES.PATH_TO_VIEW;
+        var LEGACY_HASH_TO_VIEW = ROUTES.LEGACY_HASH_TO_VIEW;
+        var pathForView = ROUTES.pathForView;
+        var pathForSeason = ROUTES.pathForSeason;
+        var pathForPlayer = ROUTES.pathForPlayer;
+        var pathForGame = ROUTES.pathForGame;
 
-        // Table de routes statiques : chemin <-> vue
-        var STATIC_ROUTES = [
-            ['/', 'home'],
-            ['/discord', 'discord'],
-            ['/classement-actuel', 'recent'],
-            ['/classement-actuel/evolution', 'leaders-recent'],
-            ['/classement-general', 'general'],
-            ['/classement-general/evolution', 'leaders'],
-            ['/classement-annuel', 'years'],
-            ['/palmares', 'years-palmares'],
-            ['/vainqueurs', 'winners'],
-            ['/vainqueurs/palmares', 'winners-palmares'],
-            ['/saisons-speciales', 'special-winners'],
-            ['/saisons-speciales/palmares', 'special-palmares'],
-            ['/saisons-speciales/organisateurs', 'special-organizers'],
-            ['/statistiques', 'stats'],
-            ['/statistiques/globales', 'stats-globales'],
-            ['/statistiques/classement-actuel', 'stats-classement-actuel'],
-            ['/statistiques/classement-general', 'stats-classement-general'],
-            ['/statistiques/classement-annuel', 'stats-classement-annuel'],
-            ['/statistiques/par-jeux', 'stats-par-jeux'],
-            ['/statistiques/faits-interessants', 'stats-faits-interessants'],
-            ['/statistiques/pommes-rouges', 'years-stats'],
-            ['/jeux', 'games'],
-            ['/mentions-legales', 'mentions-legales']
-        ];
-
-        var PATH_TO_VIEW = {};
-        var VIEW_TO_PATH = {};
-        STATIC_ROUTES.forEach(function(entry) {
-            PATH_TO_VIEW[entry[0]] = entry[1];
-            if (!VIEW_TO_PATH[entry[1]]) VIEW_TO_PATH[entry[1]] = entry[0];
-        });
-
-        // Anciens fragments -> nouveaux chemins (y compris les graphies jamais
-        // implementees qui circulent dans des liens partages)
-        var LEGACY_HASH_TO_VIEW = {
-            'home': 'home', 'discord': 'discord',
-            'recent': 'recent', 'current': 'recent',
-            'general': 'general',
-            'years': 'years', 'annual': 'years',
-            'winners': 'winners', 'winners-palmares': 'winners-palmares',
-            'special-winners': 'special-winners', 'special': 'special-winners',
-            'special-palmares': 'special-palmares', 'special-organizers': 'special-organizers',
-            'stats': 'stats', 'games': 'games',
-            'leaders': 'leaders', 'leaders-recent': 'leaders-recent',
-            'years-palmares': 'years-palmares', 'years-stats': 'years-stats',
-            'stats-globales': 'stats-globales',
-            'stats-classement-actuel': 'stats-classement-actuel',
-            'stats-classement-general': 'stats-classement-general',
-            'stats-classement-annuel': 'stats-classement-annuel',
-            'stats-par-jeux': 'stats-par-jeux',
-            'stats-faits-interessants': 'stats-faits-interessants',
-            'mentions-legales': 'mentions-legales'
-        };
-
-        // Chemin d'une vue, avec parametre eventuel
-        function pathForView(view, param) {
-            if (view === 'years' && param) return '/classement-annuel/' + param;
-            return VIEW_TO_PATH[view] || '/';
-        }
-
-        function pathForSeason(name) { return '/saison/' + slugify(name); }
-        function pathForPlayer(name) { return '/joueur/' + slugify(name); }
-        function pathForGame(name, palmares) {
-            return '/jeu/' + slugify(name) + (palmares ? '/palmares' : '');
-        }
-
-        // Resolution inverse slug -> nom reel
+        // Resolution inverse slug -> nom reel, cote client (les donnees sont chargees)
         function seasonFromSlug(slug) {
             return (seasons || []).find(function(s) { return slugify(s.name) === slug; });
         }
@@ -10727,32 +10663,8 @@
         }
 
         // ==================== TITRES ET METADONNEES PAR ROUTE ====================
-        var SITE_NAME = 'GAMMOP';
-        var PAGE_META = {
-            'home':                    ['GAMMOP — Serveur Discord de mini-jeux', 'Tous les classements et statistiques des mini-jeux du serveur Discord GAMMOP.'],
-            'discord':                 ['Classements et statistiques — GAMMOP', 'Récompenses, classements, chiffres clés et jeux du serveur Discord GAMMOP.'],
-            'recent':                  ['Classement actuel — GAMMOP', 'Le classement GAMMOP sur les 10 dernières saisons officielles du serveur Discord.'],
-            'general':                 ['Classement général — GAMMOP', 'Le classement général de toutes les saisons officielles de GAMMOP depuis 2018.'],
-            'years':                   ['Classement annuel — GAMMOP', 'Le classement GAMMOP année par année, avec les champions annuels de chaque saison.'],
-            'winners':                 ['Vainqueurs — GAMMOP', 'La liste complète de toutes les parties de GAMMOP et de leurs vainqueurs.'],
-            'winners-palmares':        ['Palmarès des vainqueurs — GAMMOP', 'Le palmarès des joueurs GAMMOP par nombre de victoires en saison officielle.'],
-            'special-winners':         ['Saisons spéciales — GAMMOP', 'Les vainqueurs des saisons spéciales de GAMMOP et leurs poires.'],
-            'special-palmares':        ['Palmarès des saisons spéciales — GAMMOP', 'Palmarès et statistiques des saisons spéciales du serveur Discord GAMMOP.'],
-            'special-organizers':      ['Organisateurs des saisons spéciales — GAMMOP', 'Les organisateurs des saisons spéciales du serveur Discord GAMMOP.'],
-            'stats':                   ['Statistiques — GAMMOP', 'Toutes les statistiques des joueurs et des mini-jeux du serveur GAMMOP.'],
-            'games':                   ['Jeux — GAMMOP', 'Tous les mini-jeux du serveur Discord GAMMOP, leurs règles et leurs classements.'],
-            'leaders':                 ['Évolution des leaders — GAMMOP', 'L\'évolution du leader du classement général de GAMMOP au fil des saisons.'],
-            'leaders-recent':          ['Évolution des leaders (forme récente) — GAMMOP', 'L\'évolution du leader du classement actuel de GAMMOP au fil des saisons.'],
-            'years-palmares':          ['Palmarès — GAMMOP', 'Le palmarès annuel de GAMMOP : les champions de chaque année et leurs pommes rouges.'],
-            'years-stats':             ['Statistiques des pommes rouges — GAMMOP', 'Statistiques détaillées des champions annuels de GAMMOP et de leurs pommes rouges.'],
-            'stats-globales':          ['Statistiques globales — GAMMOP', 'Les statistiques globales des joueurs et des parties du serveur GAMMOP.'],
-            'stats-classement-actuel': ['Statistiques du classement actuel — GAMMOP', 'Les statistiques détaillées du classement actuel de GAMMOP.'],
-            'stats-classement-general':['Statistiques du classement général — GAMMOP', 'Les statistiques détaillées du classement général de GAMMOP.'],
-            'stats-classement-annuel': ['Statistiques du classement annuel — GAMMOP', 'Les statistiques détaillées des classements annuels de GAMMOP.'],
-            'stats-par-jeux':          ['Statistiques par jeux — GAMMOP', 'Les statistiques du serveur GAMMOP détaillées jeu par jeu.'],
-            'stats-faits-interessants':['Faits intéressants — GAMMOP', 'Les faits marquants et les records de l\'histoire du serveur GAMMOP.'],
-            'mentions-legales':        ['Mentions légales — GAMMOP', 'Mentions légales et politique de données personnelles du site GAMMOP.']
-        };
+        var SITE_NAME = ROUTES.SITE_NAME;
+        var PAGE_META = ROUTES.PAGE_META;
 
         function setMeta(id, attr, value) {
             var el = document.getElementById(id);

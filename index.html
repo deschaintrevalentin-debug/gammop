@@ -156,7 +156,6 @@
 
         /* Les couleurs vertes passent par --accent-text, qui bascule avec le theme :
            les anciennes regles de rattrapage par selecteur d'attribut sont inutiles. */
-        .home-description,
         .profile-stat-number,
         .profile-rank-text,
         h3,
@@ -200,12 +199,6 @@
         /* Largeur de lecture : le contenu reste centre, le fond reste bord a bord */
         .content,
         .tabs-inner,
-        .header-inner {
-            max-width: 1400px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
         header {
             background: var(--hero-bg);
             color: var(--hero-text);
@@ -234,24 +227,6 @@
         }
 
         /* ---- HERO : uniquement sur l'accueil (classe posee par showTab) ---- */
-        body.home-active header {
-            min-height: 88vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 60px 30px;
-        }
-
-        body.home-active header h1 {
-            font-size: clamp(3.2rem, 13vw, 9rem);
-            line-height: 0.92;
-        }
-
-        body.home-active header p {
-            font-size: clamp(1rem, 2.2vw, 1.45rem);
-            margin-top: 18px;
-        }
-
         .hero-discord {
             display: none;
             align-items: center;
@@ -271,19 +246,11 @@
             transition: background 0.18s ease-out, color 0.18s ease-out;
         }
 
-        body.home-active .hero-discord {
-            display: inline-flex;
-        }
-
         .hero-discord:hover,
         .hero-discord:focus-visible {
             background: var(--accent);
             color: var(--accent-ink);
             text-decoration-color: var(--accent-ink);
-        }
-
-        body.home-active .search-container {
-            margin-top: 40px;
         }
 
         header :focus-visible,
@@ -385,14 +352,6 @@
         .search-result-stats {
             font-size: 0.85em;
             color: var(--text-secondary);
-        }
-
-        .header-btns {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            gap: 10px;
         }
 
         .tabs {
@@ -790,31 +749,6 @@
             margin-bottom: 30px;
         }
 
-        .stat-card {
-            background: var(--card-bg);
-            padding: 25px;
-            border-radius: 12px;
-            text-align: center;
-            border: 2px solid #4a7c28;
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(74, 124, 40, 0.2);
-        }
-
-        .stat-card h3 {
-            font-size: 3em;
-            margin-bottom: 10px;
-        }
-
-        .stat-card p {
-            color: #666;
-            font-size: 1.1em;
-            font-weight: 600;
-        }
-
         .winner-card {
             background: white;
             padding: 30px;
@@ -864,17 +798,6 @@
             cursor: pointer;
             transition: all 0.3s;
             font-size: 0.95em;
-        }
-
-        .btn-primary {
-            background: #4a7c28;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #3a6020;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(74, 124, 40, 0.3);
         }
 
         .form-group {
@@ -2320,13 +2243,6 @@
                 font-size: 0.9em;
             }
 
-            .header-btns {
-                position: static;
-                justify-content: center;
-                margin-top: 10px;
-                flex-wrap: wrap;
-            }
-
             .hamburger-btn {
                 display: block;
                 position: absolute;
@@ -2449,18 +2365,6 @@
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 10px;
-            }
-
-            .stat-card {
-                padding: 15px 10px;
-            }
-
-            .stat-card h3 {
-                font-size: 2em;
-            }
-
-            .stat-card p {
-                font-size: 0.9em;
             }
 
             .winner-card {
@@ -2615,21 +2519,6 @@
 
         /* ==================== REFONTE ACCUEIL : MOBILE ==================== */
         @media (max-width: 768px) {
-            body.home-active header {
-                min-height: 82vh;
-                padding: 40px 15px;
-            }
-
-            body.home-active header h1 {
-                font-size: clamp(2.6rem, 16vw, 4.5rem);
-                letter-spacing: -0.02em;
-            }
-
-            body.home-active header p {
-                font-size: 1em;
-                margin-top: 14px;
-            }
-
             .hero-discord {
                 margin-top: 28px;
                 padding: 14px 22px;

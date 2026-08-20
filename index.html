@@ -1505,13 +1505,10 @@
             --gcar-card: 44%;
         }
 
-        /* Espaceurs : permettent de centrer la premiere et la derniere carte.
-           En padding sur le track, les % de largeur des cartes seraient calcules
-           sur la zone restante — d'ou des cartes trop etroites. */
-        .gcar-track::before,
-        .gcar-track::after {
-            content: '';
-            flex: 0 0 calc((100% - var(--gcar-card)) / 2);
+        /* Plus d'espaceurs : le jeu de cartes est repete de part et d'autre, il y a
+           donc toujours du contenu a gauche et a droite de la carte centrale. */
+        .gcar-card[data-clone="true"] {
+            pointer-events: auto;
         }
 
         .gcar-card {
@@ -3811,19 +3808,27 @@
             return Math.floor(count / 2);
         }
 
+        // Le jeu de cartes est rendu trois fois : la copie du milieu est la vraie,
+        // celles de gauche et de droite donnent l'illusion d'une boucle continue.
+        var GCAR_COPIES = 3;
+        var _gcarCount = {};
+
         function homeCarousel(id, label, cards) {
-            var start = gcarStartIndex(cards.length);
-            var html = '<div class="gcar" id="' + id + '">';
-            html += '<button type="button" class="gcar-arrow gcar-prev" aria-label="Carte précédente" onclick="gcarMove(\'' + id + '\', -1)">&#8249;</button>';
-            html += '<div class="gcar-viewport" id="' + id + '-vp" tabindex="0" role="group" aria-roledescription="carrousel" aria-label="' + homeEsc(label) + '" onkeydown="gcarKey(event, \'' + id + '\')" onscroll="gcarSync(\'' + id + '\')">';
-            html += '<div class="gcar-track">';
-            cards.forEach(function(card, i) {
+            var count = cards.length;
+            var start = gcarStartIndex(count);
+            _gcarCount[id] = count;
+
+            function carteHtml(card, i, clone) {
                 // La carte est un conteneur : le lien et les boutons d'action sont
                 // cote a cote, jamais imbriques l'un dans l'autre.
-                html += '<div class="gcar-card' + (i === start ? ' is-active' : '') + '" data-index="' + i + '"'
-                    + ' aria-current="' + (i === start ? 'true' : 'false') + '"'
+                var actif = (!clone && i === start);
+                var html = '<div class="gcar-card' + (actif ? ' is-active' : '') + '" data-index="' + i + '"'
+                    + (clone ? ' data-clone="true" aria-hidden="true"' : '')
+                    + ' aria-current="' + (actif ? 'true' : 'false') + '"'
                     + ' onclick="return gcarOpen(event, \'' + id + '\', ' + i + ', \'' + card.tab + '\')">';
-                html += '<a class="gcar-card-link" href="' + pathForView(card.tab) + '" onclick="return gcarOpen(event, \'' + id + '\', ' + i + ', \'' + card.tab + '\')">';
+                html += '<a class="gcar-card-link" href="' + pathForView(card.tab) + '"'
+                    + (clone ? ' tabindex="-1"' : '')
+                    + ' onclick="return gcarOpen(event, \'' + id + '\', ' + i + ', \'' + card.tab + '\')">';
                 html += '<span class="gcar-emoji" aria-hidden="true">' + card.emoji + '</span>';
                 html += '<span class="gcar-title">' + card.title + '</span>';
                 html += '<span class="gcar-desc">' + card.desc + '</span>';
@@ -3834,17 +3839,31 @@
                 if (card.actions && card.actions.length) {
                     html += '<div class="gcar-actions">';
                     card.actions.forEach(function(action) {
-                        html += '<a class="gcar-action" href="' + pathForView(action.tab) + '" onclick="return gcarAction(event, \'' + action.tab + '\', \'' + (action.section || '') + '\')">' + action.label + '</a>';
+                        html += '<a class="gcar-action" href="' + pathForView(action.tab) + '"'
+                            + (clone ? ' tabindex="-1"' : '')
+                            + ' onclick="return gcarAction(event, \'' + action.tab + '\', \'' + (action.section || '') + '\')">'
+                            + action.label + '</a>';
                     });
                     html += '</div>';
                 }
                 html += '</div>';
-            });
+                return html;
+            }
+
+            var html = '<div class="gcar" id="' + id + '">';
+            html += '<button type="button" class="gcar-arrow gcar-prev" aria-label="Carte précédente" onclick="gcarMove(\'' + id + '\', -1)">&#8249;</button>';
+            html += '<div class="gcar-viewport" id="' + id + '-vp" tabindex="0" role="group" aria-roledescription="carrousel" aria-label="' + homeEsc(label) + '" onkeydown="gcarKey(event, \'' + id + '\')" onscroll="gcarSync(\'' + id + '\')">';
+            html += '<div class="gcar-track">';
+            for (var copie = 0; copie < GCAR_COPIES; copie++) {
+                cards.forEach(function(card, i) {
+                    html += carteHtml(card, i, copie !== 1);
+                });
+            }
             html += '</div></div>';
             html += '<button type="button" class="gcar-arrow gcar-next" aria-label="Carte suivante" onclick="gcarMove(\'' + id + '\', 1)">&#8250;</button>';
             html += '<div class="gcar-dots">';
             cards.forEach(function(card, i) {
-                html += '<button type="button" class="gcar-dot' + (i === start ? ' is-active' : '') + '" aria-label="Aller à la carte ' + (i + 1) + ' sur ' + cards.length + '" onclick="gcarGoTo(\'' + id + '\', ' + i + ')"></button>';
+                html += '<button type="button" class="gcar-dot' + (i === start ? ' is-active' : '') + '" aria-label="Aller à la carte ' + (i + 1) + ' sur ' + count + '" onclick="gcarGoTo(\'' + id + '\', ' + i + ')"></button>';
             });
             html += '</div></div>';
             return html;
@@ -3869,10 +3888,11 @@
         function gcarInit(id) {
             var vp = document.getElementById(id + '-vp');
             if (!vp) return;
-            var previous = vp.style.scrollBehavior;
-            vp.style.scrollBehavior = 'auto';
-            gcarGoTo(id, gcarStartIndex(gcarCards(id).length));
-            vp.style.scrollBehavior = previous;
+            var count = _gcarCount[id] || gcarCards(id).length;
+            // On demarre dans la copie du milieu, sur la carte de depart
+            gcarSansAnimation(id, function() {
+                gcarScrollTo(id, count + gcarStartIndex(count));
+            });
         }
 
         function gcarCards(id) {
@@ -3880,6 +3900,17 @@
             return vp ? Array.prototype.slice.call(vp.querySelectorAll('.gcar-card')) : [];
         }
 
+        // Execute une action sans animation de defilement
+        function gcarSansAnimation(id, action) {
+            var vp = document.getElementById(id + '-vp');
+            if (!vp) return;
+            var previous = vp.style.scrollBehavior;
+            vp.style.scrollBehavior = 'auto';
+            action();
+            vp.style.scrollBehavior = previous;
+        }
+
+        // Index absolu de la carte la plus proche du centre (clones compris)
         function gcarIndex(id) {
             var vp = document.getElementById(id + '-vp');
             var cards = gcarCards(id);
@@ -3893,31 +3924,75 @@
             return best;
         }
 
-        function gcarPaint(id, index) {
+        // Index de la carte reelle (0..n-1), independamment de la copie affichee
+        function gcarRealIndex(id) {
+            var count = _gcarCount[id] || gcarCards(id).length || 1;
+            return gcarIndex(id) % count;
+        }
+
+        function gcarPaint(id, absoluteIndex) {
+            var count = _gcarCount[id] || gcarCards(id).length || 1;
+            var real = ((absoluteIndex % count) + count) % count;
+            // Toutes les occurrences de la carte reelle prennent l'etat actif :
+            // le clone affiche doit avoir exactement le meme rendu que l'original.
             gcarCards(id).forEach(function(card, i) {
-                card.classList.toggle('is-active', i === index);
-                card.setAttribute('aria-current', i === index ? 'true' : 'false');
+                var actif = (i % count) === real;
+                card.classList.toggle('is-active', actif);
+                if (card.getAttribute('data-clone') !== 'true') {
+                    card.setAttribute('aria-current', actif ? 'true' : 'false');
+                }
             });
             var dots = document.querySelectorAll('#' + id + ' .gcar-dot');
             Array.prototype.forEach.call(dots, function(dot, i) {
-                dot.classList.toggle('is-active', i === index);
-                dot.setAttribute('aria-current', i === index ? 'true' : 'false');
+                dot.classList.toggle('is-active', i === real);
+                dot.setAttribute('aria-current', i === real ? 'true' : 'false');
             });
         }
 
-        function gcarGoTo(id, index) {
+        // Amene une carte donnee (index absolu) au centre
+        function gcarScrollTo(id, absoluteIndex) {
             var vp = document.getElementById(id + '-vp');
             var cards = gcarCards(id);
             if (!vp || !cards.length) return;
-            // Boucle infinie : au-dela du dernier on revient au premier, et inversement
-            var i = ((index % cards.length) + cards.length) % cards.length;
+            var i = Math.max(0, Math.min(cards.length - 1, absoluteIndex));
             var card = cards[i];
             vp.scrollLeft = card.offsetLeft + card.offsetWidth / 2 - vp.clientWidth / 2;
             gcarPaint(id, i);
         }
 
+        // Ramene silencieusement la position dans la copie du milieu : c'est ce qui
+        // rend la boucle continue sans qu'aucun saut ne soit perceptible.
+        function gcarNormalize(id) {
+            var cards = gcarCards(id);
+            var count = _gcarCount[id] || 0;
+            if (!count || cards.length < count * GCAR_COPIES) return;
+            var current = gcarIndex(id);
+            if (current >= count && current < count * 2) return; // deja au milieu
+            var target = count + (current % count);
+            var delta = cards[target].offsetLeft - cards[current].offsetLeft;
+            gcarSansAnimation(id, function() {
+                document.getElementById(id + '-vp').scrollLeft += delta;
+            });
+        }
+
+        // Deplacement d'une carte : jamais de butee, la copie voisine prend le relais
         function gcarMove(id, delta) {
-            gcarGoTo(id, gcarIndex(id) + delta);
+            gcarScrollTo(id, gcarIndex(id) + delta);
+        }
+
+        // Point cliquable : on vise l'occurrence la plus proche de la position courante
+        function gcarGoTo(id, realIndex) {
+            var cards = gcarCards(id);
+            var count = _gcarCount[id] || cards.length || 1;
+            var real = ((realIndex % count) + count) % count;
+            var current = gcarIndex(id);
+            var best = real, bestDist = Infinity;
+            cards.forEach(function(card, i) {
+                if ((i % count) !== real) return;
+                var d = Math.abs(i - current);
+                if (d < bestDist) { bestDist = d; best = i; }
+            });
+            gcarScrollTo(id, best);
         }
 
         function gcarKey(event, id) {
@@ -3925,29 +4000,28 @@
             else if (event.key === 'ArrowLeft') { event.preventDefault(); gcarMove(id, -1); }
         }
 
-        // Le scroll natif gere le swipe tactile : on se contente de suivre la position.
+        // Le scroll natif gere le swipe tactile : on suit la position, puis on
+        // recentre une fois le defilement stabilise.
+        var _gcarSettle = {};
         function gcarSync(id) {
-            if (_gcarRaf[id]) return;
-            _gcarRaf[id] = requestAnimationFrame(function() {
-                _gcarRaf[id] = null;
-                gcarPaint(id, gcarIndex(id));
-            });
+            if (!_gcarRaf[id]) {
+                _gcarRaf[id] = requestAnimationFrame(function() {
+                    _gcarRaf[id] = null;
+                    gcarPaint(id, gcarIndex(id));
+                });
+            }
+            clearTimeout(_gcarSettle[id]);
+            _gcarSettle[id] = setTimeout(function() { gcarNormalize(id); }, 140);
         }
 
-        // Clic sur une carte laterale : elle vient au centre, sans naviguer.
-        // Clic sur la carte centrale : c'est la seule qui navigue.
         var _gcarResize = null;
         window.addEventListener('resize', function() {
             clearTimeout(_gcarResize);
             _gcarResize = setTimeout(function() {
                 ['carRewards', 'carRankings'].forEach(function(id) {
-                    var vp = document.getElementById(id + '-vp');
-                    if (!vp) return;
+                    if (!document.getElementById(id + '-vp')) return;
                     var current = gcarIndex(id);
-                    var previous = vp.style.scrollBehavior;
-                    vp.style.scrollBehavior = 'auto';
-                    gcarGoTo(id, current);
-                    vp.style.scrollBehavior = previous;
+                    gcarSansAnimation(id, function() { gcarScrollTo(id, current); });
                 });
             }, 150);
         });
@@ -3955,7 +4029,7 @@
         function gcarOpen(event, id, index, tab) {
             event.preventDefault();
             event.stopPropagation();
-            if (index !== gcarIndex(id)) {
+            if (index !== gcarRealIndex(id)) {
                 gcarGoTo(id, index);
                 return false;
             }
@@ -4025,19 +4099,9 @@
             // ==================== RECOMPENSES ====================
             html += '<section aria-labelledby="homeRewardsTitle">';
             html += '<h2 class="home-block-title" id="homeRewardsTitle">Récompenses</h2>';
+            // Ordre initial impose (§3.2) : pomme rouge a gauche, pomme verte au
+            // centre, poire a droite. La carte du milieu est la carte active.
             html += homeCarousel('carRewards', 'Récompenses', [
-                {
-                    tab: 'winners', emoji: '🍏', title: 'Pommes Vertes',
-                    desc: 'Les <strong>pommes vertes</strong> représentent vos <strong>victoires</strong> dans les saisons normales. Chaque 1ère place vous rapporte une pomme verte et compte dans le classement général !',
-                    meta: recordLine(records.green),
-                    last: lastWins.green
-                        ? lastLine('<strong>' + homeEsc(lastWins.green.player) + '</strong> — ' + homeEsc(lastWins.green.seasonName) + ' (n°' + lastWins.green.globalNumber + ')')
-                        : lastLine('—'),
-                    actions: [
-                        { label: 'Liste des vainqueurs', tab: 'winners' },
-                        { label: 'Palmarès', tab: 'winners-palmares' }
-                    ]
-                },
                 {
                     tab: 'years', emoji: '🍎', title: 'Pommes Rouges',
                     desc: 'Les <strong>pommes rouges</strong> sont les <strong>champions annuels</strong>. À la fin de chaque année, le joueur avec le plus de points sur l\'année remporte une pomme rouge. Seules les années comptant au moins 10 parties sont récompensées.',
@@ -4050,6 +4114,18 @@
                     actions: [
                         { label: 'Liste des vainqueurs', tab: 'years-palmares', section: 'redAppleWinners' },
                         { label: 'Palmarès', tab: 'years-palmares', section: 'redApplePalmares' }
+                    ]
+                },
+                {
+                    tab: 'winners', emoji: '🍏', title: 'Pommes Vertes',
+                    desc: 'Les <strong>pommes vertes</strong> représentent vos <strong>victoires</strong> dans les saisons normales. Chaque 1ère place vous rapporte une pomme verte et compte dans le classement général !',
+                    meta: recordLine(records.green),
+                    last: lastWins.green
+                        ? lastLine('<strong>' + homeEsc(lastWins.green.player) + '</strong> — ' + homeEsc(lastWins.green.seasonName) + ' (n°' + lastWins.green.globalNumber + ')')
+                        : lastLine('—'),
+                    actions: [
+                        { label: 'Liste des vainqueurs', tab: 'winners' },
+                        { label: 'Palmarès', tab: 'winners-palmares' }
                     ]
                 },
                 {

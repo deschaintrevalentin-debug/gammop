@@ -392,6 +392,8 @@
         }
 
         .tab-btn {
+            display: inline-block;
+            text-decoration: none;
             padding: 15px 25px;
             border: none;
             background: none;
@@ -1028,6 +1030,7 @@
 
         .mobile-menu .mobile-menu-item {
             display: block;
+            text-decoration: none;
             width: 100%;
             padding: 15px 20px;
             border: none;
@@ -1129,6 +1132,8 @@
         }
 
         .wgame-name {
+            display: inline-block;
+            text-decoration: none;
             font-weight: 600;
             color: var(--text-primary);
             cursor: pointer;
@@ -1150,6 +1155,8 @@
 
         /* Le pseudo est l'information principale de la ligne */
         .wplayer {
+            display: inline-block;
+            text-decoration: none;
             font-size: 1.25em;
             font-weight: 800;
             letter-spacing: -0.01em;
@@ -1569,6 +1576,11 @@
         }
 
         .gcar-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            text-align: center;
             flex: 1 1 auto;
             min-height: 40px;
             padding: 9px 14px;
@@ -2234,15 +2246,15 @@
         <div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="closeMobileMenu()"></div>
         <nav class="mobile-menu" id="mobileMenu">
             <button class="mobile-menu-close" onclick="closeMobileMenu()">&times;</button>
-            <button class="mobile-menu-item" onclick="showTab('home', event); closeMobileMenu()">🏠 Accueil</button>
-            <button class="mobile-menu-item active" onclick="showTab('discord', event); closeMobileMenu()">💬 Sur Discord</button>
-            <button class="mobile-menu-item" onclick="showTab('recent', event); closeMobileMenu()">⚡ Classement actuel</button>
-            <button class="mobile-menu-item" onclick="showTab('general', event); closeMobileMenu()">🏆 Classement général</button>
-            <button class="mobile-menu-item" onclick="showTab('years', event); closeMobileMenu()">🍎 Classement annuel</button>
-            <button class="mobile-menu-item" onclick="showTab('winners', event); closeMobileMenu()">🍏 Vainqueurs</button>
-            <button class="mobile-menu-item" onclick="showTab('special-winners', event); closeMobileMenu()">🍐 Saisons Spéciales</button>
-            <button class="mobile-menu-item" onclick="showTab('stats', event); closeMobileMenu()">📈 Statistiques</button>
-            <button class="mobile-menu-item" onclick="showTab('games', event); closeMobileMenu()">🎮 Jeux</button>
+            <a class="mobile-menu-item" href="/" onclick="closeMobileMenu()">🏠 Accueil</a>
+            <a class="mobile-menu-item active" href="/discord" onclick="closeMobileMenu()">💬 Sur Discord</a>
+            <a class="mobile-menu-item" href="/classement-actuel" onclick="closeMobileMenu()">⚡ Classement actuel</a>
+            <a class="mobile-menu-item" href="/classement-general" onclick="closeMobileMenu()">🏆 Classement général</a>
+            <a class="mobile-menu-item" href="/classement-annuel" onclick="closeMobileMenu()">🍎 Classement annuel</a>
+            <a class="mobile-menu-item" href="/vainqueurs" onclick="closeMobileMenu()">🍏 Vainqueurs</a>
+            <a class="mobile-menu-item" href="/saisons-speciales" onclick="closeMobileMenu()">🍐 Saisons Spéciales</a>
+            <a class="mobile-menu-item" href="/statistiques" onclick="closeMobileMenu()">📈 Statistiques</a>
+            <a class="mobile-menu-item" href="/jeux" onclick="closeMobileMenu()">🎮 Jeux</a>
         </nav>
 
         <header>
@@ -2267,28 +2279,28 @@
         </div>
 
         <div class="tabs">
-            <button class="tab-btn" id="homeTab" onclick="showTab('home', event)">🏠 Accueil</button>
-            <button class="tab-btn active" id="discordTab" onclick="showTab('discord', event)">💬 Sur Discord</button>
-            <button class="tab-btn" id="recentTab" onclick="showTab('recent', event)" onmouseover="showRecentDropdown()" onmouseout="hideRecentDropdown()">⚡ Classement actuel</button>
+            <a class="tab-btn" id="homeTab" href="/">🏠 Accueil</a>
+            <a class="tab-btn active" id="discordTab" href="/discord">💬 Sur Discord</a>
+            <a class="tab-btn" id="recentTab" href="/classement-actuel" onmouseover="showRecentDropdown()" onmouseout="hideRecentDropdown()">⚡ Classement actuel</a>
             <div id="recentDropdown" class="games-dropdown" onmouseover="keepRecentDropdown()" onmouseout="hideRecentDropdown()"></div>
-            <button class="tab-btn" id="generalTab" onclick="showTab('general', event)" onmouseover="showGeneralDropdown()" onmouseout="hideGeneralDropdown()">🏆 Classement général</button>
+            <a class="tab-btn" id="generalTab" href="/classement-general" onmouseover="showGeneralDropdown()" onmouseout="hideGeneralDropdown()">🏆 Classement général</a>
             <div id="generalDropdown" class="games-dropdown" onmouseover="keepGeneralDropdown()" onmouseout="hideGeneralDropdown()"></div>
-            <button class="tab-btn" id="yearsTab" onclick="showTab('years', event)" onmouseover="showYearsDropdown()" onmouseout="hideYearsDropdown()">🍎 Classement annuel</button>
+            <a class="tab-btn" id="yearsTab" href="/classement-annuel" onmouseover="showYearsDropdown()" onmouseout="hideYearsDropdown()">🍎 Classement annuel</a>
             <div id="yearsDropdown" class="games-dropdown" onmouseover="keepYearsDropdown()" onmouseout="hideYearsDropdown()"></div>
-            <button class="tab-btn" id="winnersTab" onclick="showTab('winners', event)" onmouseover="showWinnersDropdown()" onmouseout="hideWinnersDropdown()">🍏 Vainqueurs</button>
+            <a class="tab-btn" id="winnersTab" href="/vainqueurs" onmouseover="showWinnersDropdown()" onmouseout="hideWinnersDropdown()">🍏 Vainqueurs</a>
             <div id="winnersDropdown" class="games-dropdown" onmouseover="keepWinnersDropdown()" onmouseout="hideWinnersDropdown()"></div>
-            <button class="tab-btn" id="specialSeasonsTab" onclick="showTab('special-winners', event)" onmouseover="showSpecialSeasonsDropdown()" onmouseout="hideSpecialSeasonsDropdown()">🍐 Saisons Spéciales</button>
+            <a class="tab-btn" id="specialSeasonsTab" href="/saisons-speciales" onmouseover="showSpecialSeasonsDropdown()" onmouseout="hideSpecialSeasonsDropdown()">🍐 Saisons Spéciales</a>
             <div id="specialSeasonsDropdown" class="games-dropdown" onmouseover="keepSpecialSeasonsDropdown()" onmouseout="hideSpecialSeasonsDropdown()"></div>
-            <button class="tab-btn" id="statsTab" onclick="showTab('stats', event)" onmouseover="showStatsDropdown()" onmouseout="hideStatsDropdown()">📈 Statistiques</button>
+            <a class="tab-btn" id="statsTab" href="/statistiques" onmouseover="showStatsDropdown()" onmouseout="hideStatsDropdown()">📈 Statistiques</a>
             <div id="statsDropdown" class="games-dropdown" onmouseover="keepStatsDropdown()" onmouseout="hideStatsDropdown()"></div>
-            <button class="tab-btn" id="gamesTab" onclick="showTab('games', event)" onmouseover="showGamesDropdown()" onmouseout="hideGamesDropdown()">🎮 Jeux</button>
+            <a class="tab-btn" id="gamesTab" href="/jeux" onmouseover="showGamesDropdown()" onmouseout="hideGamesDropdown()">🎮 Jeux</a>
             <div id="gamesDropdown" class="games-dropdown" onmouseover="keepGamesDropdown()" onmouseout="hideGamesDropdown()"></div>
         </div>
 
         <!-- PORTAIL : choix entre les deux branches -->
         <div id="home" class="content active">
             <div class="branch-grid">
-                <a class="branch-card" href="#discord" onclick="return openBranch(event, 'discord')">
+                <a class="branch-card" href="/discord">
                     <span class="branch-visual" aria-hidden="true">
                         <svg viewBox="0 0 24 24" role="img" focusable="false"><path fill="currentColor" d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg>
                     </span>
@@ -2727,9 +2739,9 @@
                 }
                 // Update URL hash
                 if (!_skipHashUpdate) {
-                    history.pushState(null, '', '#game/' + encodeURIComponent(gameName));
-                    updatePageMeta('games', getGameWithSymbol(gameName) + ' — Classement — ' + SITE_NAME, 'Le classement du jeu ' + gameName + ' sur GAMMOP.');
+                    history.pushState(null, '', pathForGame(gameName));
                 }
+                updatePageMeta('games', gameName + ' — ' + SITE_NAME, 'Le classement, les saisons et les vainqueurs du jeu ' + gameName + ' sur GAMMOP.');
             }, 100);
         }
 
@@ -2865,9 +2877,9 @@
 
             // Update URL hash
             if (!_skipHashUpdate) {
-                history.pushState(null, '', '#game-palmares/' + encodeURIComponent(gameName));
-                updatePageMeta('games', getGameWithSymbol(gameName) + ' — Palmarès — ' + SITE_NAME, 'Le palmarès du jeu ' + gameName + ' sur GAMMOP.');
+                history.pushState(null, '', pathForGame(gameName, true));
             }
+            updatePageMeta('games', 'Palmarès ' + gameName + ' — ' + SITE_NAME, 'Le palmarès des joueurs du jeu ' + gameName + ' sur GAMMOP.');
         }
 
         // Teinte sourde et stable par jeu : sert uniquement a distinguer les lignes
@@ -3021,7 +3033,7 @@
             // Retourne le HTML d'un nom de joueur cliquable
             const escapedName = playerName.replace(/'/g, "\\'");
             const badges = includeApples ? getPlayerApples(playerName) : '';
-            return `<span onclick="openPlayer('${escapedName}')" style="cursor:pointer;color:var(--accent-text);font-weight:600">${playerName}${badges}</span>`;
+            return `<a href="${pathForPlayer(playerName)}" onclick="openPlayer('${escapedName}');return false" style="cursor:pointer;color:var(--accent-text);font-weight:600;text-decoration:none">${playerName}${badges}</a>`;
         }
 
         // Fonction pour télécharger un élément HTML en image
@@ -3174,12 +3186,8 @@
                 document.body.appendChild(panel);
             }
 
-            // Navigate to hash if present in URL (e.g. #general, #player/Name)
-            if (window.location.hash) {
-                navigateToHash();
-            } else {
-                updatePageMeta('home');
-            }
+            // Route initiale : ancienne URL a fragment -> redirection, sinon chemin
+            routeFromCurrentUrl();
         }
 
         var _menuOpener = null;
@@ -3757,7 +3765,7 @@
                 html += '<div class="gcar-card' + (i === start ? ' is-active' : '') + '" data-index="' + i + '"'
                     + ' aria-current="' + (i === start ? 'true' : 'false') + '"'
                     + ' onclick="return gcarOpen(event, \'' + id + '\', ' + i + ', \'' + card.tab + '\')">';
-                html += '<a class="gcar-card-link" href="#' + card.tab + '" onclick="return gcarOpen(event, \'' + id + '\', ' + i + ', \'' + card.tab + '\')">';
+                html += '<a class="gcar-card-link" href="' + pathForView(card.tab) + '" onclick="return gcarOpen(event, \'' + id + '\', ' + i + ', \'' + card.tab + '\')">';
                 html += '<span class="gcar-emoji" aria-hidden="true">' + card.emoji + '</span>';
                 html += '<span class="gcar-title">' + card.title + '</span>';
                 html += '<span class="gcar-desc">' + card.desc + '</span>';
@@ -3768,7 +3776,7 @@
                 if (card.actions && card.actions.length) {
                     html += '<div class="gcar-actions">';
                     card.actions.forEach(function(action) {
-                        html += '<button type="button" class="gcar-action" onclick="gcarAction(event, \'' + action.tab + '\', \'' + (action.section || '') + '\')">' + action.label + '</button>';
+                        html += '<a class="gcar-action" href="' + pathForView(action.tab) + '" onclick="return gcarAction(event, \'' + action.tab + '\', \'' + (action.section || '') + '\')">' + action.label + '</a>';
                     });
                     html += '</div>';
                 }
@@ -6609,11 +6617,11 @@
                 html += '<td class="wcol-num">n°' + w.globalNum + '</td>';
                 html += '<td class="wcol-date">' + date + '</td>';
                 html += '<td class="wcol-game">'
-                    + '<span class="wgame-name" onclick="showGameRanking(\'' + escapedGame + '\')" title="Voir le classement de ce jeu">' + getGameWithSymbol(w.game) + '</span>'
-                    + '<span class="wgame-season" onclick="showSeasonDetail(\'' + escapedSeason + '\')" title="Voir le détail de cette partie">' + (seasonLabel || w.season) + '</span>'
+                    + '<a class="wgame-name" href="' + pathForGame(w.game) + '" onclick="showGameRanking(\'' + escapedGame + '\');return false" title="Voir le classement de ce jeu">' + getGameWithSymbol(w.game) + '</a>'
+                    + '<a class="wgame-season" href="' + pathForSeason(w.season) + '" onclick="showSeasonDetail(\'' + escapedSeason + '\');return false" title="Voir le détail de cette partie">' + (seasonLabel || w.season) + '</a>'
                     + '</td>';
                 html += '<td class="wcol-player">'
-                    + '<span class="wplayer" onclick="openPlayer(\'' + escapedWinner + '\')">' + w.winner + '</span>'
+                    + '<a class="wplayer" href="' + pathForPlayer(w.winner) + '" onclick="openPlayer(\'' + escapedWinner + '\');return false">' + w.winner + '</a>'
                     + '<span class="wrank">(' + winRank + ')</span>'
                     + (winRank === 1 ? '<span class="wfirst">1ère 🍏</span>' : '')
                     + '</td>';
@@ -7730,8 +7738,10 @@
             updateYearRanking();
             var yearVal = document.getElementById('yearSelector').value;
             if (!_skipHashUpdate && yearVal) {
-                history.pushState(null, '', '#years/' + yearVal);
-                updatePageMeta('years', 'Classement annuel ' + yearVal + ' — ' + SITE_NAME, 'Le classement GAMMOP de l\'année ' + yearVal + '.');
+                history.pushState(null, '', pathForView('years', yearVal));
+            }
+            if (yearVal) {
+                updatePageMeta('years', 'Classement annuel ' + yearVal + ' — ' + SITE_NAME, 'Le classement GAMMOP de l\'année ' + yearVal + ', saison par saison.');
             }
         }
 
@@ -8242,9 +8252,9 @@
 
             // Update URL hash
             if (!_skipHashUpdate) {
-                history.pushState(null, '', '#season/' + encodeURIComponent(seasonName));
-                updatePageMeta('winners', seasonName + ' — ' + SITE_NAME, 'Le classement complet de la saison ' + seasonName + ' sur GAMMOP.');
+                history.pushState(null, '', pathForSeason(seasonName));
             }
+            updatePageMeta('winners', seasonName + ' — ' + SITE_NAME, 'Le classement complet et les participants de la saison ' + seasonName + ' sur GAMMOP.');
         }
 
         function selectGameFromDropdown(game) {
@@ -8326,9 +8336,9 @@
 
             // Push year-specific hash (seulement si pas appelé depuis navigateToHash)
             if (!_skipHashUpdate) {
-                history.pushState(null, '', '#years/' + year);
-                updatePageMeta('years', 'Classement annuel ' + year + ' — ' + SITE_NAME, 'Le classement GAMMOP de l\'année ' + year + '.');
+                history.pushState(null, '', pathForView('years', year));
             }
+            updatePageMeta('years', 'Classement annuel ' + year + ' — ' + SITE_NAME, 'Le classement GAMMOP de l\'année ' + year + ', saison par saison.');
 
             // Cacher le dropdown
             const dropdown = document.getElementById('yearsDropdown');
@@ -10422,9 +10432,9 @@
 
             // Update URL hash for player modal
             if (!_skipHashUpdate) {
-                history.pushState(null, '', '#player/' + encodeURIComponent(name));
-                updatePageMeta('home', name + ' — Profil — ' + SITE_NAME, 'Le profil, les statistiques et le palmarès de ' + name + ' sur GAMMOP.');
+                history.pushState(null, '', pathForPlayer(name));
             }
+            updatePageMeta('home', name + ' — ' + SITE_NAME, 'Le profil, les statistiques et le palmarès de ' + name + ' sur GAMMOP.');
         }
 
         function openSpecialOnlyPlayer(name) {
@@ -10564,9 +10574,9 @@
             document.getElementById('playerModal').classList.add('active');
 
             if (!_skipHashUpdate) {
-                history.pushState(null, '', '#player/' + encodeURIComponent(name));
-                updatePageMeta('home', name + ' — Profil — ' + SITE_NAME, 'Le profil, les statistiques et le palmarès de ' + name + ' sur GAMMOP.');
+                history.pushState(null, '', pathForPlayer(name));
             }
+            updatePageMeta('home', name + ' — ' + SITE_NAME, 'Le profil, les statistiques et le palmarès de ' + name + ' sur GAMMOP.');
         }
 
         function closeModal() {
@@ -10579,7 +10589,7 @@
             if (window.location.hash.startsWith('#player/')) {
                 var activeContent = document.querySelector('.content.active');
                 var tabId = activeContent ? activeContent.id : 'home';
-                history.replaceState(null, '', '#' + tabId);
+                history.replaceState(null, '', pathForView(tabId));
             }
         }
 
@@ -10596,16 +10606,120 @@
             event.target.classList.add('active');
         }
 
-        // --- Hash-based URL routing ---
-        var _skipHashUpdate = false;
+        // ==================== ROUTAGE PAR CHEMINS REELS ====================
+        // Les fragments (#discord, #season/...) ne sont jamais transmis au serveur :
+        // le HTML servi etait donc toujours le meme. On passe a de vraies URL de
+        // chemin, pilotees par l'History API, avec redirection des anciennes URL.
+        var _skipHashUpdate = false; // conserve : reference a plusieurs endroits
+
+        // Slug normalise : minuscules, accents translitteres, tirets
+        function slugify(value) {
+            var slug = String(value == null ? '' : value)
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+            // Pseudos entierement non latins : on retombe sur un encodage sur
+            return slug || encodeURIComponent(String(value == null ? '' : value));
+        }
+
+        // Table de routes statiques : chemin <-> vue
+        var STATIC_ROUTES = [
+            ['/', 'home'],
+            ['/discord', 'discord'],
+            ['/classement-actuel', 'recent'],
+            ['/classement-actuel/evolution', 'leaders-recent'],
+            ['/classement-general', 'general'],
+            ['/classement-general/evolution', 'leaders'],
+            ['/classement-annuel', 'years'],
+            ['/palmares', 'years-palmares'],
+            ['/vainqueurs', 'winners'],
+            ['/vainqueurs/palmares', 'winners-palmares'],
+            ['/saisons-speciales', 'special-winners'],
+            ['/saisons-speciales/palmares', 'special-palmares'],
+            ['/saisons-speciales/organisateurs', 'special-organizers'],
+            ['/statistiques', 'stats'],
+            ['/statistiques/globales', 'stats-globales'],
+            ['/statistiques/classement-actuel', 'stats-classement-actuel'],
+            ['/statistiques/classement-general', 'stats-classement-general'],
+            ['/statistiques/classement-annuel', 'stats-classement-annuel'],
+            ['/statistiques/par-jeux', 'stats-par-jeux'],
+            ['/statistiques/faits-interessants', 'stats-faits-interessants'],
+            ['/statistiques/pommes-rouges', 'years-stats'],
+            ['/jeux', 'games'],
+            ['/mentions-legales', 'mentions-legales']
+        ];
+
+        var PATH_TO_VIEW = {};
+        var VIEW_TO_PATH = {};
+        STATIC_ROUTES.forEach(function(entry) {
+            PATH_TO_VIEW[entry[0]] = entry[1];
+            if (!VIEW_TO_PATH[entry[1]]) VIEW_TO_PATH[entry[1]] = entry[0];
+        });
+
+        // Anciens fragments -> nouveaux chemins (y compris les graphies jamais
+        // implementees qui circulent dans des liens partages)
+        var LEGACY_HASH_TO_VIEW = {
+            'home': 'home', 'discord': 'discord',
+            'recent': 'recent', 'current': 'recent',
+            'general': 'general',
+            'years': 'years', 'annual': 'years',
+            'winners': 'winners', 'winners-palmares': 'winners-palmares',
+            'special-winners': 'special-winners', 'special': 'special-winners',
+            'special-palmares': 'special-palmares', 'special-organizers': 'special-organizers',
+            'stats': 'stats', 'games': 'games',
+            'leaders': 'leaders', 'leaders-recent': 'leaders-recent',
+            'years-palmares': 'years-palmares', 'years-stats': 'years-stats',
+            'stats-globales': 'stats-globales',
+            'stats-classement-actuel': 'stats-classement-actuel',
+            'stats-classement-general': 'stats-classement-general',
+            'stats-classement-annuel': 'stats-classement-annuel',
+            'stats-par-jeux': 'stats-par-jeux',
+            'stats-faits-interessants': 'stats-faits-interessants',
+            'mentions-legales': 'mentions-legales'
+        };
+
+        // Chemin d'une vue, avec parametre eventuel
+        function pathForView(view, param) {
+            if (view === 'years' && param) return '/classement-annuel/' + param;
+            return VIEW_TO_PATH[view] || '/';
+        }
+
+        function pathForSeason(name) { return '/saison/' + slugify(name); }
+        function pathForPlayer(name) { return '/joueur/' + slugify(name); }
+        function pathForGame(name, palmares) {
+            return '/jeu/' + slugify(name) + (palmares ? '/palmares' : '');
+        }
+
+        // Resolution inverse slug -> nom reel
+        function seasonFromSlug(slug) {
+            return (seasons || []).find(function(s) { return slugify(s.name) === slug; });
+        }
+        function playerFromSlug(slug) {
+            var found = (rankingData || []).find(function(p) { return slugify(p.player) === slug; });
+            if (found) return found.player;
+            return (window._specialOnlyPlayers || []).find(function(p) { return slugify(p) === slug; });
+        }
+        function gameFromSlug(slug) {
+            var names = {};
+            (seasons || []).forEach(function(s) { if (s.game) names[s.game] = true; });
+            return Object.keys(names).find(function(g) { return slugify(g) === slug; });
+        }
+
+        // Ecrit l'URL sans recharger la page
+        function pushPath(path, replace) {
+            if (_skipHashUpdate) return;
+            if (location.pathname === path && !location.hash) return;
+            history[replace ? 'replaceState' : 'pushState'](null, '', path);
+        }
 
         function getTabButtonId(tab) {
-            if (tab === 'home') return 'homeTab';
+            if (tab === 'home' || tab === 'discord') return 'homeTab';
             if (tab === 'recent' || tab === 'leaders-recent') return 'recentTab';
-            if (tab === 'discord') return 'discordTab';
             if (tab === 'general' || tab === 'leaders') return 'generalTab';
             if (tab === 'years' || tab === 'years-palmares' || tab === 'years-stats') return 'yearsTab';
-            if (tab === 'winners') return 'winnersTab';
+            if (tab === 'winners' || tab === 'winners-palmares') return 'winnersTab';
             if (tab.startsWith('special-')) return 'specialSeasonsTab';
             if (tab === 'stats' || tab.startsWith('stats-')) return 'statsTab';
             if (tab === 'games') return 'gamesTab';
@@ -10616,28 +10730,28 @@
         var SITE_NAME = 'GAMMOP';
         var PAGE_META = {
             'home':                    ['GAMMOP — Serveur Discord de mini-jeux', 'Tous les classements et statistiques des mini-jeux du serveur Discord GAMMOP.'],
-            'discord':                 ['Classements et statistiques — GAMMOP', 'Récompenses, classements et jeux du serveur Discord GAMMOP.'],
-            'recent':                  ['Classement actuel — GAMMOP', 'Le classement GAMMOP sur les 10 dernières saisons officielles.'],
-            'general':                 ['Classement général — GAMMOP', 'Le classement général de toutes les saisons officielles de GAMMOP.'],
-            'years':                   ['Classement annuel — GAMMOP', 'Le classement GAMMOP année par année.'],
-            'winners':                 ['Vainqueurs — GAMMOP', 'La liste de toutes les parties de GAMMOP et de leurs vainqueurs.'],
-            'winners-palmares':        ['Palmarès des vainqueurs — GAMMOP', 'Le palmarès des joueurs par nombre de victoires en saison officielle.'],
-            'special-winners':         ['Saisons spéciales — GAMMOP', 'Les vainqueurs des saisons spéciales de GAMMOP.'],
-            'special-palmares':        ['Palmarès des saisons spéciales — GAMMOP', 'Palmarès et statistiques des saisons spéciales de GAMMOP.'],
-            'special-organizers':      ['Organisateurs des saisons spéciales — GAMMOP', 'Les organisateurs des saisons spéciales de GAMMOP.'],
-            'stats':                   ['Statistiques — GAMMOP', 'Toutes les statistiques des joueurs et des jeux de GAMMOP.'],
-            'games':                   ['Jeux — GAMMOP', 'Tous les mini-jeux du serveur Discord GAMMOP et leurs classements.'],
-            'leaders':                 ['Évolution des leaders — GAMMOP', 'L\'évolution du leader du classement général de GAMMOP.'],
-            'leaders-recent':          ['Évolution des leaders (forme récente) — GAMMOP', 'L\'évolution du leader du classement actuel de GAMMOP.'],
-            'years-palmares':          ['Palmarès annuel — GAMMOP', 'Les champions annuels de GAMMOP et leurs pommes rouges.'],
-            'years-stats':             ['Statistiques des pommes rouges — GAMMOP', 'Statistiques détaillées des champions annuels de GAMMOP.'],
-            'stats-globales':          ['Statistiques globales — GAMMOP', 'Les statistiques globales de GAMMOP.'],
-            'stats-classement-actuel': ['Statistiques du classement actuel — GAMMOP', 'Les statistiques du classement actuel de GAMMOP.'],
-            'stats-classement-general':['Statistiques du classement général — GAMMOP', 'Les statistiques du classement général de GAMMOP.'],
-            'stats-classement-annuel': ['Statistiques du classement annuel — GAMMOP', 'Les statistiques du classement annuel de GAMMOP.'],
-            'stats-par-jeux':          ['Statistiques par jeux — GAMMOP', 'Les statistiques de GAMMOP jeu par jeu.'],
-            'stats-faits-interessants':['Faits intéressants — GAMMOP', 'Les faits marquants de l\'histoire de GAMMOP.'],
-            'mentions-legales':        ['Mentions légales — GAMMOP', 'Mentions légales du site GAMMOP.']
+            'discord':                 ['Classements et statistiques — GAMMOP', 'Récompenses, classements, chiffres clés et jeux du serveur Discord GAMMOP.'],
+            'recent':                  ['Classement actuel — GAMMOP', 'Le classement GAMMOP sur les 10 dernières saisons officielles du serveur Discord.'],
+            'general':                 ['Classement général — GAMMOP', 'Le classement général de toutes les saisons officielles de GAMMOP depuis 2018.'],
+            'years':                   ['Classement annuel — GAMMOP', 'Le classement GAMMOP année par année, avec les champions annuels de chaque saison.'],
+            'winners':                 ['Vainqueurs — GAMMOP', 'La liste complète de toutes les parties de GAMMOP et de leurs vainqueurs.'],
+            'winners-palmares':        ['Palmarès des vainqueurs — GAMMOP', 'Le palmarès des joueurs GAMMOP par nombre de victoires en saison officielle.'],
+            'special-winners':         ['Saisons spéciales — GAMMOP', 'Les vainqueurs des saisons spéciales de GAMMOP et leurs poires.'],
+            'special-palmares':        ['Palmarès des saisons spéciales — GAMMOP', 'Palmarès et statistiques des saisons spéciales du serveur Discord GAMMOP.'],
+            'special-organizers':      ['Organisateurs des saisons spéciales — GAMMOP', 'Les organisateurs des saisons spéciales du serveur Discord GAMMOP.'],
+            'stats':                   ['Statistiques — GAMMOP', 'Toutes les statistiques des joueurs et des mini-jeux du serveur GAMMOP.'],
+            'games':                   ['Jeux — GAMMOP', 'Tous les mini-jeux du serveur Discord GAMMOP, leurs règles et leurs classements.'],
+            'leaders':                 ['Évolution des leaders — GAMMOP', 'L\'évolution du leader du classement général de GAMMOP au fil des saisons.'],
+            'leaders-recent':          ['Évolution des leaders (forme récente) — GAMMOP', 'L\'évolution du leader du classement actuel de GAMMOP au fil des saisons.'],
+            'years-palmares':          ['Palmarès — GAMMOP', 'Le palmarès annuel de GAMMOP : les champions de chaque année et leurs pommes rouges.'],
+            'years-stats':             ['Statistiques des pommes rouges — GAMMOP', 'Statistiques détaillées des champions annuels de GAMMOP et de leurs pommes rouges.'],
+            'stats-globales':          ['Statistiques globales — GAMMOP', 'Les statistiques globales des joueurs et des parties du serveur GAMMOP.'],
+            'stats-classement-actuel': ['Statistiques du classement actuel — GAMMOP', 'Les statistiques détaillées du classement actuel de GAMMOP.'],
+            'stats-classement-general':['Statistiques du classement général — GAMMOP', 'Les statistiques détaillées du classement général de GAMMOP.'],
+            'stats-classement-annuel': ['Statistiques du classement annuel — GAMMOP', 'Les statistiques détaillées des classements annuels de GAMMOP.'],
+            'stats-par-jeux':          ['Statistiques par jeux — GAMMOP', 'Les statistiques du serveur GAMMOP détaillées jeu par jeu.'],
+            'stats-faits-interessants':['Faits intéressants — GAMMOP', 'Les faits marquants et les records de l\'histoire du serveur GAMMOP.'],
+            'mentions-legales':        ['Mentions légales — GAMMOP', 'Mentions légales et politique de données personnelles du site GAMMOP.']
         };
 
         function setMeta(id, attr, value) {
@@ -10650,7 +10764,7 @@
             var entry = PAGE_META[route] || PAGE_META['home'];
             var title = customTitle || entry[0];
             var description = customDescription || entry[1];
-            var url = location.origin + location.pathname + (location.hash || '');
+            var url = location.origin + location.pathname;
 
             document.title = title;
             setMeta('metaDescription', 'content', description);
@@ -10674,10 +10788,9 @@
             var el = document.getElementById(tab);
             if (el) el.classList.add('active');
 
-            // Le portail (titre geant, bouton Discord, deux branches) n'existe que sur #home
+            // Le portail (titre geant, bouton Discord, deux branches) n'existe que sur /
             document.body.classList.toggle('portal-active', tab === 'home');
 
-            // Highlight the correct tab button based on tab ID
             var btnId = getTabButtonId(tab);
             if (btnId) {
                 var btn = document.getElementById(btnId);
@@ -10686,23 +10799,16 @@
                 evt.target.classList.add('active');
             }
 
-            // Update URL hash
-            if (!_skipHashUpdate) {
-                if (tab === 'years') {
-                    var yearSel = document.getElementById('yearSelector');
-                    var yearVal = yearSel ? yearSel.value : '';
-                    history.pushState(null, '', yearVal ? '#years/' + yearVal : '#years');
-                } else {
-                    history.pushState(null, '', '#' + tab);
-                }
+            if (tab === 'years') {
+                var yearSel = document.getElementById('yearSelector');
+                pushPath(pathForView('years', yearSel ? yearSel.value : ''));
+            } else {
+                pushPath(pathForView(tab));
             }
 
             // Les carrousels sont mesures en pixels : ils doivent etre repositionnes
             // quand la branche devient visible (largeur nulle tant qu'elle est masquee)
             if (tab === 'discord' && typeof gcarInit === 'function') {
-                // La vue vient d'etre affichee : ses largeurs ne sont pas encore
-                // stabilisees. On repositionne tout de suite puis apres la mise en
-                // page (polices et emojis peuvent encore la decaler).
                 gcarInit('carRewards');
                 gcarInit('carRankings');
                 setTimeout(function() { gcarInit('carRewards'); gcarInit('carRankings'); }, 0);
@@ -10712,91 +10818,122 @@
             updatePageMeta(tab);
         }
 
-        function navigateToHash() {
-            var hash = window.location.hash.replace('#', '');
-            if (!hash) hash = 'home';
+        // Affiche la vue correspondant a un chemin
+        function navigateToPath(path) {
+            path = (path || '/').replace(/\/+$/, '') || '/';
 
             _skipHashUpdate = true;
 
-            // Close player modal if navigating to a non-player hash
-            if (!hash.startsWith('player/')) {
-                document.getElementById('playerModal').classList.remove('active');
-            }
+            var modal = document.getElementById('playerModal');
+            if (modal && path.indexOf('/joueur/') !== 0) modal.classList.remove('active');
 
-            // Player modal: #player/PlayerName
-            if (hash.startsWith('player/')) {
-                var playerName = decodeURIComponent(hash.substring(7));
-                var inRanking = rankingData && rankingData.find(function(x) { return x.player === playerName; });
-                var isSpecialOnly = !inRanking && (window._specialOnlyPlayers || []).indexOf(playerName) !== -1;
-                if (inRanking || isSpecialOnly) {
-                    openPlayer(playerName);
+            // Route statique
+            if (PATH_TO_VIEW[path]) {
+                var view = PATH_TO_VIEW[path];
+                var contentEl = document.getElementById(view);
+                if (contentEl && contentEl.classList.contains('content')) {
+                    showTab(view);
+                    if (view === 'special-palmares' && typeof updateSpecialPalmares === 'function') {
+                        updateSpecialPalmares();
+                    }
+                } else {
+                    showTab('home');
                 }
                 _skipHashUpdate = false;
                 return;
             }
 
-            // Year with specific year: #years/2024
-            if (hash.startsWith('years/')) {
-                var year = parseInt(hash.substring(6));
-                if (!isNaN(year)) {
-                    selectYearFromDropdown(year);
+            var parts = path.split('/').filter(Boolean);
+
+            // /classement-annuel/2024
+            if (parts[0] === 'classement-annuel' && parts[1]) {
+                var year = parseInt(parts[1], 10);
+                if (!isNaN(year)) selectYearFromDropdown(year);
+                else showTab('years');
+                _skipHashUpdate = false;
+                return;
+            }
+
+            // /joueur/<slug>
+            if (parts[0] === 'joueur' && parts[1]) {
+                var playerName = playerFromSlug(parts[1]);
+                // La branche sert de fond a la modale : le portail n'a rien a faire ici
+                if (!document.querySelector('.content.active') || document.body.classList.contains('portal-active')) {
+                    showTab('discord');
                 }
+                if (playerName) openPlayer(playerName);
                 _skipHashUpdate = false;
                 return;
             }
 
-            // Season detail: #season/SeasonName
-            if (hash.startsWith('season/')) {
-                var seasonName = decodeURIComponent(hash.substring(7));
-                if (seasons && seasons.find(function(s) { return s.name === seasonName; })) {
-                    showSeasonDetail(seasonName);
-                }
+            // /saison/<slug>
+            if (parts[0] === 'saison' && parts[1]) {
+                var season = seasonFromSlug(parts[1]);
+                if (season) showSeasonDetail(season.name);
+                else showTab('winners');
                 _skipHashUpdate = false;
                 return;
             }
 
-            // Game ranking: #game/GameName
-            if (hash.startsWith('game/')) {
-                var gameName = decodeURIComponent(hash.substring(5));
-                showGameRanking(gameName);
+            // /jeu/<slug> et /jeu/<slug>/palmares
+            if (parts[0] === 'jeu' && parts[1]) {
+                var gameName = gameFromSlug(parts[1]);
+                if (gameName && parts[2] === 'palmares') showGamePalmares(gameName);
+                else if (gameName) showGameRanking(gameName);
+                else showTab('games');
                 _skipHashUpdate = false;
                 return;
             }
 
-            // Game palmares: #game-palmares/GameName
-            if (hash.startsWith('game-palmares/')) {
-                var gameName = decodeURIComponent(hash.substring(14));
-                showGamePalmares(gameName);
-                _skipHashUpdate = false;
-                return;
-            }
-
-            // Stats categories: #stats-globales, #stats-par-jeux, etc.
-            if (hash.startsWith('stats-')) {
-                var category = hash.substring(6);
-                selectStatsCategory(category);
-                _skipHashUpdate = false;
-                return;
-            }
-
-            // Verify the tab content div exists
-            var contentEl = document.getElementById(hash);
-            if (contentEl && contentEl.classList.contains('content')) {
-                showTab(hash);
-
-                // Trigger content loading for tabs that need it
-                if (hash === 'special-palmares' && typeof updateSpecialPalmares === 'function') {
-                    updateSpecialPalmares();
-                }
-            } else {
-                showTab('home');
-            }
-
+            showTab('home');
             _skipHashUpdate = false;
         }
 
+        // Traduit une ancienne URL a fragment vers son chemin equivalent
+        function pathFromLegacyHash(hash) {
+            hash = (hash || '').replace(/^#/, '');
+            if (!hash) return null;
+            if (LEGACY_HASH_TO_VIEW[hash]) return pathForView(LEGACY_HASH_TO_VIEW[hash]);
+            if (hash.indexOf('years/') === 0) return '/classement-annuel/' + hash.substring(6);
+            if (hash.indexOf('player/') === 0) return pathForPlayer(decodeURIComponent(hash.substring(7)));
+            if (hash.indexOf('season/') === 0) return pathForSeason(decodeURIComponent(hash.substring(7)));
+            if (hash.indexOf('game-palmares/') === 0) return pathForGame(decodeURIComponent(hash.substring(14)), true);
+            if (hash.indexOf('game/') === 0) return pathForGame(decodeURIComponent(hash.substring(5)));
+            return null;
+        }
+
+        // Point d'entree : ancienne URL a fragment -> redirection, sinon chemin courant
+        function routeFromCurrentUrl() {
+            var legacy = pathFromLegacyHash(location.hash);
+            if (legacy) {
+                history.replaceState(null, '', legacy);
+                navigateToPath(legacy);
+                return;
+            }
+            navigateToPath(location.pathname);
+        }
+
+        // Conserve pour compatibilite avec les anciens appels
+        function navigateToHash() {
+            routeFromCurrentUrl();
+        }
+
+        // Intercepte les liens internes : navigation sans rechargement
+        document.addEventListener('click', function(event) {
+            if (event.defaultPrevented || event.button !== 0) return;
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            var link = event.target.closest ? event.target.closest('a[href^="/"]') : null;
+            if (!link) return;
+            if (link.target === '_blank' || link.hasAttribute('download')) return;
+            event.preventDefault();
+            var path = link.getAttribute('href');
+            history.pushState(null, '', path);
+            navigateToPath(path);
+            window.scrollTo(0, 0);
+        });
+
         window.addEventListener('popstate', function() {
-            navigateToHash();
+            navigateToPath(location.pathname);
         });
 
         function getDiscordAvatar(pseudo) {

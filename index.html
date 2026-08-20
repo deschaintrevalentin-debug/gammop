@@ -2997,10 +2997,6 @@
             <!-- Content loaded by updateYearsStats() -->
         </div>
 
-        <div id="special-seasons" class="content">
-            <!-- Content loaded by updateSpecialSeasons() -->
-        </div>
-
         <div id="special-winners" class="content">
             <!-- Content loaded by updateSpecialWinners() -->
         </div>
@@ -5097,17 +5093,6 @@
             window.scrollTo(0, 0);
             return false;
         }
-
-        // ==================== ACCUEIL : RENDU ====================
-        // Ouvre une branche depuis le portail (les cartes sont de vrais liens)
-        function openBranch(event, branch) {
-            event.preventDefault();
-            showTab(branch, null);
-            window.scrollTo(0, 0);
-            return false;
-        }
-
-        // Rend la branche Discord : recompenses, classements, chiffres cles, jeux
         function updateHome() {
             const el = document.getElementById('discord');
             if (!el) return;
@@ -7383,81 +7368,6 @@
             html += '</div>';
             el.innerHTML = html;
         }
-
-        function updateStatsSaisonSpeciale() {
-            const el = document.getElementById('stats-saison-speciale');
-            if (!el) return;
-
-            const specialSeasons = seasons.filter(s => s.isSpecial);
-
-            if (specialSeasons.length === 0) {
-                el.innerHTML = '<div class="section"><h3>🍐 Statistiques Saisons Spéciales</h3><p style="color:var(--text-secondary);text-align:center;padding:40px">Aucune saison spéciale enregistrée.</p></div>';
-                return;
-            }
-
-            const playerStats = {};
-            specialSeasons.forEach(season => {
-                season.players.forEach((player, index) => {
-                    const position = index + 1;
-                    if (!playerStats[player]) {
-                        playerStats[player] = { player, games: 0, w: 0, t3: 0, t5: 0, t10: 0, orgs: 0, lastDate: season.date };
-                    }
-                    playerStats[player].games++;
-                    if (position === 1) playerStats[player].w++;
-                    if (position <= 3) playerStats[player].t3++;
-                    if (position <= 5) playerStats[player].t5++;
-                    if (position <= 10) playerStats[player].t10++;
-                    if (new Date(season.date) > new Date(playerStats[player].lastDate)) playerStats[player].lastDate = season.date;
-                });
-                if (season.organizer) {
-                    if (!playerStats[season.organizer]) {
-                        playerStats[season.organizer] = { player: season.organizer, games: 0, w: 0, t3: 0, t5: 0, t10: 0, orgs: 0, lastDate: season.date };
-                    }
-                    playerStats[season.organizer].orgs++;
-                }
-            });
-
-            const allPlayers = Object.values(playerStats);
-
-            function buildSpecialRanking(data, valueAccessor, valueText) {
-                const sorted = [...data].filter(p => valueAccessor(p) > 0).sort((a, b) => {
-                    if (valueAccessor(b) !== valueAccessor(a)) return valueAccessor(b) - valueAccessor(a);
-                    return new Date(a.lastDate) - new Date(b.lastDate);
-                });
-                assignTiedRanks(sorted, valueAccessor);
-                sorted.forEach(p => { p.html = makeRankingItem(p.rank, p.player, valueText(p)); });
-                return sorted;
-            }
-
-            const rankings = [
-                { title: '🎮 Participations + organisations', data: buildSpecialRanking(allPlayers, p => p.games + p.orgs, p => `${p.games + p.orgs}`), id: 'sss-combined' },
-                { title: '🎯 Participations', data: buildSpecialRanking(allPlayers, p => p.games, p => `${p.games}`), id: 'sss-participations' },
-                { title: '👔 Organisations', data: buildSpecialRanking(allPlayers, p => p.orgs, p => `${p.orgs}`), id: 'sss-organisations' },
-                { title: '🏆 Top 1', data: buildSpecialRanking(allPlayers, p => p.w, p => `${p.w}`), id: 'sss-top1' },
-                { title: '🥉 Top 3', data: buildSpecialRanking(allPlayers, p => p.t3, p => `${p.t3}`), id: 'sss-top3' },
-                { title: '⭐ Top 5', data: buildSpecialRanking(allPlayers, p => p.t5, p => `${p.t5}`), id: 'sss-top5' },
-                { title: '🌟 Top 10', data: buildSpecialRanking(allPlayers, p => p.t10, p => `${p.t10}`), id: 'sss-top10' },
-                { title: '🏆 Taux de victoire', data: buildSpecialRanking(allPlayers.filter(p => p.games > 0), p => Math.round((p.w / p.games) * 100), p => `${Math.round((p.w / p.games) * 100)}%`), id: 'sss-tauxvictoire' },
-                { title: '🥉 Taux de top 3', data: buildSpecialRanking(allPlayers.filter(p => p.games > 0), p => Math.round((p.t3 / p.games) * 100), p => `${Math.round((p.t3 / p.games) * 100)}%`), id: 'sss-tauxtop3' },
-                { title: '⭐ Taux de top 5', data: buildSpecialRanking(allPlayers.filter(p => p.games > 0), p => Math.round((p.t5 / p.games) * 100), p => `${Math.round((p.t5 / p.games) * 100)}%`), id: 'sss-tauxtop5' },
-                { title: '🌟 Taux de top 10', data: buildSpecialRanking(allPlayers.filter(p => p.games > 0), p => Math.round((p.t10 / p.games) * 100), p => `${Math.round((p.t10 / p.games) * 100)}%`), id: 'sss-tauxtop10' },
-            ];
-
-            let html = '<div class="section">';
-            html += '<h3>🍐 Statistiques Saisons Spéciales</h3>';
-            html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:20px;margin-top:20px">';
-
-            rankings.forEach(r => {
-                html += '<div style="background:var(--section-bg);border-radius:12px;padding:20px;border:2px solid var(--section-border)">';
-                html += `<h4 style="color:var(--accent-text);margin-bottom:15px">${r.title}</h4>`;
-                html += r.data.length > 0 ? createExpandableRanking(r.data, r.id) : '<p style="color:var(--text-secondary);text-align:center">Aucune donnée</p>';
-                html += '</div>';
-            });
-
-            html += '</div></div>';
-            el.innerHTML = html;
-        }
-
         function updateStatsFaitsInteressants() {
             const el = document.getElementById('stats-faits-interessants');
             if (!el) return;
@@ -9205,23 +9115,6 @@
             }
             updatePageMeta('winners', seasonName + ' — ' + SITE_NAME, 'Le classement complet et les participants de la saison ' + seasonName + ' sur GAMMOP.');
         }
-
-        function selectGameFromDropdown(game) {
-            // Aller à l'onglet Jeux
-            showTab('games', event);
-
-            // Sélectionner le jeu dans le dropdown
-            const selector = document.getElementById('gameSelector');
-            selector.value = game;
-
-            // Mettre à jour l'affichage
-            updateGames();
-
-            // Cacher le dropdown
-            const dropdown = document.getElementById('gamesDropdown');
-            dropdown.classList.remove('show');
-        }
-
         function showYearsDropdown() {
             hideAllDropdowns();
             const dropdown = document.getElementById('yearsDropdown');

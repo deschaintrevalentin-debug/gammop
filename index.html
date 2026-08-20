@@ -7837,18 +7837,12 @@
         }
 
         function updateWinners() {
-            console.log('updateWinners() appelée');
             const el = document.getElementById('winners');
-            console.log('Element winners:', el);
-            if (!el) {
-                console.error('Element winners non trouvé!');
-                return;
-            }
+            if (!el) return;
 
             const winStats = {};
             const allWins = [];
             const normalSeasons = seasons.filter(s => !s.isSpecial);
-            console.log('Nombre de saisons:', normalSeasons.length);
 
             normalSeasons.forEach((s) => {
                 if (s.players && s.players.length > 0) {

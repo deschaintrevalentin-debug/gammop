@@ -2328,9 +2328,21 @@
 
             /* Cibles tactiles : minimum 44px, espacees */
             a.player-name,
+            /* Depuis le passage aux vrais liens, les elements cliquables sont des
+               <a> autant que des <span>. On ne vise que ces deux balises : une
+               ligne de tableau porte aussi un onclick, et la passer en inline-flex
+               casserait la mise en page du tableau. */
+            a[onclick*="openPlayer"],
             span[onclick*="openPlayer"],
+            a[onclick*="showSeasonDetail"],
             span[onclick*="showSeasonDetail"],
+            a[onclick*="showGameRanking"],
             span[onclick*="showGameRanking"],
+            .wplayer,
+            .wgame-name,
+            .wgame-season,
+            .pal-pseudo,
+            .aw-player,
             .player-name,
             .games-dropdown-item,
             .mobile-menu .mobile-menu-item,
@@ -2531,9 +2543,17 @@
                 min-height: 44px;
             }
 
-            .gcar-action {
+            .gcar-action,
+            .aw-chip,
+            .aw-more,
+            .aw-info {
                 min-height: 44px;
             }
+
+            .aw-info {
+                width: 44px;
+            }
+
 
             .wtable {
                 font-size: 0.85em;

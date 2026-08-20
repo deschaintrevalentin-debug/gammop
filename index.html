@@ -1105,6 +1105,287 @@
             padding: 5px 10px;
         }
 
+        /* ==================== AWARDS ANNUELS ==================== */
+        .aw-section {
+            margin-top: 24px;
+        }
+
+        .aw-title {
+            font-size: 1.35em;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            color: var(--accent-text);
+            margin-bottom: 6px;
+        }
+
+        /* §6.5 : annee non officielle -> devaluation, jamais masquage */
+        .aw-section.is-unofficial,
+        .aw-strip.is-unofficial,
+        .aw-badge.is-unofficial {
+            filter: saturate(0.25);
+            opacity: 0.82;
+        }
+
+        .aw-warning,
+        .aw-strip-warning {
+            font-size: 0.82em;
+            color: var(--text-secondary);
+            margin-bottom: 14px;
+        }
+
+        .aw-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 14px;
+            margin-top: 14px;
+        }
+
+        .aw-card {
+            background: var(--home-surface);
+            border: 1px solid var(--home-border);
+            border-radius: 12px;
+            padding: 16px 18px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .aw-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .aw-emoji { font-size: 1.3em; }
+
+        .aw-name {
+            font-weight: 800;
+            letter-spacing: -0.01em;
+        }
+
+        .aw-info {
+            margin-left: auto;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 1px solid var(--home-border);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.72em;
+            font-weight: 700;
+            font-style: italic;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .aw-info:hover,
+        .aw-info:focus-visible {
+            border-color: var(--accent);
+            color: var(--accent-text);
+        }
+
+        .aw-desc {
+            margin-top: 6px;
+            font-size: 0.85em;
+            line-height: 1.5;
+            color: var(--home-muted);
+        }
+
+        .aw-criteria {
+            margin-top: 10px;
+            padding: 10px 12px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            font-size: 0.8em;
+            line-height: 1.55;
+            color: var(--text-secondary);
+        }
+
+        .aw-criteria p + p { margin-top: 6px; }
+
+        .aw-list {
+            list-style: none;
+            margin: 12px 0 0;
+            padding: 0;
+        }
+
+        .aw-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 0;
+            border-bottom: 1px solid var(--home-border);
+            font-size: 0.92em;
+        }
+
+        .aw-row:last-child { border-bottom: none; }
+
+        .aw-rank {
+            min-width: 24px;
+            font-variant-numeric: tabular-nums;
+            color: var(--text-secondary);
+            font-size: 0.9em;
+        }
+
+        .aw-player {
+            font-weight: 700;
+            color: var(--accent-text);
+            text-decoration: none;
+        }
+
+        .aw-player:hover,
+        .aw-player:focus-visible { text-decoration: underline; }
+
+        .aw-value {
+            margin-left: auto;
+            color: var(--text-secondary);
+            font-size: 0.88em;
+            white-space: nowrap;
+        }
+
+        .aw-none {
+            margin-top: 12px;
+            padding: 10px 12px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            font-size: 0.84em;
+            color: var(--text-secondary);
+        }
+
+        .aw-more {
+            margin-top: 12px;
+            min-height: 40px;
+            padding: 8px 14px;
+            font: inherit;
+            font-size: 0.84em;
+            font-weight: 600;
+            color: var(--accent-text);
+            background: transparent;
+            border: 1px solid var(--home-border);
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .aw-more:hover,
+        .aw-more:focus-visible { border-color: var(--accent); }
+
+        /* Bandeau compact de la page Palmares */
+        .aw-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: -6px 0 4px;
+            padding: 12px 14px;
+            border: 1px dashed var(--home-border);
+            border-radius: 12px;
+        }
+
+        .aw-strip-warning { flex: 1 1 100%; margin: 0 0 4px; }
+
+        .aw-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 40px;
+            padding: 6px 12px;
+            font: inherit;
+            font-size: 0.82em;
+            background: var(--home-surface);
+            border: 1px solid var(--home-border);
+            border-radius: 999px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .aw-chip:hover,
+        .aw-chip:focus-visible { border-color: var(--accent); }
+
+        .aw-chip-name { color: var(--text-secondary); }
+
+        .aw-chip-value { font-weight: 700; color: var(--accent-text); }
+
+        .aw-chip-none { font-weight: 400; color: var(--text-secondary); font-style: italic; }
+
+        /* Modale du classement complet */
+        .aw-modal {
+            max-width: 620px;
+            position: relative;
+        }
+
+        .aw-modal-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 44px;
+            height: 44px;
+            border: none;
+            background: none;
+            font-size: 1.8em;
+            line-height: 1;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .aw-modal-close:hover,
+        .aw-modal-close:focus-visible { color: var(--accent-text); }
+
+        .aw-modal-head {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding-right: 44px;
+        }
+
+        .aw-modal-head h2 {
+            font-size: 1.3em;
+            font-weight: 800;
+        }
+
+        .aw-criteria-open { margin-top: 14px; }
+
+        .aw-list-full { max-height: 46vh; overflow-y: auto; }
+
+        /* Fiche joueur */
+        .aw-player-section { margin-top: 22px; }
+
+        .aw-player-title {
+            font-size: 1.05em;
+            font-weight: 800;
+            color: var(--accent-text);
+            margin-bottom: 10px;
+        }
+
+        .aw-player-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+            gap: 10px;
+        }
+
+        .aw-badge {
+            display: grid;
+            gap: 2px;
+            padding: 12px 14px;
+            background: var(--home-surface);
+            border: 1px solid var(--home-border);
+            border-left: 3px solid var(--accent);
+            border-radius: 10px;
+        }
+
+        .aw-badge.is-unofficial { border-left-color: var(--home-border); }
+
+        .aw-badge-emoji { font-size: 1.2em; }
+        .aw-badge-name { font-weight: 800; font-size: 0.95em; }
+        .aw-badge-year { font-size: 0.85em; color: var(--text-secondary); }
+        .aw-badge-value { font-size: 0.8em; color: var(--home-muted); }
+        .aw-badge-note { font-size: 0.72em; font-style: italic; color: var(--text-secondary); }
+
+        .aw-player-empty {
+            padding: 14px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            font-size: 0.88em;
+            color: var(--text-secondary);
+        }
+
         /* ==================== PAGE PALMARES (POMMES ROUGES) ==================== */
         /* Doit l'emporter sur ".section h1.view-title" */
         .pal-title,
@@ -2736,6 +3017,14 @@
 
     </div>
 
+    <!-- Modale du classement complet d'un award -->
+    <div id="awardModal" class="modal" onclick="if(event.target===this) closeAwardModal()" role="dialog" aria-modal="true" aria-labelledby="awardModalTitle">
+        <div class="modal-content aw-modal">
+            <button type="button" class="aw-modal-close" onclick="closeAwardModal()" aria-label="Fermer">&times;</button>
+            <div id="awardModalBody"></div>
+        </div>
+    </div>
+
     <!-- Player Modal -->
     <div id="mentions-legales" class="content">
         <div class="section" style="max-width:800px;margin:0 auto">
@@ -3858,6 +4147,527 @@
                 (s.players || []).forEach(function(p) { set[p] = true; });
             });
             return Object.keys(set).length;
+        }
+
+        // ==================== AWARDS ANNUELS (§6) ====================
+        // Module de calcul unique. Les trois emplacements d'affichage (sous un
+        // classement annuel, sur la page Palmares, sur une fiche joueur) passent
+        // tous par ici : aucune regle n'est ecrite deux fois.
+
+        var _histoireJoueurs = null;
+        var _awardsCache = {};
+
+        /** Annees de participation de chaque joueur, toutes saisons officielles. */
+        function histoireJoueurs() {
+            if (_histoireJoueurs) return _histoireJoueurs;
+            var histoire = {};
+            (seasons || []).forEach(function(s) {
+                if (s.isSpecial || !s.date) return;
+                var annee = new Date(s.date).getFullYear();
+                (s.players || []).forEach(function(p) {
+                    (histoire[p] = histoire[p] || {})[annee] = true;
+                });
+            });
+            _histoireJoueurs = histoire;
+            return histoire;
+        }
+
+        /** Statistiques d'une annee, calculees une seule fois puis partagees. */
+        function statsAnnuelles(annee) {
+            var saisons = saisonsDeLAnnee(annee)
+                .slice()
+                .sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+
+            var classement = homeRankSeasons(saisons);
+            var rangAnnuel = {}, pointsAnnuels = {};
+            classement.forEach(function(p, i) {
+                rangAnnuel[p.player] = i + 1;
+                pointsAnnuels[p.player] = p.pts;
+            });
+
+            var joueurs = {};
+            var rangMax = 0;
+            saisons.forEach(function(s) {
+                var participants = (s.players || []).length;
+                if (participants > rangMax) rangMax = participants;
+                (s.players || []).forEach(function(pseudo, index) {
+                    var position = index + 1;
+                    var e = joueurs[pseudo] || (joueurs[pseudo] = {
+                        player: pseudo, participations: 0, victoires: 0,
+                        jeux: {}, positions: [], sommeParticipants: 0,
+                        sommeParticipantsVictoires: 0,
+                        derniereParticipation: null, derniereVictoire: null
+                    });
+                    e.participations++;
+                    e.jeux[s.game || '?'] = true;
+                    e.positions.push(position);
+                    e.sommeParticipants += participants;
+                    e.derniereParticipation = s.date;
+                    if (position === 1) {
+                        e.victoires++;
+                        e.sommeParticipantsVictoires += participants;
+                        e.derniereVictoire = s.date;
+                    }
+                });
+            });
+
+            Object.keys(joueurs).forEach(function(pseudo) {
+                var e = joueurs[pseudo];
+                e.points = pointsAnnuels[pseudo] || 0;
+                e.rangAnnuel = rangAnnuel[pseudo] || Infinity;
+                e.nbJeux = Object.keys(e.jeux).length;
+                e.moyenneParticipants = e.participations ? e.sommeParticipants / e.participations : 0;
+                e.moyenneParticipantsVictoires = e.victoires ? e.sommeParticipantsVictoires / e.victoires : 0;
+                e.moyennePlacement = e.positions.length
+                    ? e.positions.reduce(function(a, b) { return a + b; }, 0) / e.positions.length
+                    : Infinity;
+                e.pointsParPartie = e.participations ? e.points / e.participations : 0;
+                e.podiums = e.positions.filter(function(p) { return p <= 3; }).length;
+            });
+
+            return {
+                annee: annee,
+                saisons: saisons,
+                nbSaisons: saisons.length,
+                rangMax: rangMax,
+                joueurs: Object.keys(joueurs).map(function(k) { return joueurs[k]; })
+            };
+        }
+
+        /** Nombre de saisons terminees dans le top k. */
+        function nbTopK(joueur, k) {
+            return joueur.positions.filter(function(p) { return p <= k; }).length;
+        }
+
+        /**
+         * Classe une liste de joueurs selon une cascade de criteres appliquee dans
+         * l'ordre. Deux joueurs que toute la cascade laisse a egalite partagent le
+         * meme rang (ex aequo).
+         */
+        function classerAvecExAequo(joueurs, criteres) {
+            // Copies : les objets joueur sont partages entre les six awards, un
+            // classement ne doit jamais ecraser le rang calcule par un autre.
+            var tries = joueurs.map(function(j) { return Object.assign({}, j); }).sort(function(a, b) {
+                for (var i = 0; i < criteres.length; i++) {
+                    var d = criteres[i](a, b);
+                    if (d) return d;
+                }
+                // Ordre d'affichage seulement : ne separe pas les rangs
+                return a.player.localeCompare(b.player);
+            });
+            var rang = 1;
+            tries.forEach(function(joueur, i) {
+                if (i > 0) {
+                    var exAequo = criteres.every(function(c) { return c(tries[i - 1], joueur) === 0; });
+                    if (!exAequo) rang = i + 1;
+                }
+                joueur.rang = rang;
+            });
+            return tries;
+        }
+
+        // Fabriques de criteres : "plus grand gagne" et "plus petit gagne"
+        function critDesc(cle) {
+            return function(a, b) { return (b[cle] || 0) - (a[cle] || 0); };
+        }
+        function critAsc(cle) {
+            return function(a, b) { return (a[cle] || 0) - (b[cle] || 0); };
+        }
+        function critDateRecente(cle) {
+            return function(a, b) {
+                var da = a[cle] ? new Date(a[cle]).getTime() : 0;
+                var db = b[cle] ? new Date(b[cle]).getTime() : 0;
+                return db - da;
+            };
+        }
+        function critRangAnnuel(a, b) { return (a.rangAnnuel || Infinity) - (b.rangAnnuel || Infinity); }
+
+        // Cascade de l'award Efficacite, reutilisee par les awards 3 et 4
+        var CASCADE_EFFICACITE = [critDesc('participations'), critDateRecente('derniereParticipation'), critRangAnnuel];
+        var TEXTE_CASCADE_EFFICACITE = 'Départage : plus grand nombre de participations, puis participation la plus récente, puis meilleur classement annuel.';
+
+        /** Definition des six awards. Chaque calcul renvoie un classement complet. */
+        var AWARDS = [
+            {
+                id: 'regularite',
+                nom: 'Régularité',
+                emoji: '📅',
+                description: 'Récompense le joueur le plus assidu sur l\'année.',
+                critere: 'Plus grand nombre de participations dans l\'année.',
+                departage: 'Départage : plus grand nombre de jeux différents, puis moyenne de participants la plus élevée sur les saisons jouées, puis participation la plus récente, puis meilleur classement annuel.',
+                valeur: function(j) { return j.participations + ' participation' + (j.participations > 1 ? 's' : ''); },
+                calcul: function(stats) {
+                    var eligibles = stats.joueurs.filter(function(j) { return j.participations > 0; });
+                    if (!eligibles.length) return { attribue: false, raison: 'Aucune participation enregistrée cette année.' };
+                    return {
+                        attribue: true,
+                        classement: classerAvecExAequo(eligibles, [
+                            critDesc('participations'),
+                            critDesc('nbJeux'),
+                            critDesc('moyenneParticipants'),
+                            critDateRecente('derniereParticipation'),
+                            critRangAnnuel
+                        ])
+                    };
+                }
+            },
+            {
+                id: 'vainqueur',
+                nom: 'Vainqueur',
+                emoji: '🏆',
+                description: 'Récompense le joueur ayant gagné le plus de saisons dans l\'année.',
+                critere: 'Plus grand nombre de saisons remportées dans l\'année.',
+                departage: 'Départage : moyenne de participants la plus élevée sur les saisons remportées, puis victoire la plus récente.',
+                valeur: function(j) { return j.victoires + ' victoire' + (j.victoires > 1 ? 's' : ''); },
+                calcul: function(stats) {
+                    var eligibles = stats.joueurs.filter(function(j) { return j.victoires > 0; });
+                    if (!eligibles.length) return { attribue: false, raison: 'Aucune victoire enregistrée cette année.' };
+                    return {
+                        attribue: true,
+                        classement: classerAvecExAequo(eligibles, [
+                            critDesc('victoires'),
+                            critDesc('moyenneParticipantsVictoires'),
+                            critDateRecente('derniereVictoire')
+                        ])
+                    };
+                }
+            },
+            {
+                id: 'nouveau',
+                nom: 'Meilleur nouveau',
+                emoji: '🌱',
+                description: 'Récompense la meilleure première année.',
+                critere: 'Plus grand total de points sur l\'année, parmi les joueurs qui n\'avaient jamais participé auparavant.',
+                departage: TEXTE_CASCADE_EFFICACITE,
+                valeur: function(j) { return j.points + ' pts'; },
+                calcul: function(stats) {
+                    var histoire = histoireJoueurs();
+                    var eligibles = stats.joueurs.filter(function(j) {
+                        var annees = Object.keys(histoire[j.player] || {}).map(Number);
+                        return !annees.some(function(a) { return a < stats.annee; });
+                    });
+                    if (!eligibles.length) return { attribue: false, raison: 'Aucun joueur ne débute cette année.' };
+                    return {
+                        attribue: true,
+                        classement: classerAvecExAequo(eligibles, [critDesc('points')].concat(CASCADE_EFFICACITE))
+                    };
+                }
+            },
+            {
+                id: 'retour',
+                nom: 'Meilleur retour',
+                emoji: '🔄',
+                description: 'Récompense le meilleur retour après une absence.',
+                critere: 'Plus grand total de points sur l\'année, parmi les joueurs absents l\'année précédente mais déjà présents avant.',
+                departage: TEXTE_CASCADE_EFFICACITE,
+                valeur: function(j) { return j.points + ' pts'; },
+                calcul: function(stats) {
+                    var annees = anneesJouees();
+                    var plusAncienne = annees.length ? annees[annees.length - 1] : null;
+                    if (plusAncienne === null || stats.annee === plusAncienne) {
+                        return { attribue: false, raison: 'Première année du site : aucun retour possible.' };
+                    }
+                    if (saisonsDeLAnnee(stats.annee - 1).length === 0) {
+                        return { attribue: false, raison: 'Aucune partie n\'a eu lieu en ' + (stats.annee - 1) + '.' };
+                    }
+                    var histoire = histoireJoueurs();
+                    var eligibles = stats.joueurs.filter(function(j) {
+                        var vues = Object.keys(histoire[j.player] || {}).map(Number);
+                        var absentAvant = vues.indexOf(stats.annee - 1) === -1;
+                        var presentPlusTot = vues.some(function(a) { return a < stats.annee - 1; });
+                        return absentAvant && presentPlusTot;
+                    });
+                    if (!eligibles.length) return { attribue: false, raison: 'Aucun joueur ne revient après une absence cette année.' };
+                    return {
+                        attribue: true,
+                        classement: classerAvecExAequo(eligibles, [critDesc('points')].concat(CASCADE_EFFICACITE))
+                    };
+                }
+            },
+            {
+                id: 'efficacite',
+                nom: 'Efficacité',
+                emoji: '🎯',
+                description: 'Récompense le meilleur rendement par partie.',
+                critere: 'Meilleure moyenne de points par participation, parmi les joueurs ayant joué au moins la moitié des saisons de l\'année.',
+                departage: TEXTE_CASCADE_EFFICACITE,
+                valeur: function(j) { return j.pointsParPartie.toFixed(1) + ' pts/partie'; },
+                calcul: function(stats) {
+                    // Seuil arrondi a l'entier superieur : 11 saisons -> 6 participations
+                    var minimum = Math.ceil(stats.nbSaisons / 2);
+                    var eligibles = stats.joueurs.filter(function(j) { return j.participations >= minimum; });
+                    if (!eligibles.length) {
+                        return { attribue: false, raison: 'Aucun joueur n\'atteint les ' + minimum + ' participations requises.' };
+                    }
+                    return {
+                        attribue: true,
+                        seuil: minimum,
+                        classement: classerAvecExAequo(eligibles, [critDesc('pointsParPartie')].concat(CASCADE_EFFICACITE))
+                    };
+                }
+            },
+            {
+                id: 'medaille',
+                nom: 'Plus grand médaillé',
+                emoji: '🥇',
+                description: 'Récompense l\'accumulation de podiums.',
+                critere: 'Plus grand nombre de podiums (top 3) dans l\'année.',
+                departage: 'Départage : on compare les seuils cumulatifs de classement en partant du sommet — nombre de top 1, puis de top 2, puis de top 3, et ainsi de suite jusqu\'au dernier rang observé — puis la meilleure moyenne de classement, puis le meilleur classement annuel.',
+                valeur: function(j) { return j.podiums + ' podium' + (j.podiums > 1 ? 's' : ''); },
+                calcul: function(stats) {
+                    var eligibles = stats.joueurs.filter(function(j) { return j.podiums > 0; });
+                    if (!eligibles.length) return { attribue: false, raison: 'Aucun podium enregistré cette année.' };
+                    // Boucle generique sur le rang k : aucune comparaison ecrite en dur
+                    var criteres = [critDesc('podiums')];
+                    for (var k = 1; k <= stats.rangMax; k++) {
+                        criteres.push((function(rang) {
+                            return function(a, b) { return nbTopK(b, rang) - nbTopK(a, rang); };
+                        })(k));
+                    }
+                    criteres.push(critAsc('moyennePlacement'));
+                    criteres.push(critRangAnnuel);
+                    return { attribue: true, classement: classerAvecExAequo(eligibles, criteres) };
+                }
+            }
+        ];
+
+        /** Awards d'une annee, calcules une fois puis mis en cache. */
+        function awardsDeLAnnee(annee) {
+            if (_awardsCache[annee]) return _awardsCache[annee];
+            var stats = statsAnnuelles(annee);
+            var resultat = {
+                annee: annee,
+                officielle: estAnneeOfficielle(annee),
+                nbSaisons: stats.nbSaisons,
+                awards: AWARDS.map(function(award) {
+                    var calcul = award.calcul(stats) || {};
+                    return {
+                        id: award.id, nom: award.nom, emoji: award.emoji,
+                        description: award.description, critere: award.critere,
+                        departage: award.departage, valeur: award.valeur,
+                        attribue: !!calcul.attribue,
+                        raison: calcul.raison || '',
+                        seuil: calcul.seuil,
+                        classement: calcul.classement || []
+                    };
+                })
+            };
+            _awardsCache[annee] = resultat;
+            return resultat;
+        }
+
+        /** Awards remportes par un joueur, toutes annees confondues. */
+        function awardsDuJoueur(pseudo) {
+            var resultat = [];
+            anneesJouees().forEach(function(annee) {
+                var donnees = awardsDeLAnnee(annee);
+                donnees.awards.forEach(function(award) {
+                    if (!award.attribue) return;
+                    var ligne = award.classement.find(function(j) { return j.player === pseudo; });
+                    if (ligne && ligne.rang === 1) {
+                        resultat.push({
+                            annee: annee, id: award.id, nom: award.nom, emoji: award.emoji,
+                            valeur: award.valeur(ligne), officielle: donnees.officielle,
+                            exAequo: award.classement.filter(function(j) { return j.rang === 1; }).length > 1
+                        });
+                    }
+                });
+            });
+            return resultat.sort(function(a, b) { return b.annee - a.annee; });
+        }
+
+        // ==================== AWARDS : AFFICHAGE ====================
+
+        /** Une ligne de classement d'award : rang, pseudo cliquable, valeur. */
+        function awardLigneHtml(ligne, award) {
+            var exAequo = ligne.rang === 1 ? '' : '';
+            return '<li class="aw-row">'
+                + '<span class="aw-rank">' + ligne.rang + '</span>'
+                + '<a class="aw-player" href="' + pathForPlayer(ligne.player) + '"'
+                + ' onclick="openPlayer(\'' + ligne.player.replace(/'/g, "\\'") + '\');return false">'
+                + homeEsc(ligne.player) + '</a>'
+                + '<span class="aw-value">' + award.valeur(ligne) + '</span>'
+                + exAequo + '</li>';
+        }
+
+        /**
+         * Bloc des six awards d'une annee.
+         * mode 'top5'   : sous un classement annuel, chaque award montre son top 5
+         * mode 'premier': sur la page Palmares, chaque award ne montre que son premier
+         */
+        function awardsBlockHtml(annee, mode) {
+            var donnees = awardsDeLAnnee(annee);
+            var limite = mode === 'premier' ? 1 : 5;
+
+            var html = '<div class="section aw-section' + (donnees.officielle ? '' : ' is-unofficial') + '">';
+            html += '<h2 class="aw-title">🏅 Awards ' + annee + '</h2>';
+
+            if (!donnees.officielle) {
+                // §6.5 : devaluation visuelle, jamais un masquage
+                html += '<p class="aw-warning">Année non officielle — awards indicatifs (moins de '
+                    + SEUIL_ANNEE_OFFICIELLE + ' saisons).</p>';
+            }
+
+            html += '<div class="aw-grid">';
+            donnees.awards.forEach(function(award) {
+                html += '<div class="aw-card">';
+                html += '<div class="aw-head">';
+                html += '<span class="aw-emoji" aria-hidden="true">' + award.emoji + '</span>';
+                html += '<span class="aw-name">' + award.nom + '</span>';
+                html += '<button type="button" class="aw-info" aria-label="Critères de départage de l\'award ' + award.nom + '"'
+                    + ' onclick="toggleAwardInfo(this)">i</button>';
+                html += '</div>';
+                html += '<p class="aw-desc">' + award.description + '</p>';
+                html += '<div class="aw-criteria" hidden>'
+                    + '<p><strong>Critère principal.</strong> ' + award.critere + '</p>'
+                    + '<p>' + award.departage + '</p>'
+                    + '</div>';
+
+                if (!award.attribue) {
+                    html += '<p class="aw-none">Award non attribué — ' + award.raison + '</p>';
+                } else {
+                    html += '<ol class="aw-list">';
+                    award.classement.slice(0, limite).forEach(function(ligne) {
+                        html += awardLigneHtml(ligne, award);
+                    });
+                    html += '</ol>';
+                    html += '<button type="button" class="aw-more" onclick="openAwardModal(' + annee + ', \'' + award.id + '\')">'
+                        + 'Classement complet (' + award.classement.length + ')</button>';
+                }
+                html += '</div>';
+            });
+            html += '</div></div>';
+            return html;
+        }
+
+        /**
+         * Bandeau compact des six awards d'une annee, pour la page Palmares :
+         * chaque award n'affiche que son premier et ouvre le classement complet.
+         */
+        function awardsStripHtml(annee) {
+            var donnees = awardsDeLAnnee(annee);
+            var html = '<div class="aw-strip' + (donnees.officielle ? '' : ' is-unofficial') + '">';
+            if (!donnees.officielle) {
+                html += '<div class="aw-strip-warning">Année non officielle — awards indicatifs (moins de '
+                    + SEUIL_ANNEE_OFFICIELLE + ' saisons).</div>';
+            }
+            donnees.awards.forEach(function(award) {
+                var premier = award.attribue ? award.classement.filter(function(j) { return j.rang === 1; }) : [];
+                html += '<button type="button" class="aw-chip" onclick="openAwardModal(' + annee + ', \'' + award.id + '\')"'
+                    + ' aria-label="' + award.nom + ' ' + annee + ' — voir le classement complet">';
+                html += '<span class="aw-chip-emoji" aria-hidden="true">' + award.emoji + '</span>';
+                html += '<span class="aw-chip-name">' + award.nom + '</span>';
+                if (!premier.length) {
+                    html += '<span class="aw-chip-value aw-chip-none">non attribué</span>';
+                } else {
+                    html += '<span class="aw-chip-value">' + premier.map(function(j) { return homeEsc(j.player); }).join(', ') + '</span>';
+                }
+                html += '</button>';
+            });
+            html += '</div>';
+            return html;
+        }
+
+        /** Deplie les criteres de departage d'un award. */
+        function toggleAwardInfo(bouton) {
+            var carte = bouton.closest('.aw-card');
+            if (!carte) return;
+            var bloc = carte.querySelector('.aw-criteria');
+            if (!bloc) return;
+            var ouvert = !bloc.hasAttribute('hidden');
+            if (ouvert) bloc.setAttribute('hidden', '');
+            else bloc.removeAttribute('hidden');
+            bouton.setAttribute('aria-expanded', ouvert ? 'false' : 'true');
+        }
+
+        // ---- Modale du classement complet ----
+        var _awardModalOpener = null;
+
+        function openAwardModal(annee, awardId) {
+            var donnees = awardsDeLAnnee(annee);
+            var award = donnees.awards.find(function(a) { return a.id === awardId; });
+            var modal = document.getElementById('awardModal');
+            var corps = document.getElementById('awardModalBody');
+            if (!award || !modal || !corps) return;
+
+            var html = '<div class="aw-modal-head">';
+            html += '<span class="aw-emoji" aria-hidden="true">' + award.emoji + '</span>';
+            html += '<div><h2 id="awardModalTitle">' + award.nom + ' ' + annee + '</h2>';
+            html += '<p class="aw-desc">' + award.description + '</p></div>';
+            html += '</div>';
+
+            if (!donnees.officielle) {
+                html += '<p class="aw-warning">Année non officielle — awards indicatifs (moins de '
+                    + SEUIL_ANNEE_OFFICIELLE + ' saisons).</p>';
+            }
+
+            html += '<div class="aw-criteria aw-criteria-open">'
+                + '<p><strong>Critère principal.</strong> ' + award.critere + '</p>'
+                + '<p>' + award.departage + '</p>'
+                + (award.seuil ? '<p>Seuil d\'éligibilité : ' + award.seuil + ' participations.</p>' : '')
+                + '</div>';
+
+            if (!award.attribue) {
+                html += '<p class="aw-none">Award non attribué — ' + award.raison + '</p>';
+            } else {
+                html += '<ol class="aw-list aw-list-full">';
+                award.classement.forEach(function(ligne) {
+                    html += awardLigneHtml(ligne, award);
+                });
+                html += '</ol>';
+            }
+
+            corps.innerHTML = html;
+            modal.classList.add('active');
+            _awardModalOpener = document.activeElement;
+            var fermer = modal.querySelector('.aw-modal-close');
+            if (fermer) fermer.focus();
+        }
+
+        function closeAwardModal() {
+            var modal = document.getElementById('awardModal');
+            if (!modal || !modal.classList.contains('active')) return;
+            modal.classList.remove('active');
+            if (_awardModalOpener && typeof _awardModalOpener.focus === 'function') _awardModalOpener.focus();
+            _awardModalOpener = null;
+        }
+
+        /** Piege le focus dans la modale tant qu'elle est ouverte. */
+        document.addEventListener('keydown', function(event) {
+            var modal = document.getElementById('awardModal');
+            if (!modal || !modal.classList.contains('active')) return;
+            if (event.key === 'Escape') { closeAwardModal(); return; }
+            if (event.key !== 'Tab') return;
+            var focusables = modal.querySelectorAll('a[href], button:not([disabled])');
+            if (!focusables.length) return;
+            var premier = focusables[0], dernier = focusables[focusables.length - 1];
+            if (event.shiftKey && document.activeElement === premier) {
+                event.preventDefault(); dernier.focus();
+            } else if (!event.shiftKey && document.activeElement === dernier) {
+                event.preventDefault(); premier.focus();
+            }
+        });
+
+        /** Awards d'un joueur, pour sa fiche profil. */
+        function awardsJoueurHtml(pseudo) {
+            var gagnes = awardsDuJoueur(pseudo);
+            if (!gagnes.length) {
+                return '<div class="aw-player-empty">Aucun award remporté pour le moment.</div>';
+            }
+            var html = '<div class="aw-player-list">';
+            gagnes.forEach(function(a) {
+                html += '<div class="aw-badge' + (a.officielle ? '' : ' is-unofficial') + '"'
+                    + (a.officielle ? '' : ' title="Année non officielle — award indicatif (moins de ' + SEUIL_ANNEE_OFFICIELLE + ' saisons)"')
+                    + '>';
+                html += '<span class="aw-badge-emoji" aria-hidden="true">' + a.emoji + '</span>';
+                html += '<span class="aw-badge-name">' + a.nom + '</span>';
+                html += '<span class="aw-badge-year">' + a.annee + '</span>';
+                html += '<span class="aw-badge-value">' + a.valeur + (a.exAequo ? ' · ex æquo' : '') + '</span>';
+                if (!a.officielle) html += '<span class="aw-badge-note">Année non officielle</span>';
+                html += '</div>';
+            });
+            html += '</div>';
+            return html;
         }
 
         // ==================== ACCUEIL : OUTILS ====================
@@ -7226,12 +8036,14 @@
 
             // L'annee actuelle est detachee du reste, en tete de page
             if (annees.indexOf(courante) !== -1) {
-                html += '<div class="pal-current">' + encart(donneesAnnee(courante), true) + '</div>';
+                html += '<div class="pal-current">' + encart(donneesAnnee(courante), true)
+                    + awardsStripHtml(courante) + '</div>';
             }
 
             html += '<div class="pal-list">';
             annees.filter(function(a) { return a !== courante; }).forEach(function(annee) {
                 html += encart(donneesAnnee(annee), false);
+                html += awardsStripHtml(annee);
             });
             html += '</div>';
             html += '</div>';
@@ -8223,208 +9035,10 @@
 
             html += `</tbody></table></div>`;
 
-            // ========== AWARDS ==========
-
-            // 1. Award du Meilleur Nouveau
-            const newPlayers = [];
-            ranking.forEach(p => {
-                const playerName = p.player;
-                let isNew = true;
-
-                // Vérifier si le joueur a joué avant l'année sélectionnée
-                seasons.forEach(s => {
-                    if (new Date(s.date).getFullYear() < selectedYear) {
-                        if (s.players.includes(playerName)) {
-                            isNew = false;
-                        }
-                    }
-                });
-
-                if (isNew) {
-                    newPlayers.push({ player: playerName, pts: p.pts });
-                }
-            });
-
-            newPlayers.sort((a, b) => b.pts - a.pts);
-            const topNewPlayers = newPlayers.slice(0, 5);
-
-            html += `<h4 style="color:var(--accent-text);margin-top:30px;margin-bottom:15px">🌟 Award du Meilleur Nouveau</h4>`;
-            html += `<p style="color:#666;font-size:0.9em;margin-bottom:15px;font-style:italic">Joueurs qui découvrent Gammop cette année et qui brillent dès leurs débuts</p>`;
-            html += `<div style="display:grid;gap:10px;margin-bottom:20px">`;
-
-            if (topNewPlayers.length === 0) {
-                html += `<div style="padding:10px;color:#666;text-align:center">Aucun joueur qualifié</div>`;
-            } else {
-                topNewPlayers.forEach((p, idx) => {
-                    if (idx === 0) {
-                        html += `<div style="display:flex;justify-content:space-between;padding:12px;background:#FFD700;border-radius:8px;border-left:5px solid #DAA520;font-size:1.1em;cursor:pointer" onclick="openPlayer('${p.player.replace(/'/g, "\\'")}')"`;
-                        html += `<span style="font-weight:700;color:#8B6914">${idx + 1}. ${p.player}${getPlayerApples(p.player)} 🥇</span>`;
-                        html += `<span style="font-weight:bold;color:#8B6914">${p.pts} pts</span>`;
-                        html += `</div>`;
-                    } else {
-                        html += `<div style="display:flex;justify-content:space-between;padding:10px;background:#e8f5e9;border-radius:8px;border-left:3px solid #4a7c28;cursor:pointer" onclick="openPlayer('${p.player.replace(/'/g, "\\'")}')"`;
-                        html += `<span style="font-weight:600;color:var(--accent-text)">${idx + 1}. ${p.player}${getPlayerApples(p.player)}</span>`;
-                        html += `<span style="font-weight:bold;color:var(--accent-text)">${p.pts} pts</span>`;
-                        html += `</div>`;
-                    }
-                });
+            // Awards de l'annee affichee (§6.1) : top 5 de chaque award
+            if (typeof awardsBlockHtml === 'function') {
+                html += awardsBlockHtml(selectedYear, 'top5');
             }
-
-            html += `</div>`;
-
-            // 2. Award des Vainqueurs
-            const topWinners = ranking
-                .filter(p => p.w > 0)
-                .sort((a, b) => b.w - a.w)
-                .slice(0, 5);
-
-            html += `<h4 style="color:var(--accent-text);margin-top:30px;margin-bottom:15px">🏆 Award des Vainqueurs</h4>`;
-            html += `<p style="color:#666;font-size:0.9em;margin-bottom:15px;font-style:italic">Joueurs qui ont remporté le plus de victoires cette année</p>`;
-            html += `<div style="display:grid;gap:10px;margin-bottom:20px">`;
-
-            if (topWinners.length === 0) {
-                html += `<div style="padding:10px;color:#666;text-align:center">Aucun joueur qualifié</div>`;
-            } else {
-                topWinners.forEach((p, idx) => {
-                    if (idx === 0) {
-                        html += `<div style="display:flex;justify-content:space-between;padding:12px;background:#FFD700;border-radius:8px;border-left:5px solid #DAA520;font-size:1.1em;cursor:pointer" onclick="openPlayer('${p.player.replace(/'/g, "\\'")}')"`;
-                        html += `<span style="font-weight:700;color:#8B6914">${idx + 1}. ${p.player}${getPlayerApples(p.player)} 🥇</span>`;
-                        html += `<span style="font-weight:bold;color:#8B6914">${p.w} victoire${p.w > 1 ? 's' : ''}</span>`;
-                        html += `</div>`;
-                    } else {
-                        html += `<div style="display:flex;justify-content:space-between;padding:10px;background:#e8f5e9;border-radius:8px;border-left:3px solid #4a7c28;cursor:pointer" onclick="openPlayer('${p.player.replace(/'/g, "\\'")}')"`;
-                        html += `<span style="font-weight:600;color:var(--accent-text)">${idx + 1}. ${p.player}${getPlayerApples(p.player)}</span>`;
-                        html += `<span style="font-weight:bold;color:var(--accent-text)">${p.w} victoire${p.w > 1 ? 's' : ''}</span>`;
-                        html += `</div>`;
-                    }
-                });
-            }
-
-            html += `</div>`;
-
-            // 3. Award de la Régularité
-            const topRegular = ranking
-                .sort((a, b) => b.games - a.games)
-                .slice(0, 5);
-
-            html += `<h4 style="color:var(--accent-text);margin-top:30px;margin-bottom:15px">🎯 Award de la Régularité</h4>`;
-            html += `<p style="color:#666;font-size:0.9em;margin-bottom:15px;font-style:italic">Joueurs les plus assidus avec le plus grand nombre de participations</p>`;
-            html += `<div style="display:grid;gap:10px;margin-bottom:20px">`;
-
-            if (topRegular.length === 0) {
-                html += `<div style="padding:10px;color:#666;text-align:center">Aucun joueur qualifié</div>`;
-            } else {
-                topRegular.forEach((p, idx) => {
-                    if (idx === 0) {
-                        html += `<div style="display:flex;justify-content:space-between;padding:12px;background:#FFD700;border-radius:8px;border-left:5px solid #DAA520;font-size:1.1em;cursor:pointer" onclick="openPlayer('${p.player.replace(/'/g, "\\'")}')"`;
-                        html += `<span style="font-weight:700;color:#8B6914">${idx + 1}. ${p.player}${getPlayerApples(p.player)} 🥇</span>`;
-                        html += `<span style="font-weight:bold;color:#8B6914">${p.games} partie${p.games > 1 ? 's' : ''}</span>`;
-                        html += `</div>`;
-                    } else {
-                        html += `<div style="display:flex;justify-content:space-between;padding:10px;background:#e8f5e9;border-radius:8px;border-left:3px solid #4a7c28;cursor:pointer" onclick="openPlayer('${p.player.replace(/'/g, "\\'")}')"`;
-                        html += `<span style="font-weight:600;color:var(--accent-text)">${idx + 1}. ${p.player}${getPlayerApples(p.player)}</span>`;
-                        html += `<span style="font-weight:bold;color:var(--accent-text)">${p.games} partie${p.games > 1 ? 's' : ''}</span>`;
-                        html += `</div>`;
-                    }
-                });
-            }
-
-            html += `</div>`;
-
-            // 4. Award de l'Efficacité
-            const topEfficiency = ranking
-                .filter(p => p.games >= 3)
-                .map(p => ({
-                    player: p.player,
-                    avg: (p.pts / p.games).toFixed(2),
-                    avgNum: p.pts / p.games
-                }))
-                .sort((a, b) => b.avgNum - a.avgNum)
-                .slice(0, 5);
-
-            html += `<h4 style="color:var(--accent-text);margin-top:30px;margin-bottom:15px">📊 Award de l'Efficacité</h4>`;
-            html += `<p style="color:#666;font-size:0.9em;margin-bottom:15px;font-style:italic">Joueurs avec la meilleure moyenne de points par partie (min. 3 parties)</p>`;
-            html += `<div style="display:grid;gap:10px;margin-bottom:20px">`;
-
-            if (topEfficiency.length === 0) {
-                html += `<div style="padding:10px;color:#666;text-align:center">Aucun joueur qualifié</div>`;
-            } else {
-                topEfficiency.forEach((p, idx) => {
-                    if (idx === 0) {
-                        html += `<div style="display:flex;justify-content:space-between;padding:12px;background:#FFD700;border-radius:8px;border-left:5px solid #DAA520;font-size:1.1em;cursor:pointer" onclick="openPlayer('${p.player.replace(/'/g, "\\'")}')"`;
-                        html += `<span style="font-weight:700;color:#8B6914">${idx + 1}. ${p.player}${getPlayerApples(p.player)} 🥇</span>`;
-                        html += `<span style="font-weight:bold;color:#8B6914">${p.avg} pts/partie</span>`;
-                        html += `</div>`;
-                    } else {
-                        html += `<div style="display:flex;justify-content:space-between;padding:10px;background:#e8f5e9;border-radius:8px;border-left:3px solid #4a7c28;cursor:pointer" onclick="openPlayer('${p.player.replace(/'/g, "\\'")}')"`;
-                        html += `<span style="font-weight:600;color:var(--accent-text)">${idx + 1}. ${p.player}${getPlayerApples(p.player)}</span>`;
-                        html += `<span style="font-weight:bold;color:var(--accent-text)">${p.avg} pts/partie</span>`;
-                        html += `</div>`;
-                    }
-                });
-            }
-
-            html += `</div>`;
-
-            // 5. Award du Retour
-            const returningPlayers = [];
-            ranking.forEach(p => {
-                const playerName = p.player;
-                let playedLastYear = false;
-
-                // Vérifier si le joueur a joué l'année précédente
-                seasons.forEach(s => {
-                    if (new Date(s.date).getFullYear() === (selectedYear - 1)) {
-                        if (s.players.includes(playerName)) {
-                            playedLastYear = true;
-                        }
-                    }
-                });
-
-                // Si n'a pas joué l'année précédente mais joue cette année = retour
-                if (!playedLastYear) {
-                    // Vérifier qu'il a bien joué AVANT (pas un nouveau)
-                    let playedBefore = false;
-                    seasons.forEach(s => {
-                        if (new Date(s.date).getFullYear() < (selectedYear - 1)) {
-                            if (s.players.includes(playerName)) {
-                                playedBefore = true;
-                            }
-                        }
-                    });
-
-                    if (playedBefore) {
-                        returningPlayers.push({ player: playerName, pts: p.pts });
-                    }
-                }
-            });
-
-            returningPlayers.sort((a, b) => b.pts - a.pts);
-            const topReturning = returningPlayers.slice(0, 5);
-
-            html += `<h4 style="color:var(--accent-text);margin-top:30px;margin-bottom:15px">🎲 Award du Retour</h4>`;
-            html += `<p style="color:#666;font-size:0.9em;margin-bottom:15px;font-style:italic">Joueurs qui reviennent après avoir manqué l'année précédente</p>`;
-            html += `<div style="display:grid;gap:10px;margin-bottom:20px">`;
-
-            if (topReturning.length === 0) {
-                html += `<div style="padding:10px;color:#666;text-align:center">Aucun joueur qualifié</div>`;
-            } else {
-                topReturning.forEach((p, idx) => {
-                    if (idx === 0) {
-                        html += `<div style="display:flex;justify-content:space-between;padding:12px;background:#FFD700;border-radius:8px;border-left:5px solid #DAA520;font-size:1.1em;cursor:pointer" onclick="openPlayer('${p.player.replace(/'/g, "\\'")}')"`;
-                        html += `<span style="font-weight:700;color:#8B6914">${idx + 1}. ${p.player}${getPlayerApples(p.player)} 🥇</span>`;
-                        html += `<span style="font-weight:bold;color:#8B6914">${p.pts} pts</span>`;
-                        html += `</div>`;
-                    } else {
-                        html += `<div style="display:flex;justify-content:space-between;padding:10px;background:#e8f5e9;border-radius:8px;border-left:3px solid #4a7c28;cursor:pointer" onclick="openPlayer('${p.player.replace(/'/g, "\\'")}')"`;
-                        html += `<span style="font-weight:600;color:var(--accent-text)">${idx + 1}. ${p.player}${getPlayerApples(p.player)}</span>`;
-                        html += `<span style="font-weight:bold;color:var(--accent-text)">${p.pts} pts</span>`;
-                        html += `</div>`;
-                    }
-                });
-            }
-
-            html += `</div>`;
 
             contentEl.innerHTML = html;
         }
@@ -10309,6 +10923,14 @@
             palmaresHtml += '</div>';
 
             palmaresHtml += '</div>';
+
+            // Awards remportes par le joueur (§6.1)
+            if (typeof awardsJoueurHtml === 'function') {
+                palmaresHtml += '<div class="aw-player-section">'
+                    + '<h4 class="aw-player-title">🏅 Awards remportés</h4>'
+                    + awardsJoueurHtml(name)
+                    + '</div>';
+            }
 
             document.getElementById('modalPalmares').innerHTML = palmaresHtml;
 

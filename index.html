@@ -3371,14 +3371,7 @@
                             const position = index + 1;
 
                             // Système de points Gammop
-                            let pts = (totalPlayers - position) + 1;
-                            pts += Math.floor(((totalPlayers - position) + 1) / position);
-                            if (position <= 10) pts += (11 - position);
-                            if (position <= 5) pts += (6 - position);
-                            if (position <= 3) pts += (4 - position);
-                            if (position === 1) pts += 1;
-
-                            if (!playerYearData[player]) {
+                            let pts = pointsGammop(position, totalPlayers);if (!playerYearData[player]) {
                                 playerYearData[player] = { player: player, pts: 0, w: 0, t2: 0, t3: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
                             }
 
@@ -3750,6 +3743,27 @@
             }, 200); // Petit délai pour permettre le clic
         }
 
+        /**
+         * Bareme de points GAMMOP. Implementation unique : cette formule etait
+         * recopiee a l'identique a 28 endroits du fichier.
+         *
+         * 1. Points de base      : (nombre total de joueurs - classement) + 1
+         * 2. Bonus proportionnel : floor(points de base / classement)
+         * 3. Bonus top 10        : 1er = 10 pts, 2e = 9 pts, ..., 10e = 1 pt
+         * 4. Bonus top 5         : 1er = 5 pts, 2e = 4 pts, ..., 5e = 1 pt
+         * 5. Bonus top 3         : 1er = 3 pts, 2e = 2 pts, 3e = 1 pt
+         * 6. Bonus vainqueur     : +1 pt pour le 1er
+         */
+        function pointsGammop(position, totalJoueurs) {
+            var base = (totalJoueurs - position) + 1;
+            var total = base + Math.floor(base / position);
+            if (position <= 10) total += (11 - position);
+            if (position <= 5) total += (6 - position);
+            if (position <= 3) total += (4 - position);
+            if (position === 1) total += 1;
+            return total;
+        }
+
         function calc() {
             const playerData = {};
 
@@ -3762,32 +3776,7 @@
                 season.players.forEach((player, index) => {
                     const position = index + 1;
 
-                    // Système de points Gammop
-                    // 1. Points de base : (Nombre total - Classement) + 1
-                    let points = (totalPlayers - position) + 1;
-
-                    // 2. Bonus proportionnel : floor(Points de base / Classement)
-                    points += Math.floor(((totalPlayers - position) + 1) / position);
-
-                    // 3. Bonus Top 10 (1er=10pts, 2ème=9pts, ..., 10ème=1pt)
-                    if (position <= 10) {
-                        points += (11 - position);
-                    }
-
-                    // 4. Bonus Top 5 (1er=5pts, 2ème=4pts, ..., 5ème=1pt)
-                    if (position <= 5) {
-                        points += (6 - position);
-                    }
-
-                    // 5. Bonus Top 3 (1er=3pts, 2ème=2pts, 3ème=1pt)
-                    if (position <= 3) {
-                        points += (4 - position);
-                    }
-
-                    // 6. Bonus vainqueur (seulement pour le 1er)
-                    if (position === 1) {
-                        points += 1;
-                    }
+                    const points = pointsGammop(position, totalPlayers);
 
                     if (!playerData[player]) {
                         playerData[player] = {
@@ -4569,14 +4558,7 @@
                 var total = season.players.length;
                 season.players.forEach(function(player, index) {
                     var position = index + 1;
-                    var pts = (total - position) + 1;
-                    pts += Math.floor(((total - position) + 1) / position);
-                    if (position <= 10) pts += (11 - position);
-                    if (position <= 5) pts += (6 - position);
-                    if (position <= 3) pts += (4 - position);
-                    if (position === 1) pts += 1;
-
-                    if (!playerData[player]) {
+                    var pts = pointsGammop(position, total);if (!playerData[player]) {
                         playerData[player] = { player: player, pts: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
                     }
                     playerData[player].pts += pts;
@@ -5166,14 +5148,7 @@
                         const position = index + 1;
 
                         // Système de points Gammop
-                        let pts = (totalPlayers - position) + 1;
-                        pts += Math.floor(((totalPlayers - position) + 1) / position);
-                        if (position <= 10) pts += (11 - position);
-                        if (position <= 5) pts += (6 - position);
-                        if (position <= 3) pts += (4 - position);
-                        if (position === 1) pts += 1;
-
-                        if (!playerData[player]) {
+                        let pts = pointsGammop(position, totalPlayers);if (!playerData[player]) {
                             playerData[player] = {
                                 player: player,
                                 pts: 0,
@@ -5393,14 +5368,7 @@
                         const position = index + 1;
 
                         // Système de points Gammop
-                        let pts = (totalPlayers - position) + 1;
-                        pts += Math.floor(((totalPlayers - position) + 1) / position);
-                        if (position <= 10) pts += (11 - position);
-                        if (position <= 5) pts += (6 - position);
-                        if (position <= 3) pts += (4 - position);
-                        if (position === 1) pts += 1;
-
-                        if (!playerData[player]) {
+                        let pts = pointsGammop(position, totalPlayers);if (!playerData[player]) {
                             playerData[player] = {
                                 player: player,
                                 pts: 0,
@@ -5703,14 +5671,7 @@
                     const totalPlayers = season.players.length;
                     season.players.forEach((player, index) => {
                         const position = index + 1;
-                        let pts = (totalPlayers - position) + 1;
-                        pts += Math.floor(((totalPlayers - position) + 1) / position);
-                        if (position <= 10) pts += (11 - position);
-                        if (position <= 5) pts += (6 - position);
-                        if (position <= 3) pts += (4 - position);
-                        if (position === 1) pts += 1;
-
-                        if (!playerYearData[player]) {
+                        let pts = pointsGammop(position, totalPlayers);if (!playerYearData[player]) {
                             playerYearData[player] = { player: player, pts: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
                         }
                         playerYearData[player].pts += pts;
@@ -5965,14 +5926,7 @@
                         const totalPlayers = season.players.length;
                         season.players.forEach((player, index) => {
                             const position = index + 1;
-                            let pts = (totalPlayers - position) + 1;
-                            pts += Math.floor(((totalPlayers - position) + 1) / position);
-                            if (position <= 10) pts += (11 - position);
-                            if (position <= 5) pts += (6 - position);
-                            if (position <= 3) pts += (4 - position);
-                            if (position === 1) pts += 1;
-
-                            if (!playerData[player]) {
+                            let pts = pointsGammop(position, totalPlayers);if (!playerData[player]) {
                                 playerData[player] = { player: player, pts: 0, games: 0, lastDate: season.date, maxSeasonPts: 0, maxSeasonDate: season.date };
                             }
                             playerData[player].pts += pts;
@@ -6180,14 +6134,7 @@
                 const totalPlayers = season.players.length;
                 season.players.forEach((player, index) => {
                     const position = index + 1;
-                    let pts = (totalPlayers - position) + 1;
-                    pts += Math.floor(((totalPlayers - position) + 1) / position);
-                    if (position <= 10) pts += (11 - position);
-                    if (position <= 5) pts += (6 - position);
-                    if (position <= 3) pts += (4 - position);
-                    if (position === 1) pts += 1;
-
-                    bestPerformances.push({
+                    let pts = pointsGammop(position, totalPlayers);bestPerformances.push({
                         player: player,
                         points: pts,
                         game: season.name,
@@ -6596,14 +6543,7 @@
                 const totalPlayers = season.players.length;
                 season.players.forEach((player, index) => {
                     const position = index + 1;
-                    let pts = (totalPlayers - position) + 1;
-                    pts += Math.floor(((totalPlayers - position) + 1) / position);
-                    if (position <= 10) pts += (11 - position);
-                    if (position <= 5) pts += (6 - position);
-                    if (position <= 3) pts += (4 - position);
-                    if (position === 1) pts += 1;
-
-                    if (!bestSinglePerf || pts > bestSinglePerf.pts) {
+                    let pts = pointsGammop(position, totalPlayers);if (!bestSinglePerf || pts > bestSinglePerf.pts) {
                         bestSinglePerf = { player: player, pts: pts, game: season.name, position: position, total: totalPlayers };
                     }
                 });
@@ -6745,14 +6685,7 @@
                         const totalPlayers = season.players.length;
                         season.players.forEach((player, index) => {
                             const position = index + 1;
-                            let pts = (totalPlayers - position) + 1;
-                            pts += Math.floor(((totalPlayers - position) + 1) / position);
-                            if (position <= 10) pts += (11 - position);
-                            if (position <= 5) pts += (6 - position);
-                            if (position <= 3) pts += (4 - position);
-                            if (position === 1) pts += 1;
-
-                            if (!playerData[player]) {
+                            let pts = pointsGammop(position, totalPlayers);if (!playerData[player]) {
                                 playerData[player] = { player: player, pts: 0, games: 0, lastDate: season.date, maxSeasonPts: 0, maxSeasonDate: season.date };
                             }
                             playerData[player].pts += pts;
@@ -7000,14 +6933,7 @@
                     const totalPlayers = season.players.length;
                     season.players.forEach((player, index) => {
                         const position = index + 1;
-                        let pts = (totalPlayers - position) + 1;
-                        pts += Math.floor(((totalPlayers - position) + 1) / position);
-                        if (position <= 10) pts += (11 - position);
-                        if (position <= 5) pts += (6 - position);
-                        if (position <= 3) pts += (4 - position);
-                        if (position === 1) pts += 1;
-
-                        if (!playerYearData[player]) {
+                        let pts = pointsGammop(position, totalPlayers);if (!playerYearData[player]) {
                             playerYearData[player] = { player: player, pts: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
                         }
                         playerYearData[player].pts += pts;
@@ -7446,14 +7372,7 @@
                     }
 
                     // Calcul des points (même système que le général)
-                    let points = (totalPlayers - position) + 1;
-                    points += Math.floor(((totalPlayers - position) + 1) / position);
-                    if (position <= 10) points += (11 - position);
-                    if (position <= 5) points += (6 - position);
-                    if (position <= 3) points += (4 - position);
-                    if (position === 1) points += 1;
-
-                    playerData[player].pts += points;
+                    let points = pointsGammop(position, totalPlayers);playerData[player].pts += points;
                     playerData[player].games++;
 
                     if (points > playerData[player].maxSeasonPts || (points === playerData[player].maxSeasonPts && new Date(season.date) > new Date(playerData[player].maxSeasonDate))) {
@@ -8318,14 +8237,7 @@
                     const totalPlayers = s.players.length;
                     s.players.forEach((p, idx) => {
                         const position = idx + 1;
-                        let pts = (totalPlayers - position) + 1;
-                        pts += Math.floor(((totalPlayers - position) + 1) / position);
-                        if (position <= 10) pts += (11 - position);
-                        if (position <= 5) pts += (6 - position);
-                        if (position <= 3) pts += (4 - position);
-                        if (position === 1) pts += 1;
-
-                        if (!playerStats[p]) {
+                        let pts = pointsGammop(position, totalPlayers);if (!playerStats[p]) {
                             playerStats[p] = { player: p, pts: 0, lastDate: s.date, maxSeasonPts: 0, maxSeasonDate: s.date };
                         }
                         playerStats[p].pts += pts;
@@ -8543,14 +8455,7 @@
                     const position = index + 1;
 
                     // Système de points Gammop
-                    let pts = (totalPlayers - position) + 1;
-                    pts += Math.floor(((totalPlayers - position) + 1) / position);
-                    if (position <= 10) pts += (11 - position);
-                    if (position <= 5) pts += (6 - position);
-                    if (position <= 3) pts += (4 - position);
-                    if (position === 1) pts += 1;
-
-                    if (!playerData[player]) {
+                    let pts = pointsGammop(position, totalPlayers);if (!playerData[player]) {
                         playerData[player] = {
                             player: player,
                             pts: 0,
@@ -8631,14 +8536,7 @@
                     const position = i + 1;
 
                     // Calculer les points pour cette position
-                    let pts = (totalPlayers - position) + 1;
-                    pts += Math.floor(((totalPlayers - position) + 1) / position);
-                    if (position <= 10) pts += (11 - position);
-                    if (position <= 5) pts += (6 - position);
-                    if (position <= 3) pts += (4 - position);
-                    if (position === 1) pts += 1;
-
-                    let bgColor, icon, textColor;
+                    let pts = pointsGammop(position, totalPlayers);let bgColor, icon, textColor;
                     if (position === 1) {
                         bgColor = 'linear-gradient(135deg,#FFD700,#FFA500)';
                         icon = '🥇';
@@ -8754,14 +8652,7 @@
                     const position = index + 1;
 
                     // Système de points Gammop
-                    let pts = (totalPlayers - position) + 1;
-                    pts += Math.floor(((totalPlayers - position) + 1) / position);
-                    if (position <= 10) pts += (11 - position);
-                    if (position <= 5) pts += (6 - position);
-                    if (position <= 3) pts += (4 - position);
-                    if (position === 1) pts += 1;
-
-                    if (!playerData[player]) {
+                    let pts = pointsGammop(position, totalPlayers);if (!playerData[player]) {
                         playerData[player] = {
                             player: player,
                             pts: 0,
@@ -9303,14 +9194,7 @@
                     const totalPlayers = s.players.length;
                     s.players.forEach((player, index) => {
                         const position = index + 1;
-                        let pts = (totalPlayers - position) + 1;
-                        pts += Math.floor(((totalPlayers - position) + 1) / position);
-                        if (position <= 10) pts += (11 - position);
-                        if (position <= 5) pts += (6 - position);
-                        if (position <= 3) pts += (4 - position);
-                        if (position === 1) pts += 1;
-
-                        if (!playerData[player]) {
+                        let pts = pointsGammop(position, totalPlayers);if (!playerData[player]) {
                             playerData[player] = { player: player, pts: 0, games: 0, lastDate: s.date, maxSeasonPts: 0, maxSeasonDate: s.date };
                         }
                         playerData[player].pts += pts;
@@ -9605,14 +9489,7 @@
                     const totalPlayers = season.players.length;
                     season.players.forEach((player, index) => {
                         const position = index + 1;
-                        let pts = (totalPlayers - position) + 1;
-                        pts += Math.floor(((totalPlayers - position) + 1) / position);
-                        if (position <= 10) pts += (11 - position);
-                        if (position <= 5) pts += (6 - position);
-                        if (position <= 3) pts += (4 - position);
-                        if (position === 1) pts += 1;
-
-                        if (!playerYearData[player]) {
+                        let pts = pointsGammop(position, totalPlayers);if (!playerYearData[player]) {
                             playerYearData[player] = { player: player, pts: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
                         }
                         playerYearData[player].pts += pts;
@@ -9743,13 +9620,7 @@
                         const totalPlayers = season.players.length;
                         season.players.forEach((player, index) => {
                             const position = index + 1;
-                            let pts = (totalPlayers - position) + 1;
-                            pts += Math.floor(((totalPlayers - position) + 1) / position);
-                            if (position <= 10) pts += (11 - position);
-                            if (position <= 5) pts += (6 - position);
-                            if (position <= 3) pts += (4 - position);
-                            if (position === 1) pts += 1;
-                            if (!playerYearData[player]) {
+                            let pts = pointsGammop(position, totalPlayers);if (!playerYearData[player]) {
                                 playerYearData[player] = { player: player, pts: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
                             }
                             playerYearData[player].pts += pts;
@@ -9842,14 +9713,7 @@
                     const totalPlayers = season.players.length;
 
                     // Système de points Gammop
-                    let pts = (totalPlayers - position) + 1;
-                    pts += Math.floor(((totalPlayers - position) + 1) / position);
-                    if (position <= 10) pts += (11 - position);
-                    if (position <= 5) pts += (6 - position);
-                    if (position <= 3) pts += (4 - position);
-                    if (position === 1) pts += 1;
-
-                    if (!allGameStats[game][player]) {
+                    let pts = pointsGammop(position, totalPlayers);if (!allGameStats[game][player]) {
                         allGameStats[game][player] = {
                             player: player,
                             pts: 0,
@@ -10012,14 +9876,7 @@
                     const totalPlayers = season.players.length;
                     season.players.forEach((player, index) => {
                         const position = index + 1;
-                        let pts = (totalPlayers - position) + 1;
-                        pts += Math.floor(((totalPlayers - position) + 1) / position);
-                        if (position <= 10) pts += (11 - position);
-                        if (position <= 5) pts += (6 - position);
-                        if (position <= 3) pts += (4 - position);
-                        if (position === 1) pts += 1;
-
-                        if (!playerDataRecent[player]) {
+                        let pts = pointsGammop(position, totalPlayers);if (!playerDataRecent[player]) {
                             playerDataRecent[player] = { player: player, pts: 0, games: 0, lastDate: season.date, maxSeasonPts: 0, maxSeasonDate: season.date };
                         }
                         playerDataRecent[player].pts += pts;
@@ -10055,14 +9912,7 @@
                     const totalPlayers = season.players.length;
                     season.players.forEach((player, index) => {
                         const position = index + 1;
-                        let pts = (totalPlayers - position) + 1;
-                        pts += Math.floor(((totalPlayers - position) + 1) / position);
-                        if (position <= 10) pts += (11 - position);
-                        if (position <= 5) pts += (6 - position);
-                        if (position <= 3) pts += (4 - position);
-                        if (position === 1) pts += 1;
-
-                        if (!playerYearData[player]) {
+                        let pts = pointsGammop(position, totalPlayers);if (!playerYearData[player]) {
                             playerYearData[player] = { player: player, pts: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
                         }
                         playerYearData[player].pts += pts;
@@ -10089,13 +9939,7 @@
                     const tp = s.players.length;
                     s.players.forEach((pl, idx) => {
                         const pos = idx + 1;
-                        let pts = (tp - pos) + 1;
-                        pts += Math.floor(((tp - pos) + 1) / pos);
-                        if (pos <= 10) pts += (11 - pos);
-                        if (pos <= 5) pts += (6 - pos);
-                        if (pos <= 3) pts += (4 - pos);
-                        if (pos === 1) pts += 1;
-                        if (!pyd[pl]) pyd[pl] = { player: pl, pts: 0, maxSeasonPts: 0, maxSeasonDate: s.date };
+                        let pts = pointsGammop(pos, tp);if (!pyd[pl]) pyd[pl] = { player: pl, pts: 0, maxSeasonPts: 0, maxSeasonDate: s.date };
                         pyd[pl].pts += pts;
                         if (pts > pyd[pl].maxSeasonPts || (pts === pyd[pl].maxSeasonPts && new Date(s.date) > new Date(pyd[pl].maxSeasonDate))) {
                             pyd[pl].maxSeasonPts = pts;
@@ -10122,13 +9966,7 @@
                         const tp = s.players.length;
                         s.players.forEach((pl, idx) => {
                             const pos = idx + 1;
-                            let pts = (tp - pos) + 1;
-                            pts += Math.floor(((tp - pos) + 1) / pos);
-                            if (pos <= 10) pts += (11 - pos);
-                            if (pos <= 5) pts += (6 - pos);
-                            if (pos <= 3) pts += (4 - pos);
-                            if (pos === 1) pts += 1;
-                            if (!pd[pl]) pd[pl] = { player: pl, pts: 0, lastDate: s.date, maxSeasonPts: 0, maxSeasonDate: s.date };
+                            let pts = pointsGammop(pos, tp);if (!pd[pl]) pd[pl] = { player: pl, pts: 0, lastDate: s.date, maxSeasonPts: 0, maxSeasonDate: s.date };
                             pd[pl].pts += pts;
                             if (pts > pd[pl].maxSeasonPts || (pts === pd[pl].maxSeasonPts && new Date(s.date) > new Date(pd[pl].maxSeasonDate))) {
                                 pd[pl].maxSeasonPts = pts;
@@ -10503,14 +10341,7 @@
                     const totalPlayersInSeason = season.players.length;
                     season.players.forEach((player, index) => {
                         const position = index + 1;
-                        let pts = (totalPlayersInSeason - position) + 1;
-                        pts += Math.floor(((totalPlayersInSeason - position) + 1) / position);
-                        if (position <= 10) pts += (11 - position);
-                        if (position <= 5) pts += (6 - position);
-                        if (position <= 3) pts += (4 - position);
-                        if (position === 1) pts += 1;
-
-                        if (!playerYearData[player]) {
+                        let pts = pointsGammop(position, totalPlayersInSeason);if (!playerYearData[player]) {
                             playerYearData[player] = { player: player, pts: 0, games: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
                         }
                         playerYearData[player].pts += pts;
@@ -10593,14 +10424,7 @@
                     const totalPlayers = season.players.length;
                     season.players.forEach((player, index) => {
                         const position = index + 1;
-                        let pts = (totalPlayers - position) + 1;
-                        pts += Math.floor(((totalPlayers - position) + 1) / position);
-                        if (position <= 10) pts += (11 - position);
-                        if (position <= 5) pts += (6 - position);
-                        if (position <= 3) pts += (4 - position);
-                        if (position === 1) pts += 1;
-
-                        if (!playerYearData[player]) {
+                        let pts = pointsGammop(position, totalPlayers);if (!playerYearData[player]) {
                             playerYearData[player] = { player: player, pts: 0, games: 0, w: 0, t3: 0, maxSeasonPts: 0, maxSeasonDate: season.date };
                         }
                         playerYearData[player].pts += pts;
@@ -10717,14 +10541,7 @@
 
                 const totalPlayers = s.players.length;
                 const position = playerIndex + 1;
-                let pts = (totalPlayers - position) + 1;
-                pts += Math.floor(((totalPlayers - position) + 1) / position);
-                if (position <= 10) pts += (11 - position);
-                if (position <= 5) pts += (6 - position);
-                if (position <= 3) pts += (4 - position);
-                if (position === 1) pts += 1;
-
-                return {
+                let pts = pointsGammop(position, totalPlayers);return {
                     game: s.name,
                     date: s.date,
                     pos: position,
@@ -10996,14 +10813,7 @@
                             const position = index + 1;
 
                             // Système de points Gammop
-                            let pts = (totalPlayers - position) + 1;
-                            pts += Math.floor(((totalPlayers - position) + 1) / position);
-                            if (position <= 10) pts += (11 - position);
-                            if (position <= 5) pts += (6 - position);
-                            if (position <= 3) pts += (4 - position);
-                            if (position === 1) pts += 1;
-
-                            if (!playerData[player]) {
+                            let pts = pointsGammop(position, totalPlayers);if (!playerData[player]) {
                                 playerData[player] = {
                                     player: player,
                                     pts: 0,

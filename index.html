@@ -495,6 +495,17 @@
             color: #ffffff;
         }
 
+        /* Sous-onglet actif : reprend la couleur d'accent de la barre */
+        .games-dropdown-item.is-active {
+            color: var(--accent-text);
+            font-weight: 700;
+            box-shadow: inset 3px 0 0 var(--accent);
+        }
+
+        body.dark-mode .games-dropdown-item.is-active {
+            color: var(--accent-text);
+        }
+
         .games-dropdown-header {
             padding: 10px 20px;
             font-weight: bold;
@@ -2938,7 +2949,7 @@
             <a class="mobile-menu-item active" href="/discord" onclick="closeMobileMenu()"><svg class="nav-ico" aria-hidden="true" focusable="false"><use href="#ico-accueil"></use></svg><span class="nav-label">Accueil</span></a>
             <a class="mobile-menu-item" href="/classement-actuel" onclick="closeMobileMenu()"><svg class="nav-ico" aria-hidden="true" focusable="false"><use href="#ico-actuel"></use></svg><span class="nav-label">Classement actuel</span></a>
             <a class="mobile-menu-item" href="/classement-general" onclick="closeMobileMenu()"><svg class="nav-ico" aria-hidden="true" focusable="false"><use href="#ico-general"></use></svg><span class="nav-label">Classement général</span></a>
-            <a class="mobile-menu-item" href="/palmares" onclick="closeMobileMenu()"><svg class="nav-ico" aria-hidden="true" focusable="false"><use href="#ico-annuel"></use></svg><span class="nav-label">Classement annuel</span></a>
+            <a class="mobile-menu-item" href="/classement-annuel" onclick="closeMobileMenu()"><svg class="nav-ico" aria-hidden="true" focusable="false"><use href="#ico-annuel"></use></svg><span class="nav-label">Classement annuel</span></a>
             <a class="mobile-menu-item" href="/vainqueurs" onclick="closeMobileMenu()"><svg class="nav-ico" aria-hidden="true" focusable="false"><use href="#ico-vainqueurs"></use></svg><span class="nav-label">Vainqueurs</span></a>
             <a class="mobile-menu-item" href="/saisons-speciales" onclick="closeMobileMenu()"><svg class="nav-ico" aria-hidden="true" focusable="false"><use href="#ico-speciales"></use></svg><span class="nav-label">Saisons Spéciales</span></a>
             <a class="mobile-menu-item" href="/statistiques" onclick="closeMobileMenu()"><svg class="nav-ico" aria-hidden="true" focusable="false"><use href="#ico-statistiques"></use></svg><span class="nav-label">Statistiques</span></a>
@@ -2976,7 +2987,7 @@
             <div id="recentDropdown" class="games-dropdown" onmouseover="keepRecentDropdown()" onmouseout="hideRecentDropdown()"></div>
             <a class="tab-btn" id="generalTab" href="/classement-general" onmouseover="showGeneralDropdown()" onmouseout="hideGeneralDropdown()"><svg class="nav-ico" aria-hidden="true" focusable="false"><use href="#ico-general"></use></svg><span class="nav-label">Classement général</span></a>
             <div id="generalDropdown" class="games-dropdown" onmouseover="keepGeneralDropdown()" onmouseout="hideGeneralDropdown()"></div>
-            <a class="tab-btn" id="yearsTab" href="/palmares" onmouseover="showYearsDropdown()" onmouseout="hideYearsDropdown()"><svg class="nav-ico" aria-hidden="true" focusable="false"><use href="#ico-annuel"></use></svg><span class="nav-label">Classement annuel</span></a>
+            <a class="tab-btn" id="yearsTab" href="/classement-annuel" onmouseover="showYearsDropdown()" onmouseout="hideYearsDropdown()"><svg class="nav-ico" aria-hidden="true" focusable="false"><use href="#ico-annuel"></use></svg><span class="nav-label">Classement annuel</span></a>
             <div id="yearsDropdown" class="games-dropdown" onmouseover="keepYearsDropdown()" onmouseout="hideYearsDropdown()"></div>
             <a class="tab-btn" id="winnersTab" href="/vainqueurs" onmouseover="showWinnersDropdown()" onmouseout="hideWinnersDropdown()"><svg class="nav-ico" aria-hidden="true" focusable="false"><use href="#ico-vainqueurs"></use></svg><span class="nav-label">Vainqueurs</span></a>
             <div id="winnersDropdown" class="games-dropdown" onmouseover="keepWinnersDropdown()" onmouseout="hideWinnersDropdown()"></div>
@@ -9219,15 +9230,26 @@
             const courante = anneeActuelle();
             const annees = anneesJouees();
 
+            // Sous-onglet actif : un seul a la fois, deduit de la vue courante
+            // et de l'annee affichee. Le classement annuel actuel est celui qui
+            // s'active a l'arrivee sur l'onglet (§6.2).
+            const vue = (document.querySelector('.content.active') || {}).id || '';
+            const selecteur = document.getElementById('yearSelector');
+            const anneeVue = selecteur && selecteur.value ? parseInt(selecteur.value, 10) : courante;
+            const actif = vue === 'years'
+                ? (anneeVue === courante ? 'actuel' : 'ancien')
+                : (vue === 'year-winners' ? 'vainqueurs' : (vue === 'years-palmares' ? 'palmares' : ''));
+            const marque = c => c ? ' games-dropdown-item is-active" aria-current="true' : ' games-dropdown-item';
+
             // Exactement quatre entrees (§4.2), dans cet ordre.
             let html = '';
-            html += `<div class="games-dropdown-item" onclick="selectYearFromDropdown(${courante})">📊 Classement annuel actuel</div>`;
+            html += `<div class="${marque(actif === 'actuel')}" onclick="selectYearFromDropdown(${courante})">📊 Classement annuel actuel</div>`;
             html += `<div class="games-dropdown-header">Anciens classements annuels</div>`;
             annees.filter(function(a) { return a !== courante; }).forEach(year => {
-                html += `<div class="games-dropdown-item" onclick="selectYearFromDropdown(${year})">${year}</div>`;
+                html += `<div class="${marque(actif === 'ancien' && year === anneeVue)}" onclick="selectYearFromDropdown(${year})">${year}</div>`;
             });
-            html += `<div class="games-dropdown-item" onclick="showYearWinners(${courante})">🍏 Liste des vainqueurs</div>`;
-            html += `<div class="games-dropdown-item" onclick="selectYearOption('palmares')">🏅 Palmarès</div>`;
+            html += `<div class="${marque(actif === 'vainqueurs')}" onclick="showYearWinners(${courante})">🍏 Liste des vainqueurs</div>`;
+            html += `<div class="${marque(actif === 'palmares')}" onclick="selectYearOption('palmares')">🏅 Palmarès</div>`;
 
             dropdown.innerHTML = html;
             dropdown.style.left = rect.left + 'px';
@@ -11545,7 +11567,12 @@
             }
 
             if (tab === 'years') {
+                // Le classement annuel s'ouvre sur l'annee en cours (§6.1) :
+                // celle du dernier jeu enregistre, via le predicat existant.
                 var yearSel = document.getElementById('yearSelector');
+                if (typeof updateYearRanking === 'function') {
+                    updateYearRanking(anneeActuelle());
+                }
                 pushPath(pathForView('years', yearSel ? yearSel.value : ''));
             } else {
                 pushPath(pathForView(tab));

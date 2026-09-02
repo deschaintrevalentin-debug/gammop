@@ -57,6 +57,9 @@
             --accent-text: #1d6b21;
 
             /* Couleurs semantiques de texte, variantes lisibles sur fond clair */
+            /* Accent poire des saisons speciales, assombri pour le fond clair */
+            --pear-accent: #6f7d1f;
+
             /* Accent rouge de la page Palmares, assombri pour le fond clair */
             --red-accent: #c62828;
             --red-accent-soft: rgba(198, 40, 40, 0.08);
@@ -118,6 +121,7 @@
             --accent-text: #7bd44f;
 
             /* Couleurs semantiques de texte, variantes lisibles sur fond sombre */
+            --pear-accent: #c3d455;
             --red-accent: #ff6b6b;
             --red-accent-soft: rgba(255, 107, 107, 0.10);
             --red-accent-line: rgba(255, 107, 107, 0.32);
@@ -1648,6 +1652,52 @@
             width: 1%;
         }
 
+        /* Colonnes propres aux saisons speciales (§5) : integrees a la grille,
+           dans le meme registre que les colonnes du tableau officiel */
+        .wcol-spec {
+            color: var(--text-secondary);
+        }
+
+        .wspec {
+            display: inline-block;
+            padding: 4px 9px;
+            border: 1px solid var(--home-border);
+            border-radius: 6px;
+            background: var(--section-bg);
+            font-size: 0.88em;
+            line-height: 1.4;
+        }
+
+        .wspec strong {
+            color: var(--text-primary);
+        }
+
+        .wspec-empty {
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .wcol-fruit {
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            width: 1%;
+        }
+
+        /* Lien vers le compte rendu, sous le nom de la partie */
+        .wgame-doc {
+            display: block;
+            margin-top: 2px;
+            font-size: 0.78em;
+            color: var(--info-text);
+            text-decoration: none;
+        }
+
+        .wgame-doc:hover {
+            text-decoration: underline;
+        }
+
         /* Beaucoup de grilles sont declarees en style inline avec un minimum de
            260 a 300px : sous 700px elles debordent. On les ramene a une colonne. */
         @media (max-width: 700px) {
@@ -1711,6 +1761,8 @@
             .wcol-num    { order: 3; }
             .wcol-date   { order: 4; }
             .wcol-count  { order: 5; text-align: left; }
+            .wcol-fruit  { order: 6; text-align: left; width: auto; }
+            .wcol-spec   { order: 7; flex: 1 1 100%; margin-top: 6px; }
 
             .wcol-count::after {
                 content: ' participants';
@@ -1720,6 +1772,14 @@
             .wcol-date::after {
                 content: '·';
                 margin-left: 10px;
+                opacity: 0.45;
+            }
+
+            /* Le compteur de poires suit les participants : il lui faut le meme
+               separateur, pose en amont puisque le suffixe occupe deja l'after */
+            .wcol-fruit::before {
+                content: '·';
+                margin-right: 10px;
                 opacity: 0.45;
             }
 
@@ -7751,13 +7811,36 @@
          * la liste annuelle (§4.2). La numerotation reste globale : le n° d'une
          * partie ne change pas selon la vue depuis laquelle on la consulte.
          */
-        function winnersTableHtml(seasonsAMontrer) {
-            var officielles = (seasons || []).filter(function(s) { return !s.isSpecial; });
-            var triees = officielles.slice().sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
-            var numeroGlobal = {};
-            triees.forEach(function(season, i) { numeroGlobal[season.name + '|' + season.date] = i + 1; });
+        /**
+         * Tableau des vainqueurs, partage par les parties officielles et par les
+         * saisons speciales (§5). Les deux vues ont la meme structure de ligne,
+         * la meme hierarchie typographique, la meme alternance de fond, le meme
+         * surlignage et le meme repli en cartes sur mobile.
+         *
+         * Seules varient : la numerotation affichee, le fruit de la recompense,
+         * la teinte du filet de gauche, et les deux colonnes propres aux
+         * speciales (specificite et compteur de poires).
+         *
+         * options.speciales : sert les saisons speciales au lieu des officielles.
+         */
+        function winnersTableHtml(seasonsAMontrer, options) {
+            var opts = options || {};
+            var speciales = !!opts.speciales;
 
-            // Compteur historique de victoires, calcule sur toutes les parties
+            // Corpus de reference : le compteur de victoires se calcule entre
+            // parties de meme nature, jamais sur un melange des deux
+            var corpus = (seasons || []).filter(function(s) { return !!s.isSpecial === speciales; });
+            var triees = corpus.slice().sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+
+            // Rang chronologique : sert a la fois a l'ordre des lignes, aux
+            // compteurs de victoires et au numero affiche. Meme semantique dans
+            // les deux tableaux : la Nieme partie de cette nature. Le numero par
+            // jeu des speciales reste porte par le libelle de saison ("#3").
+            var rangChrono = {};
+            triees.forEach(function(season, i) {
+                rangChrono[season.name + '|' + season.date] = i + 1;
+            });
+
             var toutesVictoires = triees
                 .filter(function(s) { return s.players && s.players.length; })
                 .map(function(s) {
@@ -7767,17 +7850,21 @@
             var lignes = seasonsAMontrer
                 .filter(function(s) { return s.players && s.players.length; })
                 .map(function(s) {
+                    var cle = s.name + '|' + s.date;
                     return {
                         season: s.name, game: s.game, date: s.date, winner: s.players[0],
                         participants: s.players.length,
-                        globalNum: numeroGlobal[s.name + '|' + s.date] || 0
+                        organizer: s.organizer, speciality: s.speciality, gdocLink: s.gdocLink,
+                        rang: rangChrono[cle] || 0
                     };
                 })
-                .sort(function(a, b) { return b.globalNum - a.globalNum; });
+                .sort(function(a, b) { return b.rang - a.rang; });
 
             if (!lignes.length) {
                 return '<p style="color:var(--text-secondary);text-align:center;padding:40px">Aucune victoire enregistrée.</p>';
             }
+
+            var fruit = speciales ? '🍐' : '🍏';
 
             var html = '<div class="wtable-wrap"><table class="wtable">';
             html += '<thead><tr>';
@@ -7785,33 +7872,55 @@
             html += '<th class="wcol-date">Date</th>';
             html += '<th class="wcol-game">Jeu</th>';
             html += '<th class="wcol-player">Vainqueur</th>';
+            if (speciales) html += '<th class="wcol-spec">Spécificité</th>';
             html += '<th class="wcol-count">Participants</th>';
+            if (speciales) html += '<th class="wcol-fruit">' + fruit + '</th>';
             html += '</tr></thead><tbody>';
 
             lignes.forEach(function(w) {
                 var date = new Date(w.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
-                // Rang de la victoire au moment ou elle a ete obtenue (compteur fige)
+                // Compteur fige : victoires du joueur jusqu'a celle-ci incluse
                 var rangVictoire = toutesVictoires.filter(function(x) {
-                    return x.winner === w.winner && (numeroGlobal[x.season + '|' + x.date] || 0) <= w.globalNum;
+                    return x.winner === w.winner && (rangChrono[x.season + '|' + x.date] || 0) <= w.rang;
                 }).length;
                 var libelleSaison = w.season.replace(new RegExp('^' + w.game + '\\s*', 'i'), '');
                 var winnerEch = w.winner.replace(/'/g, "\\'");
                 var seasonEch = w.season.replace(/'/g, "\\'");
                 var gameEch = (w.game || '').replace(/'/g, "\\'");
 
-                html += '<tr style="--game-tint:' + gameTint(w.game) + '">';
-                html += '<td class="wcol-num">n°' + w.globalNum + '</td>';
+                // Filet de gauche : teinte du jeu pour les officielles, teinte
+                // poire constante pour les speciales, qui forment une famille
+                var teinte = speciales ? 'var(--pear-accent)' : gameTint(w.game);
+
+                html += '<tr style="--game-tint:' + teinte + '">';
+                html += '<td class="wcol-num">n°' + w.rang + '</td>';
                 html += '<td class="wcol-date">' + date + '</td>';
                 html += '<td class="wcol-game">'
                     + '<a class="wgame-name" href="' + pathForGame(w.game) + '" onclick="showGameRanking(\'' + gameEch + '\');return false" title="Voir le classement de ce jeu">' + getGameWithSymbol(w.game) + '</a>'
-                    + '<a class="wgame-season" href="' + pathForSeason(w.season) + '" onclick="showSeasonDetail(\'' + seasonEch + '\');return false" title="Voir le détail de cette partie">' + (libelleSaison || w.season) + '</a>'
-                    + '</td>';
+                    + '<a class="wgame-season" href="' + pathForSeason(w.season) + '" onclick="showSeasonDetail(\'' + seasonEch + '\');return false" title="Voir le détail de cette partie">' + (libelleSaison || w.season) + '</a>';
+                if (speciales && w.gdocLink) {
+                    html += '<a class="wgame-doc" href="' + w.gdocLink + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">📄 Voir les résultats</a>';
+                }
+                html += '</td>';
                 html += '<td class="wcol-player">'
-                    + '<a class="wplayer" href="' + pathForPlayer(w.winner) + '" onclick="openPlayer(\'' + winnerEch + '\');return false">' + w.winner + '</a>'
-                    + '<span class="wrank">(' + rangVictoire + ')</span>'
-                    + (rangVictoire === 1 ? '<span class="wfirst">1ère 🍏</span>' : '')
+                    + '<a class="wplayer" href="' + pathForPlayer(w.winner) + '" onclick="openPlayer(\'' + winnerEch + '\');return false">' + w.winner + '</a>';
+                // Pour les speciales le compteur a sa propre colonne : pas de doublon
+                if (!speciales) html += '<span class="wrank">(' + rangVictoire + ')</span>';
+                html += (rangVictoire === 1 ? '<span class="wfirst">1ère ' + fruit + '</span>' : '')
                     + '</td>';
+                if (speciales) {
+                    html += '<td class="wcol-spec">';
+                    if (w.organizer) {
+                        html += '<span class="wspec">👔 Organisé par <strong>' + w.organizer + '</strong></span>';
+                    } else if (w.speciality) {
+                        html += '<span class="wspec">' + w.speciality + '</span>';
+                    } else {
+                        html += '<span class="wspec-empty">—</span>';
+                    }
+                    html += '</td>';
+                }
                 html += '<td class="wcol-count">' + w.participants + '</td>';
+                if (speciales) html += '<td class="wcol-fruit">' + fruit + ' ' + rangVictoire + '</td>';
                 html += '</tr>';
             });
 
@@ -8062,107 +8171,20 @@
             const el = document.getElementById('special-winners');
             if (!el) return;
 
-            // Récupérer toutes les saisons spéciales
             const specialSeasons = seasons.filter(s => s.isSpecial);
-
-            if (specialSeasons.length === 0) {
-                el.innerHTML = '<div class="section"><h1 class="view-title">🍐 Vainqueurs des Saisons Spéciales</h1><p style="color:var(--text-secondary);text-align:center;padding:40px">Aucune saison spéciale enregistrée pour le moment.</p></div>';
-                return;
-            }
-
-            // Préparer les données de victoires
-            const allWins = [];
-            specialSeasons.forEach(s => {
-                if (s.players && s.players.length > 0) {
-                    const winner = s.players[0];
-                    allWins.push({
-                        season: s.name,
-                        game: s.game,
-                        date: s.date,
-                        winner: winner,
-                        specialNumber: s.specialNumber,
-                        organizer: s.organizer,
-                        speciality: s.speciality,
-                        gdocLink: s.gdocLink
-                    });
-                }
-            });
-
-            // Trier par date décroissante (plus récent en premier)
-            const sortedWins = [...allWins].sort((a, b) => new Date(b.date) - new Date(a.date));
 
             let html = '<div class="section">';
             html += '<h1 class="view-title">🍐 Vainqueurs des Saisons Spéciales</h1>';
+
+            if (specialSeasons.length === 0) {
+                html += '<p style="color:var(--text-secondary);text-align:center;padding:40px">Aucune saison spéciale enregistrée pour le moment.</p></div>';
+                el.innerHTML = html;
+                return;
+            }
+
             html += '<div style="margin-bottom:20px;color:var(--text-secondary);font-size:0.95em">Liste antichronologique de tous les vainqueurs des saisons spéciales</div>';
-
-            // Créer le tableau
-            html += '<table style="width:100%;border-collapse:collapse;background:var(--card-bg);box-shadow:0 2px 8px rgba(0,0,0,0.1);border-radius:8px;overflow:hidden">';
-            html += '<thead>';
-            html += '<tr style="background:linear-gradient(135deg,#4a7c28,#5d9c35);color:white">';
-            html += '<th style="padding:15px;text-align:left;font-size:1.1em;font-weight:600">Vainqueur</th>';
-            html += '<th style="padding:15px;text-align:left;font-size:1.1em;font-weight:600">Saison</th>';
-            html += '<th style="padding:15px;text-align:left;font-size:1.1em;font-weight:600">Date</th>';
-            html += '<th style="padding:15px;text-align:left;font-size:1.1em;font-weight:600">Spécificité</th>';
-            html += '<th style="padding:15px;text-align:center;font-size:1.1em;font-weight:600">🍐 Poires</th>';
-            html += '</tr>';
-            html += '</thead>';
-            html += '<tbody>';
-
-            sortedWins.forEach((w, idx) => {
-                const date = new Date(w.date).toLocaleDateString('fr-FR', {day:'numeric', month:'short', year:'numeric'});
-
-                // Calculer le nombre de poires au moment de cette victoire
-                const pearsAtWin = allWins.filter(win => win.winner === w.winner && new Date(win.date) <= new Date(w.date)).length;
-                const isFirstWin = pearsAtWin === 1;
-
-                // Alterner les couleurs de fond
-                const bgColor = idx % 2 === 0 ? 'var(--section-bg)' : 'var(--card-bg)';
-
-                html += `<tr style="background:${bgColor};border-bottom:1px solid var(--border-color);transition:background 0.2s" onmouseover="this.style.background='var(--table-hover)'" onmouseout="this.style.background='${bgColor}'">`;
-
-                // Colonne Vainqueur
-                html += `<td style="padding:15px">`;
-                const escapedWinner = w.winner.replace(/'/g, "\\'");
-                html += `<div style="display:flex;align-items:center;gap:8px">`;
-                html += `<div style="font-size:1.3em;font-weight:bold;color:var(--accent-text);cursor:pointer" onclick="openPlayer('${escapedWinner}')">${w.winner}</div>`;
-                if (isFirstWin) {
-                    html += `<span style="font-size:0.75em;color:var(--text-secondary);opacity:0.7;font-style:italic">1ère 🍐</span>`;
-                }
-                html += `</div>`;
-                html += `</td>`;
-
-                // Colonne Saison
-                html += `<td style="padding:15px">`;
-                html += `<div style="font-weight:600;font-size:1.05em;cursor:pointer;text-decoration:underline dotted" onclick="showSeasonDetail('${w.season.replace(/'/g, "\\'")}')">${w.season}</div>`;
-                if (w.gdocLink) {
-                    html += `<a href="${w.gdocLink}" target="_blank" style="font-size:0.85em;color:#5865F2;text-decoration:none">📄 Voir les résultats</a>`;
-                }
-                html += `</td>`;
-
-                // Colonne Date
-                html += `<td style="padding:15px;color:var(--text-secondary)">${date}</td>`;
-
-                // Colonne Spécificité
-                html += `<td style="padding:15px">`;
-                if (w.organizer) {
-                    html += `<span style="background:var(--section-bg);padding:5px 10px;border-radius:6px;border:1px solid var(--border-color);font-size:0.9em">👔 Organisé par <strong>${w.organizer}</strong></span>`;
-                } else if (w.speciality) {
-                    html += `<span style="background:var(--section-bg);padding:5px 10px;border-radius:6px;border:1px solid var(--border-color);font-size:0.9em">${w.speciality}</span>`;
-                } else {
-                    html += `<span style="color:var(--text-secondary);font-style:italic">-</span>`;
-                }
-                html += `</td>`;
-
-                // Colonne Poires
-                html += `<td style="padding:15px;text-align:center;font-size:1.3em">`;
-                html += `🍐 ${pearsAtWin}`;
-                html += `</td>`;
-
-                html += `</tr>`;
-            });
-
-            html += '</tbody>';
-            html += '</table>';
+            // Meme composant que la liste des vainqueurs officiels (§5)
+            html += winnersTableHtml(specialSeasons, { speciales: true });
             html += '</div>';
 
             el.innerHTML = html;

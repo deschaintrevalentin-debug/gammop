@@ -90,7 +90,10 @@
             --home-surface: #ffffff;
             --home-border: #dfe3dc;
             --home-muted: #5b615b;
-            /* Section Jeux : volontairement plus sombre que le reste, dans les deux themes */
+            /* Section Jeux : volontairement plus sombre que le reste, dans les deux
+               themes. Son accent ne bascule donc pas non plus : la variante
+               assombrie du mode clair serait illisible sur ce fond. */
+            --games-accent: #7bd44f;
             --games-bg: #1b1f1a;
             --games-surface: #232823;
             --games-border: #394137;
@@ -2211,32 +2214,95 @@
             color: var(--games-text);
             cursor: pointer;
             transition: border-color 0.18s ease-out;
+            /* Colonne : le bloc palmares est pousse en bas, les filets epais
+               s'alignent alors d'un encart a l'autre sur une meme rangee */
+            display: flex;
+            flex-direction: column;
         }
 
         .home-game:hover {
-            border-color: var(--accent);
+            border-color: var(--games-accent);
+        }
+
+        /* Bloc 1 : identite. Lien reel, seul chemin clavier vers le jeu. */
+        .home-game-link {
+            display: block;
+            text-decoration: none;
+            color: inherit;
         }
 
         .home-game-name {
+            display: block;
             font-size: 1.05em;
             font-weight: 800;
             letter-spacing: -0.01em;
         }
 
+        .home-game-link:hover .home-game-name,
+        .home-game-link:focus-visible .home-game-name {
+            text-decoration: underline;
+        }
+
         .home-game-desc {
+            display: block;
             margin-top: 10px;
             font-size: 0.85em;
             line-height: 1.5;
             color: var(--games-muted);
         }
 
-        .home-game-meta {
+        /* Bloc 2 : volumetrie. Filet FIN. */
+        .home-game-volume {
             margin-top: 14px;
+            margin-bottom: 12px;
             padding-top: 12px;
             border-top: 1px solid var(--games-border);
-            font-size: 0.78em;
-            line-height: 1.7;
+            font-size: 0.82em;
+            line-height: 1.8;
             color: var(--games-muted);
+        }
+
+        .home-game-volume strong {
+            color: var(--games-text);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Bloc 3 : palmares. Filet NETTEMENT PLUS EPAIS que le precedent :
+           c'est ce contraste qui signale l'information la plus importante. */
+        .home-game-palmares {
+            margin-top: auto;
+            padding-top: 12px;
+            border-top: 4px solid var(--games-accent);
+            font-size: 0.82em;
+            line-height: 1.6;
+            color: var(--games-muted);
+        }
+
+        .home-game-line + .home-game-line {
+            margin-top: 6px;
+        }
+
+        /* Zones cliquables du palmares : identifiables comme telles et
+           atteignables separement au clavier */
+        .hg-link {
+            color: var(--games-text);
+            font-weight: 700;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            text-decoration-thickness: 1px;
+            cursor: pointer;
+        }
+
+        .hg-link:hover,
+        .hg-link:focus-visible {
+            color: var(--games-accent);
+        }
+
+        .home-game :focus-visible,
+        .home-game-link:focus-visible {
+            outline: 2px solid var(--games-accent);
+            outline-offset: 2px;
+            border-radius: 3px;
         }
 
         .home-footer {
@@ -2704,6 +2770,32 @@
 
             .home-games-grid {
                 grid-template-columns: 1fr;
+            }
+
+            /* La regle de cibles tactiles ci-dessus vise tout <a onclick> :
+               elle attrape le lien du titre et ceux du palmares et les passe
+               en inline-flex centre, ce qui disloque l'encart. On la neutralise
+               ici avec une specificite superieure, sans perdre les 44px. */
+            .home-game .home-game-link {
+                display: block;
+                min-height: 44px;
+            }
+
+            .home-game .hg-link {
+                display: inline-block;
+                justify-content: flex-start;
+                min-width: 0;
+                min-height: 44px;
+                padding: 12px 0;
+                line-height: 20px;
+            }
+
+            .home-game-line {
+                line-height: 1.2;
+            }
+
+            .home-game-line + .home-game-line {
+                margin-top: 0;
             }
         }
 
@@ -4680,6 +4772,27 @@
                 .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
 
+        /** Chaine sure dans un litteral JavaScript place en attribut onclick. */
+        function homeJsStr(s) {
+            return String(s == null ? '' : s)
+                .replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+                .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+        }
+
+        /** Nom de saison prive de son prefixe de jeu : "Majority Saison 34" -> "Saison 34". */
+        function homeLibelleSaison(game, seasonName) {
+            var nom = String(seasonName == null ? '' : seasonName);
+            var jeu = String(game == null ? '' : game).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            return nom.replace(new RegExp('^' + jeu + '\\s*', 'i'), '') || nom;
+        }
+
+        /** Pseudo cliquable vers sa fiche profil, sans declencher l'encart parent. */
+        function homeProfilLien(pseudo) {
+            return '<a class="hg-link" href="' + pathForPlayer(pseudo) + '"'
+                + ' onclick="event.stopPropagation();openPlayer(\'' + homeJsStr(pseudo) + '\');return false"'
+                + ' title="Voir la fiche de ce joueur">' + homeEsc(pseudo) + '</a>';
+        }
+
         // Classement GAMMOP calcule sur une liste de saisons quelconque
         function homeRankSeasons(seasonsList) {
             var playerData = {};
@@ -4839,16 +4952,32 @@
                 byGame[game].push(s);
             });
 
+            // Numerotation globale des parties officielles, identique a celle
+            // de la liste des vainqueurs : une seule numerotation sur le site
+            var numeroGlobal = {};
+            normal.slice()
+                .sort(function(a, b) { return new Date(a.date) - new Date(b.date); })
+                .forEach(function(s, i) { numeroGlobal[s.name + '|' + s.date] = i + 1; });
+
             return Object.keys(byGame).map(function(game) {
                 var list = byGame[game].slice().sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
                 var last = list[0];
                 var leader = homeRankSeasons(list)[0];
+
+                // Joueurs distincts ayant participe a au moins une saison de ce jeu
+                var joueurs = {};
+                list.forEach(function(s) {
+                    (s.players || []).forEach(function(p) { joueurs[p] = true; });
+                });
+
                 return {
                     game: game,
                     count: list.length,
+                    uniquePlayers: Object.keys(joueurs).length,
                     description: getGameDescription(game),
                     lastWinner: (last && last.players && last.players.length) ? last.players[0] : null,
                     lastSeason: last ? last.name : null,
+                    lastSeasonNum: last ? (numeroGlobal[last.name + '|' + last.date] || null) : null,
                     leader: leader ? leader.player : null
                 };
             }).sort(function(a, b) { return b.count - a.count; });
@@ -5225,16 +5354,51 @@
             html += '<h2 class="home-block-title" id="homeGamesTitle">Les jeux</h2>';
             html += '<div class="home-games-grid">';
             gamesList.forEach(function(g) {
-                html += '<button type="button" class="home-game" data-game="' + homeEsc(g.game) + '" onclick="showGameRanking(this.dataset.game)">';
-                html += '<div class="home-game-name">' + homeEsc(getGameWithSymbol(g.game)) + '</div>';
+                var jeuJs = homeJsStr(g.game);
+
+                // L'encart est un conteneur : le lien du titre et les liens du
+                // palmares sont cote a cote, jamais imbriques l'un dans l'autre
+                html += '<div class="home-game" data-game="' + homeEsc(g.game) + '" onclick="showGameRanking(this.dataset.game)">';
+
+                // Bloc 1 : identite
+                html += '<a class="home-game-link" href="' + pathForGame(g.game) + '"'
+                    + ' onclick="showGameRanking(\'' + jeuJs + '\');return false">';
+                html += '<span class="home-game-name">' + homeEsc(getGameWithSymbol(g.game)) + '</span>';
                 if (g.description) {
-                    html += '<div class="home-game-desc">' + homeEsc(g.description) + '</div>';
+                    html += '<span class="home-game-desc">' + homeEsc(g.description) + '</span>';
                 }
-                html += '<div class="home-game-meta">';
-                html += 'Dernier vainqueur : ' + (g.lastWinner ? homeEsc(g.lastWinner) + ' — ' + homeEsc(g.lastSeason) : '—') + '<br>';
-                html += '1er au classement : ' + (g.leader ? homeEsc(g.leader) : '—');
+                html += '</a>';
+
+                // Bloc 2 : volumetrie, separe du precedent par un filet fin
+                html += '<div class="home-game-volume">';
+                html += '<div><strong>' + g.uniquePlayers + '</strong> joueur' + (g.uniquePlayers > 1 ? 's' : '') + ' unique' + (g.uniquePlayers > 1 ? 's' : '') + '</div>';
+                html += '<div><strong>' + g.count + '</strong> saison' + (g.count > 1 ? 's' : '') + '</div>';
                 html += '</div>';
-                html += '</button>';
+
+                // Bloc 3 : palmares, separe par un filet nettement plus epais
+                html += '<div class="home-game-palmares">';
+                html += '<div class="home-game-line">Dernier vainqueur : ';
+                if (g.lastWinner) {
+                    html += homeProfilLien(g.lastWinner);
+                    if (g.lastSeason) {
+                        // Les parentheses font partie du lien : sur les petits
+                        // ecrans le lien passe a la ligne et une parenthese
+                        // laissee dehors resterait orpheline
+                        html += ' <a class="hg-link" href="' + pathForSeason(g.lastSeason) + '"'
+                            + ' onclick="event.stopPropagation();showSeasonDetail(\'' + homeJsStr(g.lastSeason) + '\');return false"'
+                            + ' title="Voir les résultats de cette partie">('
+                            + homeEsc(g.game) + ' - ' + homeEsc(homeLibelleSaison(g.game, g.lastSeason))
+                            + (g.lastSeasonNum ? ' (jeu n°' + g.lastSeasonNum + ')' : '')
+                            + ')</a>';
+                    }
+                } else {
+                    html += '—';
+                }
+                html += '</div>';
+                html += '<div class="home-game-line">Meilleur joueur : ' + (g.leader ? homeProfilLien(g.leader) : '—') + '</div>';
+                html += '</div>';
+
+                html += '</div>';
             });
             html += '</div></section>';
 

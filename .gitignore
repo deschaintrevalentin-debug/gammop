@@ -36,14 +36,4 @@ package-lock.json
 .claude/
 
 # Pages de previsualisation locales (jetables)
-_probe.html
-_mobile.html
-_light.html
-_test.html
-_icons.html
-_menu.html
-_jeux.html
-_jeuxl.html
-_err.html
-_mobile2.html
-_dd.html
+_*.html

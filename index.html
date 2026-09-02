@@ -364,20 +364,20 @@
             padding-right: max(0px, calc((100% - 1400px) / 2));
         }
 
-        /* Ecriteau GAMMOP : reprend la typographie du portail en tres petit,
-           seul chemin de retour vers l'ecran d'accueil general */
+        /* Ecriteau GAMMOP : reprend la typographie du portail en tres petit.
+           Il vit dans l'en-tete global, pas dans la barre de navigation : ni
+           filet de separation ni soulignement d'onglet, c'est une identite. */
         .brand-mark {
             display: inline-flex;
             align-items: center;
-            padding: 15px 20px;
-            font-size: 1.05em;
+            min-height: 44px;
+            padding: 0 4px;
+            font-size: 1.15em;
             font-weight: 900;
             letter-spacing: -0.02em;
             text-transform: uppercase;
             text-decoration: none;
             color: var(--text-primary);
-            border-bottom: 3px solid transparent;
-            border-right: 1px solid var(--border-color);
             white-space: nowrap;
             transition: color 0.18s ease-out;
         }
@@ -1713,12 +1713,6 @@
             display: none;
         }
 
-        /* Hors portail, on reserve une bande pour les outils flottants :
-           ils ne peuvent plus recouvrir la barre de navigation */
-        body:not(.portal-active) {
-            padding-top: 72px;
-        }
-
         body.portal-active header {
             min-height: 0;
             padding: clamp(24px, 6vh, 64px) 20px clamp(12px, 2vh, 24px);
@@ -1834,34 +1828,58 @@
             color: var(--home-muted);
         }
 
-        /* Outils persistants (recherche + theme), presents sur toutes les vues */
-        .floating-tools {
-            position: fixed;
-            top: 14px;
-            right: 16px;
+        /* En-tete global : sigle a gauche, recherche et theme a droite, tous
+           centres sur le meme axe horizontal. En flux, pas en position fixe :
+           plus de bande reservee ni de recouvrement de la navigation. */
+        .site-header {
+            position: relative;
             z-index: 1200;
             display: flex;
-            align-items: flex-start;
-            gap: 10px;
+            align-items: center;
+            gap: 12px;
+            padding: 10px max(20px, calc((100% - 1400px) / 2));
+            background: var(--bg-primary);
         }
 
-        .floating-tools .search-container {
+        .site-header-tools {
+            /* Colle le groupe au bord droit, y compris sur le portail ou le
+               sigle est masque et ne peut donc plus le repousser */
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            /* min-width nul : sans cela le groupe refuse de se contracter et
+               pousse la bascule de theme hors de l'ecran sur mobile */
+            min-width: 0;
+        }
+
+        .site-header .search-container {
             margin: 0;
             width: min(280px, 42vw);
         }
 
-        .floating-tools .search-input {
+        .site-header .search-input {
             background: var(--bg-primary);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
         }
 
-        .floating-tools #darkModeBtn {
+        .site-header #darkModeBtn {
             background: var(--home-surface);
             color: var(--text-primary);
             border: 1px solid var(--home-border);
             min-width: 44px;
             min-height: 44px;
             padding: 0 12px;
+        }
+
+        /* Sur le portail, le titre geant tient lieu d'identite : le sigle
+           ferait doublon, mais recherche et theme restent accessibles.
+           L'en-tete reprend le fond du hero pour ne pas creer de couture. */
+        body.portal-active .brand-mark {
+            display: none;
+        }
+
+        body.portal-active .site-header {
+            background: var(--hero-bg);
         }
 
         /* ==================== REFONTE ACCUEIL ==================== */
@@ -2245,9 +2263,8 @@
 
             .hamburger-btn {
                 display: block;
-                position: absolute;
-                top: 20px;
-                left: 15px;
+                min-width: 44px;
+                min-height: 44px;
             }
 
             .mobile-menu {
@@ -2538,8 +2555,8 @@
             }
 
             .brand-mark {
-                padding: 12px 14px;
-                font-size: 0.95em;
+                padding: 0 2px;
+                font-size: 1.05em;
                 min-height: 44px;
             }
 
@@ -2595,20 +2612,21 @@
                 padding: 12px 18px;
             }
 
-            .floating-tools {
-                top: 8px;
-                right: 8px;
-                left: 8px;
+            .site-header {
                 gap: 8px;
+                padding: 6px 10px;
             }
 
-            .floating-tools .search-container {
-                width: auto;
+            /* La recherche prend la place restante : l'en-tete ne passe jamais
+               a deux lignes et aucun outil n'est masque */
+            .site-header-tools {
                 flex: 1;
             }
 
-            body.portal-active header {
-                padding-top: 84px;
+            .site-header .search-container {
+                width: auto;
+                min-width: 0;
+                flex: 1;
             }
 
             .home-wrap {
@@ -2657,16 +2675,20 @@
             }
         }
 
-        /* Tres petits ecrans : l'ecriteau devient un monogramme */
-        @media (max-width: 380px) {
+        /* Tres petits ecrans : l'ecriteau devient un monogramme plutot que
+           de faire passer l'en-tete a deux lignes ou de masquer un outil.
+           Seuil a 360px : a 375px la ligne loge encore le sigle entier. */
+        @media (max-width: 360px) {
             .brand-mark {
                 font-size: 0;
-                padding: 12px;
+                padding: 0;
+                min-width: 24px;
+                justify-content: center;
             }
 
             .brand-mark::before {
                 content: 'G';
-                font-size: 1.15rem;
+                font-size: 1.25rem;
             }
         }
     </style>
@@ -2687,29 +2709,32 @@
             <a class="mobile-menu-item" href="/jeux" onclick="closeMobileMenu()">🎮 Jeux</a>
         </nav>
 
+        <!-- En-tete global : identite a gauche, outils globaux a droite, une
+             seule ligne de base, au-dessus de la barre de navigation -->
+        <div class="site-header">
+            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleMobileMenu()" aria-label="Ouvrir le menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <a class="brand-mark" href="/" aria-label="Retour à l'accueil GAMMOP">GAMMOP</a>
+            <div class="site-header-tools">
+                <div class="search-container">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Rechercher un joueur..." oninput="handleSearch()" onblur="hideSearchResults()" aria-label="Rechercher un joueur" />
+                    <span class="search-icon" aria-hidden="true">🔍</span>
+                    <div id="searchResults" class="search-results"></div>
+                </div>
+                <button id="darkModeBtn" class="btn" onclick="toggleDarkMode()" title="Activer/Désactiver le mode sombre" aria-label="Activer ou désactiver le mode sombre">🌙</button>
+            </div>
+        </div>
+
         <header>
             <h1>GAMMOP</h1>
             <p>Serveur Discord de mini-jeux</p>
             <a class="hero-discord" href="https://discord.com/invite/ShKeKz87qw" target="_blank" rel="noopener noreferrer">Rejoindre le serveur Discord</a>
         </header>
 
-        <!-- Outils persistants : visibles sur le portail comme dans la branche -->
-        <div class="floating-tools">
-            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleMobileMenu()" aria-label="Ouvrir le menu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-            <div class="search-container">
-                <input type="text" id="searchInput" class="search-input" placeholder="Rechercher un joueur..." oninput="handleSearch()" onblur="hideSearchResults()" aria-label="Rechercher un joueur" />
-                <span class="search-icon" aria-hidden="true">🔍</span>
-                <div id="searchResults" class="search-results"></div>
-            </div>
-            <button id="darkModeBtn" class="btn" onclick="toggleDarkMode()" title="Activer/Désactiver le mode sombre" aria-label="Activer ou désactiver le mode sombre">🌙</button>
-        </div>
-
         <div class="tabs">
-            <a class="brand-mark" href="/" aria-label="Retour à l'accueil GAMMOP">GAMMOP</a>
             <a class="tab-btn active" id="homeTab" href="/discord">🏠 Accueil</a>
             <a class="tab-btn" id="recentTab" href="/classement-actuel" onmouseover="showRecentDropdown()" onmouseout="hideRecentDropdown()">⚡ Classement actuel</a>
             <div id="recentDropdown" class="games-dropdown" onmouseover="keepRecentDropdown()" onmouseout="hideRecentDropdown()"></div>

@@ -34,3 +34,9 @@ package-lock.json
 
 # Claude Code
 .claude/
+
+# Pages de previsualisation locales (jetables)
+_probe.html
+_mobile.html
+_light.html
+_test.html
